@@ -5,11 +5,26 @@
     font-style: normal;
 }
 
+@font-face {
+    font-family: "Barlow";
+    src: url(/static/fonts/Barlow/Barlow-Bold.ttf);
+    font-weight: 700;
+    font-style: bold;
+}
+
+@font-face {
+    font-family: 'Barlow-regular';
+    src: url(/static/fonts/Barlow/Barlow-Regular.ttf);
+    font-style: normal;
+    font-weight: 400;
+}
+
+
 *{
     padding: 0;
     margin: 0;
     text-decoration: none;
-    /* font-size: 1rem; */
+    font-size: clamp(10px, 1vw, 16px);
 }
 
 :root{
@@ -21,4 +36,8 @@
 
 body{
     background-color: var(--main-color--);
+    color: var(--third-color--);
+    font-family: 'Barlow-regular';
+    font-weight: 400;
+    font-style: normal;
 }

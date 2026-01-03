@@ -39,11 +39,15 @@ header ul#navigation-lists{
   align-content: center;
   flex-flow: row nowrap;
   gap: 2rem;
+}
 
+header ul#navigation-lists li#homepage a{
+  color: var(--secondary-red-color-light--);
 }
 
 header ul#navigation-lists li.navigation{
     font-family: 'DM Sans';
+    list-style: none;
 }
 
 header ul#navigation-lists li.navigation a{
