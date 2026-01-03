@@ -1,0 +1,71 @@
+:root{
+    --max-height--: 7.19rem;
+    --header-font-size--: 1.125rem;
+}
+
+div#logo{
+    height: var(--max-height--);
+    width: fit-content;
+}
+
+div#logo img{
+    height: 100%;
+  object-fit: contain;
+  object-position: center;
+}
+
+body header{
+    height: var(--max-height--);
+    max-height: var(--max-height--);
+    font-size: var(--header-font-size--);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0px 4px 4px 0px #FFFFFF80;
+}
+
+
+header div#navbar-container{
+    display: flex;
+  justify-content: space-between;
+  max-height: 100%;
+  width: 78%;
+}
+
+
+header ul#navigation-lists{
+    display: flex;
+  justify-content: center;
+  align-content: center;
+  flex-flow: row nowrap;
+  gap: 2rem;
+
+}
+
+header ul#navigation-lists li.navigation{
+    font-family: 'DM Sans';
+}
+
+header ul#navigation-lists li.navigation a{
+    text-decoration: none;
+    color: white;
+    line-height: var(--max-height--);
+}
+
+header ul#navigation-lists li#contactus{
+    display: flex;
+}
+
+header ul#navigation-lists li#contactus a{
+    color: var(--secondary-red-color-light--);
+    line-height: 2.9375rem;
+    max-height: 2.9375rem;
+  background: white;
+  display: flex;
+  width: 9.75rem;
+  justify-content: center;
+  align-content: center;
+  margin-top: auto;
+  margin-bottom: auto;
+  border-radius: 50rem;
+}
