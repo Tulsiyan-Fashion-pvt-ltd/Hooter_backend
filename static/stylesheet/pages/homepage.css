@@ -53,3 +53,142 @@ button#xplore{
     border: none;
 }
 
+button#xplore:hover{
+    /* background-color: var(--secondary-red-color-dark--); */
+    animation: 0.1s red-button-animation 1 ease-out forwards;
+}
+
+#short-intro-section{
+  width: 70vw;
+  max-width: 100%;
+  background-color: var(--third-color--);
+  color: var(--main-color--);
+  border-radius: 20px;
+  padding: 4rem;
+  display: flex;
+  flex-flow: row;
+  justify-content: space-between;
+  align-content: center;
+  margin: 12rem auto;
+}
+
+#short-intro-section #left-box,  #short-intro-section #right-box{
+    width: 46%;
+    width: 46%;
+  
+  display: flex;
+  flex-flow: column nowrap;
+  justify-content: start;
+}
+
+#short-intro-section #left-box{
+    gap: 2rem;
+}
+
+#short-intro-section #right-box{
+    gap: 1rem;
+}
+
+
+#short-intro-section #left-box #intro{
+    font-family: 'poppins';
+    font-size: 6rem;
+    color: var(--secondary-red-color-light--);
+    line-height: 7.2rem;
+    letter-spacing: -2px;
+}
+
+#short-intro-section #left-box #intro02{
+    font-family: 'poppins';
+    font-weight: 300;
+    font-size: 3rem;
+    line-height: 3.6rem;
+    letter-spacing: -2px;
+    vertical-align: middle;
+}
+
+#short-intro-section #left-box #intro03{
+    font-family: 'poppins';
+    font-size: 1.5rem;
+    line-height: 2.25rem;
+    letter-spacing: 0%;
+    vertical-align: middle;
+}
+
+#short-intro-section #right-box .intro{
+    font-family: 'poppins';
+    font-size: 1rem;
+    line-height: 1.5rem;
+    letter-spacing: 0%;
+    vertical-align: middle;
+}
+
+
+
+
+
+main #how-it-works{
+    width: 90vw;
+  max-width: 100%;
+  margin: 0rem auto;
+}
+
+#how-it-works #intro{
+display: flex;
+  justify-content: center;
+  align-content: center;
+  flex-flow: column nowrap;
+  max-width: 100%;
+  /* border: 1px solid aliceblue; */
+  width: 65%;
+  margin: 0 auto;
+}
+
+
+#how-it-works #intro p{
+    width: fit-content;
+    margin-left: auto;
+  margin-right: auto;
+}
+
+#how-it-works #intro p#top-section{
+    font-family: 'poppins';
+    font-size: 3rem;
+    line-height: 3.6rem;
+    letter-spacing: -2px;
+    vertical-align: middle;
+}
+
+#how-it-works #intro p#middle-section{
+    color: var(--secondary-red-color-light--);
+    font-family: 'poppins';
+    font-style: medium;
+    font-size: 6rem;
+    line-height: 7.2rem;
+    letter-spacing: -2px;
+    vertical-align: middle;
+}
+
+#how-it-works #explaination{
+    margin-top: 8rem;
+}
+
+
+#how-it-works #intro p#bottom-section{
+    font-family: 'poppins';
+    font-size: 1.375rem;
+    line-height: 2.0625rem;
+    letter-spacing: 0%;
+    vertical-align: middle;
+    text-align: center;
+}
+
+#how-it-works #card-container li{
+    width: 108rem;
+    height: 60rem;
+    top: 34.931875rem;
+    left: 6rem;
+    border-radius: 20px;
+    border: 1px solid white;
+    margin-bottom: 3rem;
+}

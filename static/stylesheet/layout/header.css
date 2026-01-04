@@ -74,3 +74,9 @@ header ul#navigation-lists li#contactus a{
   border-radius: 50rem;
   font-weight: 700;
 }
+
+header ul#navigation-lists li#contactus a:hover{
+  animation: white-button-animation 0.1s linear 0s 1 forwards;
+  color: white;
+  opacity: 100%;
+}

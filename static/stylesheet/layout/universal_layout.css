@@ -6,6 +6,13 @@
 }
 
 @font-face {
+    font-family: "DM Sans-bold";
+    src: url(/static/fonts/DM_Sans/static/DMSans-Bold.ttf);
+    font-weight: 700;
+    font-style: bold;
+}
+
+@font-face {
     font-family: "Barlow";
     src: url(/static/fonts/Barlow/Barlow-Bold.ttf);
     font-weight: 700;
@@ -19,12 +26,27 @@
     font-weight: 400;
 }
 
+@font-face {
+    font-family: "poppins";
+    src: url(/static/fonts/Poppins/Poppins-Regular.ttf);
+    font-weight: 400;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "poppins-bold";
+    src: url(/static/fonts/Poppins/Poppins-Bold.ttf);
+    font-weight: 700;
+    font-style: bold;
+}
+
 
 *{
     padding: 0;
     margin: 0;
     text-decoration: none;
     font-size: clamp(10px, 1vw, 16px);
+    max-width: 100%;
 }
 
 :root{
@@ -40,4 +62,13 @@ body{
     font-family: 'Barlow-regular';
     font-weight: 400;
     font-style: normal;
+}
+
+
+a:hover{
+    opacity: 70%;
+}
+
+li{
+    list-style: none;
 }

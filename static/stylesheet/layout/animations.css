@@ -1,0 +1,92 @@
+@keyframes red-button-animation {
+    0%{
+        background: radial-gradient(circle, var(--secondary-red-color-dark--) 0%, var(--secondary-red-color-light--));
+    }
+
+    10%{
+        background: radial-gradient(circle, var(--secondary-red-color-dark--) 10%, var(--secondary-red-color-light--));
+    }
+
+    20%{
+        background: radial-gradient(circle, var(--secondary-red-color-dark--) 20%, var(--secondary-red-color-light--));
+    }
+
+    30%{
+        background: radial-gradient(circle, var(--secondary-red-color-dark--) 30%, var(--secondary-red-color-light--));
+    }
+
+    40%{
+        background: radial-gradient(circle, var(--secondary-red-color-dark--) 40%, var(--secondary-red-color-light--));
+    }
+
+    50%{
+        background: radial-gradient(circle, var(--secondary-red-color-dark--) 50%, var(--secondary-red-color-light--));
+    }
+
+    60%{
+        background: radial-gradient(circle, var(--secondary-red-color-dark--) 60%, var(--secondary-red-color-light--));
+    }
+
+    70%{
+        background: radial-gradient(circle, var(--secondary-red-color-dark--) 70%, var(--secondary-red-color-light--));
+    }
+
+    80%{
+        background: radial-gradient(circle, var(--secondary-red-color-dark--) 80%, var(--secondary-red-color-light--));
+    }
+
+    90%{
+        background: radial-gradient(circle, var(--secondary-red-color-dark--) 90%, var(--secondary-red-color-light--));
+    }
+
+    100%{
+        background: radial-gradient(circle, var(--secondary-red-color-dark--) 100%, var(--secondary-red-color-light--));
+    }
+}
+
+
+@keyframes white-button-animation {
+    0%{
+        background: radial-gradient(circle, var(--secondary-red-color-light--) 0%, var(--third-color--));
+    }
+
+    10%{
+        background: radial-gradient(circle, var(--secondary-red-color-light--) 10%, var(--third-color--));
+    }
+
+    20%{
+        background: radial-gradient(circle, var(--secondary-red-color-light--) 20%, var(--third-color--));
+    }
+
+    30%{
+        background: radial-gradient(circle, var(--secondary-red-color-light--) 30%, var(--third-color--));
+    }
+
+    40%{
+        background: radial-gradient(circle, var(--secondary-red-color-light--) 40%, var(--third-color--));
+    }
+
+    50%{
+        background: radial-gradient(circle, var(--secondary-red-color-light--) 50%, var(--third-color--));
+    }
+
+    60%{
+        background: radial-gradient(circle, var(--secondary-red-color-light--) 60%, var(--third-color--));
+    }
+
+    70%{
+        background: radial-gradient(circle, var(--secondary-red-color-light--) 70%, var(--third-color--));
+    }
+
+    80%{
+        background: radial-gradient(circle, var(--secondary-red-color-light--) 80%, var(--third-color--));
+    }
+
+    90%{
+        background: radial-gradient(circle, var(--secondary-red-color-light--) 90%, var(--third-color--));
+    }
+
+    100%{
+        background: radial-gradient(circle, var(--secondary-red-color-light--) 100%, var(--third-color--));
+    }
+}
