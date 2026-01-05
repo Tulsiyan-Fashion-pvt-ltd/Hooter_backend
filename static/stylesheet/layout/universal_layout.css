@@ -45,7 +45,7 @@
     padding: 0;
     margin: 0;
     text-decoration: none;
-    font-size: clamp(10px, 1vw, 16px);
+    font-size: clamp(10px, 16px);
     max-width: 100%;
 }
 

@@ -189,6 +189,158 @@ display: flex;
     top: 34.931875rem;
     left: 6rem;
     border-radius: 20px;
-    border: 1px solid white;
+    /* border: 1px solid white; */
     margin-bottom: 3rem;
+    background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  padding: 6rem;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+
+#how-it-works #card-container li#cards01{
+    background-image: url(/static/images/mountain.png);
+}
+
+#how-it-works #card-container li#cards02{
+    background-image: url(/static/images/58bc9277572fd907f6b25162a84565ecf4c4170b.png);
+}
+#how-it-works #card-container li#cards03{
+    background-image: url(/static/images/mountain.png);
+}
+#how-it-works #card-container li#cards04{
+    background-image: url(/static/images/58bc9277572fd907f6b25162a84565ecf4c4170b.png);
+}
+
+
+#how-it-works #card-container li .step{
+    font-family: 'poppins';
+    font-weight: 300;
+    font-size: 2.25rem;
+    line-height: 3.375rem;
+    letter-spacing: 0%;
+    text-align: start;
+    margin-bottom: 1rem;
+}
+
+#how-it-works #card-container li .task{
+    font-family: 'poppins';
+    font-weight: 500;
+    font-size: 3.75rem;
+    line-height: 4.125rem;
+    letter-spacing: -2px;
+    vertical-align: middle;
+    text-align: start;
+    margin-bottom: 4rem;
+    /* width: 55%; */
+}
+
+#how-it-works #card-container li .explanation{
+    font-family: 'poppins';
+    font-weight: 400;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    letter-spacing: 0%;
+    vertical-align: middle;
+    text-align: start;
+    margin-bottom: 2rem;
+    width: 40rem;
+}
+
+#how-it-works #card-container li .summary-line{
+    font-family: 'poppins';
+    font-weight: 400;
+    font-size: 1.875rem;
+    line-height: 2.8125rem;
+    letter-spacing: 0%;
+    vertical-align: middle;
+    text-align: start;
+    width: 30rem;
+}
+
+
+#solution_section #text-container{
+    display: flex;
+    width: 100%;
+    height: 100%;
+    /* border: 1px solid white; */
+    justify-content: space-between;
+  padding: 5rem;
+  box-sizing: border-box;
+}
+
+#solution_section #text-container .title{
+    font-family: 'poppins';
+    font-weight: 500;
+    font-size: 1.875rem;
+    line-height: 2.25rem;
+}
+
+#solution_section #text-container .summary{
+    font-family: 'poppins';
+    font-weight: 400;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    margin: 1rem 0rem;
+}
+
+#solution_section #text-container .section-left{
+    width: 4rem;
+  height: 4rem;
+  background-image: url(/static/images/solution-icon.png);
+  background-repeat: no-repeat;
+  background-size: cover;
+  margin: 0.7rem;
+}
+
+#solution_section #text-container .solution{
+    display: flex;
+  flex-flow: row nowrap;
+  margin: 1rem 0rem;
+}
+
+
+#solution_section #right-section{
+    width: 38%;
+    position: relative;
+  top: 1rem;
+}
+
+#solution_section #right-section .title{
+    font-family: Poppins;
+font-weight: 400;
+font-style: Regular;
+font-size: 6rem;
+line-height: 7.2rem;
+letter-spacing: -2px;
+vertical-align: middle;
+}
+
+#solution_section #right-section .strategy{
+    font-family: Poppins;
+font-weight: 400;
+font-style: Regular;
+font-size: 1.25rem;
+line-height: 1.875rem;
+letter-spacing: 0%;
+vertical-align: middle;
+margin: 4rem 0rem;
+}
+
+#solution_section #right-section .connect{
+    color: white;
+  line-height: 2rem;
+  border: 1px solid;
+  padding: 1rem 2rem;
+  border-radius: 50rem;
+  position: relative;
+  z-index: 10000;
+}
+
+
+#solution_section #img-container{
+position: absolute;
+  margin-top: -24vw;
 }
