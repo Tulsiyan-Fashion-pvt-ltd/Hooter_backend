@@ -521,3 +521,8 @@ background-color: var(--secondary-red-color-light--);
 #plans .card button:hover{
     animation: 0.1s red-button-animation 1 ease-out forwards;
 }
+
+#plans .card button:active{
+    width: 15rem;
+    line-height: 0.5rem;
+}

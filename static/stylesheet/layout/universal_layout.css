@@ -81,3 +81,7 @@ a:hover{
 li{
     list-style: none;
 }
+
+button:active{
+    opacity: 80%;
+}
