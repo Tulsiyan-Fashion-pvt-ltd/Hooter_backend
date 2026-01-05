@@ -41,6 +41,15 @@
 }
 
 
+@font-face{
+    font-family: "roboto";
+    src: url(/static/fonts/Roboto/static/Roboto-Regular.ttf);
+    font-weight: 400;
+    font-style: normal;
+}
+
+
+
 *{
     padding: 0;
     margin: 0;

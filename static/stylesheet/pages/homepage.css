@@ -341,6 +341,183 @@ margin: 4rem 0rem;
 
 
 #solution_section #img-container{
-position: absolute;
+/* position: absolute; */
   margin-top: -24vw;
+}
+
+
+
+#plans{
+    margin-top: 8rem;
+}
+
+#plans .title, #plans .description{
+    text-align: center;
+}
+
+#plans .title{
+    color: var(--secondary-red-color-light--);
+    font-family: 'Barlow';
+    font-style: normal;
+    font-weight: 600;
+    font-size: 1.5rem;
+    line-height: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+#plans .description{
+    font-family: 'Barlow';
+    font-size: 2.5rem;
+    line-height: 3.125rem;
+    font-weight: 600;
+}
+
+
+#plans .cards-container{
+    display: flex;
+    flex-flow: row;
+    align-items: center;
+    gap: 2rem;
+    width: fit-content;
+    margin: 0rem auto;
+    margin-top: 10rem;
+}
+
+#plans .card{
+    border: 1px solid white;
+    border-radius: 15px;
+    width: 27.75rem;
+    min-height: 38.4375rem;
+    height: 41rem;
+    display: flex;
+    flex-flow: column;
+    justify-content: start;
+    align-items: center;
+}
+
+#plans .card#featured{
+    height: 46rem;
+}
+
+#plans .card .plan-container {
+    border-radius: 50%;
+    width: 12.5rem;
+    height: 12.5rem;
+    display: flex;
+    justify-content: center;
+    align-content: center;
+    align-items: center;
+    flex-flow: column nowrap;
+    margin-top: -6rem;
+    background-color: var(--secondary-red-color-light--);
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 3rem;
+}
+
+#plans .featured{
+    padding: 0rem 1rem;
+  line-height: 2rem;
+  background-color: var(--secondary-red-color-light--);
+  font-family: 'Barlow';
+font-weight: 600;
+font-size: 1.5rem;
+/* leading-trim: NONE; */
+line-height: 1.75rem;
+letter-spacing: 0%;
+text-align: center;
+border-radius: 4px;
+}
+
+#plans .card .plan-container .amount{
+    font-family: 'Barlow';
+font-weight: 600;
+font-style: SemiBold;
+font-size: 2.25rem;
+/* leading-trim: NONE; */
+line-height: 3rem;
+letter-spacing: 0.96px;
+text-align: center;
+
+}
+
+#plans .card .plan-container .duration{
+    font-family: 'Barlow';
+font-weight: 600;
+font-style: SemiBold;
+font-size: 0.75rem;
+/* leading-trim: NONE; */
+line-height: 1.728rem;
+letter-spacing: 0.96px;
+text-align: center;
+
+}
+
+#plans .card hr{
+    width: 80%;
+    margin: 3rem auto 2rem auto;
+}
+
+
+#plans .card .plan-name{
+    font-family: 'Barlow';
+    font-weight: 600;
+    font-size: 2.0625rem;
+    line-height: 3.01125rem;
+    letter-spacing: 0.03rem;
+}
+
+#plans .card p{
+    font-family: 'Barlow';
+    font-size: 1rem;
+    line-height: 1.75rem;
+    letter-spacing: 0%;
+}
+
+#plans .card .plan{
+    background-image: url(/static/images/check.png);
+    background-repeat: no-repeat;
+    background-size: 0.8rem;
+    background-position: center left;
+    font-family: 'roboto';
+font-weight: 400;
+/* font-style: Regular; */
+font-size: 0.9375rem;
+line-height: 1.625rem;
+letter-spacing: 0%;
+text-transform: capitalize;
+/* list-style: inside; */
+padding-left: 3rem;
+}
+
+
+#plans .card .plan-desc{
+    display: flex;
+  flex-flow: column;
+  gap: 1rem;
+}
+
+
+#plans .card button{
+    font-family: 'Roboto';
+font-weight: 600;
+/* font-style: SemiBold; */
+font-size: 0.085;
+/* leading-trim: NONE; */
+line-height: 0.875rem;
+letter-spacing: 0%;
+text-align: center;
+text-transform: capitalize;
+width: 16.125rem;
+height: 3.125rem;
+margin: 3rem auto;
+border-radius: 20rem;
+border: none;
+color: white;
+background-color: var(--secondary-red-color-light--);
+}
+
+
+#plans .card button:hover{
+    animation: 0.1s red-button-animation 1 ease-out forwards;
 }
