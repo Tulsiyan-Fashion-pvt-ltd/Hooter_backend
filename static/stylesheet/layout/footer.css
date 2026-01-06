@@ -1,0 +1,129 @@
+footer{
+    background-color: #220A01;
+    padding-bottom: 1rem;
+}
+
+footer #top-section{
+    display: flex;
+  flex-flow: row wrap;
+  justify-content: space-between;
+  align-content: center;
+  padding: 4rem 7rem;
+}
+
+footer #top-section .section{
+    width: 15%;
+}
+
+footer #top-section #brand{
+    width: 30%;
+}
+
+footer #top-section #brand .title{
+    font-family: "DM Sans";
+/* font-weight: 700; */
+font-style: Bold;
+font-size: 2.5rem;
+line-height: 100%;
+letter-spacing: 0%;
+color: var(--secondary-red-color-light--);
+}
+
+footer #top-section #brand .desc{
+font-family: "Barlow-regular";
+font-weight: 500;
+font-style: Medium;
+font-size: 1rem;
+line-height: 100%;
+letter-spacing: 0%;
+width: 90%;
+}
+
+footer #top-section .title{
+    font-family: "Barlow";
+/* font-weight: 700; */
+font-style: Bold;
+font-size: 1.25rem;
+line-height: 1.75rem;
+letter-spacing: 0%;
+}
+
+footer #top-section .item a{
+    font-family: "Barlow-regular";
+/* font-weight: 400; */
+/* font-style: Regular; */
+font-size: 1rem;
+line-height: 1.3125rem;
+letter-spacing: 0%;
+color: white;
+}
+
+footer #top-section .container{
+    display: flex;
+  flex-flow: column nowrap;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+footer #bottom-section #rights-n-links {
+    width: 88%;
+    height: 3.9375rem;
+    border-width: 1px;
+    opacity: 1;
+    border-radius: 5px;
+    border: 1px solid white;
+    background-color: #494949;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0rem 2rem;
+    margin: 0rem auto 2rem auto;
+}
+
+footer #bottom-section #left-section .content-desc{
+    font-family: "DM Sans";
+font-weight: 500;
+font-style: Medium;
+font-size: 1rem;
+line-height: 100%;
+letter-spacing: 0%;
+
+}
+
+
+footer #bottom-section #social-media #links{
+    display: flex;
+  justify-content: center;
+  align-content: center;
+  gap: 1rem;
+}
+
+footer #bottom-section #social-media #links li a{
+    width: 1.5rem;
+    height: 1.5rem;
+    /* border: 1px solid white; */
+    display: inline-block;
+    background-position: center;
+    background-size: contain;
+    background-repeat: no-repeat;
+}
+
+footer #bottom-section #social-media #links li#twitter a{
+    background-image: url(/static/icons/twitter.png);
+}
+
+footer #bottom-section #social-media #links li#facebook a{
+    background-image: url(/static/icons/facebook.png);
+}
+
+footer #bottom-section #social-media #links li#insta a{
+    background-image: url(/static/icons/insta.png);
+}
+
+footer #bottom-section #social-media #links li#youtube a{
+    background-image: url(/static/icons/youtube.png);
+}
+
+footer #bottom-section #social-media #links li#linkedin a{
+    background-image: url(/static/icons/linkedin.png);
+}

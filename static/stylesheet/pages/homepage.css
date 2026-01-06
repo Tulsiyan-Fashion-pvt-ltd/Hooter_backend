@@ -526,3 +526,97 @@ background-color: var(--secondary-red-color-light--);
     width: 15rem;
     line-height: 0.5rem;
 }
+
+
+#focus-img{
+    width: 100%;
+    margin-top: 1rem;
+}
+
+#focus-img img{
+    width: 100%;
+}
+
+
+
+#foundation{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-flow: column;
+    width: 80%;
+    margin: 0rem auto;
+}
+
+#foundation h4 {
+    font-family: 'Poppins';
+    font-weight: 300;
+    font-style: Light;
+    font-size: 3rem;
+    line-height: 3.6rem;
+    letter-spacing: -2px;
+    text-align: center;
+    vertical-align: middle;
+    margin-top: -20vw;
+    margin-bottom: 4rem;
+}
+
+#foundation #foundation-year #years{
+    display: flex;
+  justify-content: space-between;
+  width: 63%;
+  margin: 0rem auto;
+}
+
+
+#foundation #hooter-history{
+    display: flex;
+  justify-content: space-between;
+  align-content: center;
+  margin: 5rem auto;
+}
+
+#foundation #hooter-history #section-right{
+    width: 50%;
+}
+
+#foundation #hooter-history #section-right .desc{
+    font-family: 'Poppins';
+font-weight: 400;
+font-style: Regular;
+font-size: 1rem;
+line-height: 1.5rem;
+letter-spacing: 0%;
+vertical-align: middle;
+
+}
+
+#foundation #hooter-history #section-left .year{
+    font-family: 'Poppins';
+font-weight: 300;
+font-style: Light;
+font-size: 2rem;
+line-height: 3rem;
+letter-spacing: 0%;
+vertical-align: middle;
+color: var(--secondary-red-color-light--);
+}
+
+
+#foundation #hooter-history #section-left .desc{
+    font-family: 'Poppins';
+font-weight: 500;
+font-style: Medium;
+font-size: 3rem;
+line-height: 3.6rem;
+letter-spacing: 0%;
+vertical-align: middle;
+}
+
+
+#end-image{
+    height: 60vw;
+      height: 45vw;
+  object-fit: cover;
+}
+
