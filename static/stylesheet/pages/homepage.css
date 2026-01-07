@@ -94,11 +94,69 @@ background-image: url(/static/images/homepage_mesh_art03.png);
     top: 165rem;
     left: 0rem;
     opacity: 1;
-    background-image: url(/static//images/homepage_mesh_art04.png);
+    background-image: url(/static/images/homepage_mesh_art04.png);
     background-position: center left;
 }
 
+#art #mesh-art05{
+width: 15rem;
+  height: 36.7159375rem;
+  top: 225rem;
+  right: 0;
+  opacity: 1;
+  background-image: url(/static/images/homepage_mesh_art05.png);
+  background-position: center right;
+}
 
+#art #mesh-art06{
+    width: 15rem;
+  height: 36.7159375rem;
+  top: 290rem;
+  left: 0;
+  opacity: 1;
+  background-image: url(/static/images/homepage_mesh_art06.png);
+  background-position: center left;
+}
+
+#art #mesh-art07{
+width: 41.25rem;
+height: 23rem;
+top: 438rem;
+opacity: 1;
+background-position: center left;
+background-image: url(/static/images/homepage_mesh_art07.png);
+}
+
+#art #mesh-art08{
+width: 40rem;
+height: 40rem;
+top: 460rem;
+  right: 0rem;
+  opacity: 1;
+  background-position: center right -5rem;
+background-image: url(/static/images/homepage_mesh_art08.png);
+}
+
+
+#art #mesh-art09{
+width: 40rem;
+height: 40rem;
+top: 512rem;
+  left: 0rem;
+  opacity: 1;
+  background-position: center left -5rem;
+background-image: url(/static/images/homepage_mesh_art09.png);
+}
+
+#art #mesh-art10{
+width: 40rem;
+height: 40rem;
+top: 530rem;
+  right: 0rem;
+  opacity: 1;
+  background-position: center right;
+background-image: url(/static/images/homepage_mesh_art10.png);
+}
 
 h3{
     font-size: 1.25rem;
@@ -295,11 +353,11 @@ display: flex;
     /* border: 1px solid white; */
     margin-bottom: 3rem;
     background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  padding: 6rem;
-  margin: 0 auto;
-  box-sizing: border-box;
+    background-position: center;
+    background-repeat: no-repeat;
+    padding: 6rem;
+    margin: 3rem auto;
+    box-sizing: border-box;
 }
 
 
@@ -638,6 +696,8 @@ background-color: var(--secondary-red-color-light--);
 
 #focus-img img{
     width: 100%;
+    position: relative;
+  z-index: -10000;
 }
 
 
@@ -718,8 +778,7 @@ vertical-align: middle;
 
 
 #end-image{
-    height: 60vw;
-      height: 45vw;
+      height: 40vw;
   object-fit: cover;
 }
 
