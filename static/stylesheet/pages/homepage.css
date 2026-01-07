@@ -1,3 +1,105 @@
+#art{
+    position: absolute;
+    z-index: -1000;
+    width: 100%;
+}
+
+#art div{
+    background-repeat: no-repeat;
+background-size: contain;
+background-position: center;
+position: absolute;
+}
+
+#art #small-ball{
+    width: 4.875rem;
+height: 4.625rem;
+/* angle: 0 deg; */
+opacity: 1;
+background-image: url(/static/images/circle01.svg);
+background-repeat: no-repeat;
+background-size: contain;
+background-position: center;
+position: absolute;
+top: 2rem;
+Left: 4vw;
+}
+
+#art #medium-ball{
+    width: 13.25rem;
+height: 12.5rem;
+top: 653px;
+left: -2rem;
+/* angle: 0 deg; */
+opacity: 1;
+position: relative;
+background-image: url(/static/images/circle02.svg);
+background-repeat: no-repeat;
+background-size: contain;
+background-position: center;
+}
+
+
+#art #enclosed-shape{
+    width: 58.8125rem;
+height: 53.903125rem;
+top: 24rem;
+right: 0px;
+/* angle: 0 deg; */
+opacity: 1;
+background-image: url(/static/images/homepage_art01.svg);
+background-repeat: no-repeat;
+background-size: contain;
+background-position: center left 18rem;
+position: absolute;
+}
+
+
+#art #mesh-art01{
+    width: 27.0625rem;
+height: 36.715625rem;
+top: 666px;
+left: -50px;
+/* angle: 0 deg; */
+opacity: 1;
+background-image: url(/static/images/homepage_mesh_art.png);
+background-repeat: no-repeat;
+background-size: contain;
+position: absolute;
+}
+
+#art #mesh-art02 {
+    width: 32vw;
+    height: 32vw;
+    top: 90rem;
+    left: 1rem;
+    opacity: 1;
+    background-image: url(/static/images/homepage_mesh_art02.png);
+}
+
+#art #mesh-art03{
+    width: 32vw;
+height: 22vw;
+top: 96rem;
+right: 0rem;
+background-position: center right -1rem;
+/* angle: -180 deg; */
+opacity: 1;
+background-image: url(/static/images/homepage_mesh_art03.png);
+}
+
+#art #mesh-art04{
+    width: 27.0625rem;
+    height: 36.7159375rem;
+    top: 165rem;
+    left: 0rem;
+    opacity: 1;
+    background-image: url(/static//images/homepage_mesh_art04.png);
+    background-position: center left;
+}
+
+
+
 h3{
     font-size: 1.25rem;
     font-family: 'Barlow';
@@ -51,6 +153,7 @@ button#xplore{
     border-radius: 50rem;
     background: var(--secondary-red-color-light--);
     border: none;
+    color: white;
 }
 
 button#xplore:hover{
