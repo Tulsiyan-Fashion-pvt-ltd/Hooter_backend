@@ -63,4 +63,4 @@ class Helper:
 
 
 if __name__ == "__main__":
-    print(Helper.date())
+    print(User.hash_password('962412'))

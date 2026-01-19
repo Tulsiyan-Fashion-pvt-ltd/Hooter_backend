@@ -85,3 +85,7 @@ li{
 button:active{
     opacity: 80%;
 }
+
+.incorrect-input{
+    outline: 1px solid red;
+}

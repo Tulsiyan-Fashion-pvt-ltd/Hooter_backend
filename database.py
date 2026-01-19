@@ -11,6 +11,7 @@ def signup_user(user_creds):  #taking the arguments as objects or dict
     try:
         userid = user_creds.get('userid')
         hashed_password = user_creds.get('hashed_password')
+        name=user_creds.get('name')
         number = user_creds.get('number')
         email = user_creds.get('email')
         designation = user_creds.get('designation')
@@ -20,9 +21,9 @@ def signup_user(user_creds):  #taking the arguments as objects or dict
                        values(%s, %s)
                        ''', (userid, hashed_password))
         
-        cursor.execute('''insert into user_creds(user_id, phone_number, user_email, user_access, user_designation)
-                       values(%s, %s, %s, %s, %s)
-                        ''', (userid, number, email, 'super_user', designation))
+        cursor.execute('''insert into user_creds(user_id, user_name, phone_number, user_email, user_access, user_designation)
+                       values(%s, %s, %s, %s, %s, %s)
+                        ''', (userid, name, number, email, 'super_user', designation))
         
         mysql.connection.commit()
     except Exception as e:
