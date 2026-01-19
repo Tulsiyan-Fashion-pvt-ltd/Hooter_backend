@@ -6,14 +6,14 @@ def __init_sql__(app):
     mysql.init_app(app)
     print('sql initialized')
 
-def signup_user(**kwargs):
+def signup_user(user_creds):  #taking the arguments as objects or dict
     cursor = mysql.connection.cursor()
     try:
-        userid = kwargs.get('userid')
-        hashed_password = kwargs.get('hashed_password')
-        number = kwargs.get('number')
-        email = kwargs.get('email')
-        designation = kwargs.get('designation')
+        userid = user_creds.get('userid')
+        hashed_password = user_creds.get('hashed_password')
+        number = user_creds.get('number')
+        email = user_creds.get('email')
+        designation = user_creds.get('designation')
 
 
         cursor.execute('''insert into users(user_id, user_password)

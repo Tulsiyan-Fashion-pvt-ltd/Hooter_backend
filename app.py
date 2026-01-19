@@ -1,7 +1,7 @@
 from flask import Flask
 from flask_cors import CORS
 from pages import page # importing the page blueprint for the page routes
-from requests import request #importing the request blueprint from requests
+from requests import requests #importing the request blueprint from requests
 from database import __init_sql__
 import os
 
@@ -17,7 +17,7 @@ app.config['MYSQL_PASSWORD'] = os.environ.get('HOOTER_DB_PASSWORD')
 app.config['MYSQL_DB'] = os.environ.get('HOOTER_DB')
 
 app.register_blueprint(page)
-app.register_blueprint(request)
+app.register_blueprint(requests)
 
 
 __init_sql__(app) #initializing sql
