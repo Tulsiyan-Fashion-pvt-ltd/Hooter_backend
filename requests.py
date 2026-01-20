@@ -1,11 +1,11 @@
-from flask import Blueprint, request, Response, jsonify
-from database import *
+from flask import Blueprint, request, Response, jsonify, session
+from database import Write, Fetch
 from helper import Validate, User, Helper
 
 requests = Blueprint('request', __name__)
 
 @requests.route('/signup', methods=['POST'])
-def signup():
+async def signup():
     data = request.get_json()
     name=data.get('name')
     number = data.get('number')
@@ -13,8 +13,6 @@ def signup():
     password = data.get('password')
     designation = data.get('designation')
     
-    print(password)
-
     if designation == None:
         designation = 'Owner'
     # verify number and email
@@ -29,9 +27,42 @@ def signup():
             'designation': designation
             }
 
-        signup_user(user_creds)
+        response = Write.signup_user(user_creds)
+
+        if response and response.get('status') == 'error':
+            if response.get('message') == 'user_already_registered':
+                return jsonify({'status': 'already_registered'}), 409
         print('registered the user')
     else:
-        return jsonify({'status': 'Bad Request'}), 400
+        return jsonify({'status': 'Bad Request', 'message': 'all required field not provided'}), 400
     
     return jsonify({'status': 'ok'}), 200
+
+
+@requests.route('/login', methods=['POST'])
+def login():
+    #get the date from the api request
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+
+    #checking if the data is coming or not
+    if not email or not password:
+        return jsonify({'status': 'invalid request', 'message': 'email or password not provided'}), 400
+
+    if Validate.email(email):
+        userid = Fetch.check_email(email)
+
+        # if the userid is null then return then do not log in
+        if userid == None:
+            return jsonify({'status': 'error', 'message': 'user not found with this email'}), 401
+        hashed_password = User.hash_password(password)
+        login_check = Fetch.check_password(userid, hashed_password)
+
+        if login_check == 1:
+            session['user'] = userid
+            return jsonify({'status': 'ok', 'message': 'login successfull'}), 200
+        else:
+            return jsonify({'status': 'unauthorised', 'message': 'incorrect password'}), 401
+    else:
+        return jsonify({'status': 'bad request', 'message': 'invalid email'}), 400
