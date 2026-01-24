@@ -5,11 +5,11 @@ from requests import requests #importing the request blueprint from requests
 from database import __init_sql__
 import os
 
-
 app = Flask(__name__)
 CORS(app, supports_credentials=True,
     origins=["http://localhost:5173"])
 
+app.secret_key = os.environ.get('HOOTER_SECRET_KEY')
 
 app.config['MYSQL_HOST'] = os.environ.get('HOOTER_DB_HOST')
 app.config['MYSQL_USER'] = os.environ.get('HOOTER_DB_USER')

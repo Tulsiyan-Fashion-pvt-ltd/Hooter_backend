@@ -39,6 +39,7 @@ async def signup():
     return jsonify({'status': 'ok'}), 200
 
 
+
 @requests.route('/login', methods=['POST'])
 def login():
     #get the date from the api request
@@ -66,3 +67,12 @@ def login():
             return jsonify({'status': 'unauthorised', 'message': 'incorrect password'}), 401
     else:
         return jsonify({'status': 'bad request', 'message': 'invalid email'}), 400
+    
+# request to fetch user session
+@requests.route('/session', methods=['GET'])
+def check_session():
+    user = session.get('user')
+    if user:
+        return jsonify({'login', 'ok'}), 200
+    else:
+        return jsonify({'login': 'deny'}), 401
