@@ -62,6 +62,7 @@ def login():
 
         if login_check == 1:
             session['user'] = userid
+
             return jsonify({'status': 'ok', 'message': 'login successfull'}), 200
         else:
             return jsonify({'status': 'unauthorised', 'message': 'incorrect password'}), 401
@@ -72,7 +73,8 @@ def login():
 @requests.route('/session', methods=['GET'])
 def check_session():
     user = session.get('user')
+
     if user:
-        return jsonify({'login', 'ok'}), 200
+        return jsonify({'login': 'ok'}), 200
     else:
         return jsonify({'login': 'deny'}), 401
