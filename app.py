@@ -4,6 +4,7 @@ from pages import page # importing the page blueprint for the page routes
 from requests import requests #importing the request blueprint from requests
 from database import __init_sql__
 import os
+from brand_handling import brand
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True,
@@ -18,6 +19,7 @@ app.config['MYSQL_DB'] = os.environ.get('HOOTER_DB')
 
 app.register_blueprint(page)
 app.register_blueprint(requests)
+app.register_blueprint(brand)
 
 
 __init_sql__(app) #initializing sql

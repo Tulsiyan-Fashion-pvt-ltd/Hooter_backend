@@ -45,10 +45,10 @@ class Write:
 
 class Fetch:
     @staticmethod
-    def check_email(email):
+    def userid_by_email(email):
         cursor = mysql.connection.cursor()
         userid = None
-        print(email)
+
         try:          
             cursor.execute('''
                            select user_id from user_creds where user_email=%s

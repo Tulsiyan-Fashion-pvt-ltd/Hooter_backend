@@ -41,7 +41,7 @@ async def signup():
 
 
 @requests.route('/login', methods=['POST'])
-def login():
+async def login():
     #get the date from the api request
     data = request.get_json()
     email = data.get('email')
@@ -52,7 +52,7 @@ def login():
         return jsonify({'status': 'invalid request', 'message': 'email or password not provided'}), 400
 
     if Validate.email(email):
-        userid = Fetch.check_email(email)
+        userid = Fetch.userid_by_email(email)
 
         # if the userid is null then return then do not log in
         if userid == None:
@@ -71,7 +71,7 @@ def login():
     
 # request to fetch user session
 @requests.route('/session', methods=['GET'])
-def check_session():
+async def check_session():
     user = session.get('user')
 
     if user:
