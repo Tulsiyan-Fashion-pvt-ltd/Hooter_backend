@@ -8,7 +8,73 @@ brand = Blueprint('brand', __name__)
 
 # handling the database quiries related to brands to handle brands
 class Write:
-    pass
+    @staticmethod
+    def insert_brand(brand_id, brand_data):
+        cursor = mysql.connection.cursor()
+        query = """
+            INSERT INTO brand (
+                brand_id,
+                entity_name,
+                brand_name,
+                niche,
+                gstin,
+                plan,
+                address,
+                est_year,
+                created_at
+            ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        """
+        cursor.execute(query, (
+            brand_id,
+            brand_data.get('entity-name'),
+            brand_data.get('brand-name'),
+            brand_data.get('niche'),
+            brand_data.get('gstin'),
+            brand_data.get('plan'),
+            brand_data.get('address'),
+            brand_data.get('estYear'),
+            datetime.datetime.now()
+        ))
+        mysql.connection.commit()
+        cursor.close()
+
+    @staticmethod
+    def insert_poc(brand_id, poc_data):
+        cursor = mysql.connection.cursor()
+        query = """
+            INSERT INTO poc (
+                poc_id,
+                brand_id,
+                name,
+                number,
+                email,
+                designation,
+                access
+            ) VALUES (%s,%s,%s,%s,%s,%s,%s)
+        """
+        cursor.execute(query, (
+            str(uuid.uuid4()),
+            brand_id,
+            poc_data.get('name'),
+            poc_data.get('number'),
+            poc_data.get('email'),
+            poc_data.get('designation'),
+            poc_data.get('access')
+        ))
+        mysql.connection.commit()
+        cursor.close()
+
+    @staticmethod
+    def map_user_brand(user_id, brand_id):
+        cursor = mysql.connection.cursor()
+        query = """
+            INSERT INTO brand_access (brand_id, user_id)
+            VALUES (%s,%s)
+        """
+        cursor.execute(query, (brand_id, user_id))
+        mysql.connection.commit()
+        cursor.close()
+
 
 class Fetch:
     pass
@@ -40,8 +106,32 @@ class Brand:
 async def register_entity():
     response = request.get_json()
 
-    print(response.get('poc'))
-    return jsonify({'status': 'ok'}), 200
+    brand_data = response.get('brand')
+    poc_data = response.get('poc')
+
+    if not brand_data or not poc_data:
+        return jsonify({'status': 'error', 'message': 'invalid payload'}), 400
+
+    brand_id = Brand.create_id()
+
+    try:
+        Write.insert_brand(brand_id, brand_data)
+        Write.insert_poc(brand_id, poc_data)
+
+        if poc_data.get('self') is True:
+            user_id = session.get('user_id')
+            if not user_id:
+                return jsonify({'status': 'error', 'message': 'user not logged in'}), 401
+            Write.map_user_brand(user_id, brand_id)
+
+        return jsonify({
+            'status': 'ok',
+            'brand_id': brand_id
+        }), 201
+
+    except Exception as e:
+        print(e)
+        return jsonify({'status': 'error', 'message': 'server error'}), 500
 
 
 @brand.route('/request-niches', methods=['GET'])
