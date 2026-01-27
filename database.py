@@ -1,4 +1,5 @@
 from flask_mysqldb import MySQL
+from flask import session
 
 mysql = MySQL()
 
@@ -77,3 +78,25 @@ class Fetch:
         finally:
             cursor.close()
         return result
+    
+    @staticmethod
+    def user_details(userid):
+        user = userid
+        cursor = mysql.connection.cursor()
+        user_credentials = None # returned value
+        try:
+            if user == None:
+                return ()
+            else:
+                cursor.execute('''select user_name, phone_number, user_email, user_designation, user_access
+                               from user_creds
+                               where user_id=%s
+                               ''', (user, ))
+
+                user_credentials = cursor.fetchone()
+        except Exception as e:
+            print(f'encountered error while fetching user credentials \n{e}')
+        finally:
+            cursor.close()
+
+        return user_credentials

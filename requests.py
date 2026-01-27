@@ -78,3 +78,25 @@ async def check_session():
         return jsonify({'login': 'ok'}), 200
     else:
         return jsonify({'login': 'deny'}), 401
+    
+
+@requests.route('/logout')
+def logout():
+    session.clear()
+    return jsonify({'status': 'ok', 'message': 'user logout'}), 200
+
+
+@requests.route('/request-user-credentials')
+async def fetch_user_creds():
+    user = session.get('user')
+    if user==None:
+        return jsonify({'status': 'unauthorised access', 'message': 'no loged in user found'}), 401
+    _ = Fetch.user_details(user)
+    user_data = {
+                'name': _[0],
+                'number': _[1],
+                'email': _[2],
+                'designation': _[3],
+                'access': _[4]
+                }
+    return jsonify({'status': 'ok', 'user_data': user_data}), 200

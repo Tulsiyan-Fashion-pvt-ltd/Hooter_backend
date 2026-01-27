@@ -39,16 +39,10 @@ class Brand:
 @brand.route('/register', methods=['POST'])
 async def register_entity():
     response = request.get_json()
-    entity_name = response.get('entity-name')
-    brand_name = response.get('brand-name')
-    niche = response.get('niche')
-    gstin = response.get('gstin')
-    plan = response.get('plan')
-    address = response.get('address')
-    est_yr = response.get('est-yr')
 
-    print(entity_name, brand_name, niche, gstin, plan, address, est_yr)
+    print(response.get('poc'))
     return jsonify({'status': 'ok'}), 200
+
 
 @brand.route('/request-niches', methods=['GET'])
 async def request_niches():
