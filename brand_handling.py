@@ -11,69 +11,84 @@ class Write:
     @staticmethod
     def insert_brand(brand_id, brand_data):
         cursor = mysql.connection.cursor()
-        query = """
-            INSERT INTO brand (
+        try:
+            query = """
+                INSERT INTO brand (
+                    brand_id,
+                    entity_name,
+                    brand_name,
+                    niche,
+                    gstin,
+                    plan,
+                    address,
+                    est_year,
+                    created_at
+                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            """
+            cursor.execute(query, (
                 brand_id,
-                entity_name,
-                brand_name,
-                niche,
-                gstin,
-                plan,
-                address,
-                est_year,
-                created_at
-            ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
-        """
-        cursor.execute(query, (
-            brand_id,
-            brand_data.get('entity-name'),
-            brand_data.get('brand-name'),
-            brand_data.get('niche'),
-            brand_data.get('gstin'),
-            brand_data.get('plan'),
-            brand_data.get('address'),
-            brand_data.get('estYear'),
-            datetime.datetime.now()
-        ))
-        mysql.connection.commit()
-        cursor.close()
+                brand_data.get('entity-name'),
+                brand_data.get('brand-name'),
+                brand_data.get('niche'),
+                brand_data.get('gstin'),
+                brand_data.get('plan'),
+                brand_data.get('address'),
+                brand_data.get('estYear'),
+                datetime.datetime.now()
+            ))
+            mysql.connection.commit()
+        except Exception:
+            mysql.connection.rollback()
+            raise
+        finally:
+            cursor.close()
 
     @staticmethod
     def insert_poc(brand_id, poc_data):
         cursor = mysql.connection.cursor()
-        query = """
-            INSERT INTO poc (
-                poc_id,
+        try:
+            query = """
+                INSERT INTO poc (
+                    poc_id,
+                    brand_id,
+                    name,
+                    number,
+                    email,
+                    designation,
+                    access
+                ) VALUES (%s,%s,%s,%s,%s,%s,%s)
+            """
+            cursor.execute(query, (
+                str(uuid.uuid4()),
                 brand_id,
-                name,
-                number,
-                email,
-                designation,
-                access
-            ) VALUES (%s,%s,%s,%s,%s,%s,%s)
-        """
-        cursor.execute(query, (
-            str(uuid.uuid4()),
-            brand_id,
-            poc_data.get('name'),
-            poc_data.get('number'),
-            poc_data.get('email'),
-            poc_data.get('designation'),
-            poc_data.get('access')
-        ))
-        mysql.connection.commit()
-        cursor.close()
+                poc_data.get('name'),
+                poc_data.get('number'),
+                poc_data.get('email'),
+                poc_data.get('designation'),
+                poc_data.get('access')
+            ))
+            mysql.connection.commit()
+        except Exception:
+            mysql.connection.rollback()
+            raise
+        finally:
+            cursor.close()
 
     @staticmethod
     def map_user_brand(user_id, brand_id):
         cursor = mysql.connection.cursor()
-        query = """
-            INSERT INTO brand_access (brand_id, user_id)
-            VALUES (%s,%s)
-        """
-        cursor.execute(query, (brand_id, user_id))
-        mysql.connection.commit()
-        cursor.close()
+        try:
+            query = """
+                INSERT INTO brand_access (brand_id, user_id)
+                VALUES (%s,%s)
+            """
+            cursor.execute(query, (brand_id, user_id))
+            mysql.connection.commit()
+        except Exception:
+            mysql.connection.rollback()
+            raise
+        finally:
+            cursor.close()
 
 
 class Fetch:
