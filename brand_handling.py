@@ -1,5 +1,6 @@
 from flask import Blueprint, session, request, jsonify
 from database import mysql
+from helper import User
 import uuid
 import datetime
 import json
@@ -131,13 +132,19 @@ async def register_entity():
 
     try:
         Write.insert_brand(brand_id, brand_data)
-        Write.insert_poc(brand_id, poc_data)
 
+        # Check if the user is self POC
         if poc_data.get('self') is True:
+            # User is self POC - don't insert POC, just map user to brand
             user_id = session.get('user_id')
             if not user_id:
                 return jsonify({'status': 'error', 'message': 'user not logged in'}), 401
             Write.map_user_brand(user_id, brand_id)
+        else:
+            # User is not POC - create new POC with generated user_id
+            poc_user_id = User.create_userid()
+            poc_data['user_id'] = poc_user_id
+            Write.insert_poc(brand_id, poc_data)
 
         return jsonify({
             'status': 'ok',
