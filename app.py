@@ -1,10 +1,14 @@
 from flask import Flask
 from flask_cors import CORS
 from pages import page # importing the page blueprint for the page routes
-from requests import requests #importing the request blueprint from requests
+from hooter_requests import requests #importing the request blueprint from requests
 from database import __init_sql__
 import os
 from brand_handling import brand
+from catalogue import catalogue
+from dotenv import load_dotenv
+
+load_dotenv()  # Load environment variables from .env file
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True,
@@ -20,6 +24,7 @@ app.config['MYSQL_DB'] = os.environ.get('HOOTER_DB')
 app.register_blueprint(page)
 app.register_blueprint(requests)
 app.register_blueprint(brand)
+app.register_blueprint(catalogue)
 
 
 __init_sql__(app) #initializing sql
