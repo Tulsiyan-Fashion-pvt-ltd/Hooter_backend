@@ -27,7 +27,9 @@ app.register_blueprint(brand)
 app.register_blueprint(catalogue)
 
 
-__init_sql__(app) #initializing sql
+# Initialize SQL within application context to avoid "working outside"
+with app.app_context():
+    __init_sql__(app)  # initializing sql
 
 if __name__ == "__main__":
     app.run(debug=True, host='0.0.0.0', port=8800)
