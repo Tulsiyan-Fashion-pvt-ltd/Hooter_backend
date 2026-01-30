@@ -18,6 +18,7 @@ class Write:
             number = user_creds.get('number')
             email = user_creds.get('email')
             designation = user_creds.get('designation')
+            access=user_creds.get('access') if user_creds.get('access') else 'super_user'
 
 
             cursor.execute('''insert into users(user_id, user_password)
