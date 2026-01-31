@@ -1,16 +1,17 @@
 from flask import Blueprint, session, request, jsonify
-from database import mysql
+from database import mysql, Write as write_db, Fetch as fetch_db
 from helper import User
 import uuid
 import datetime
 import json
+from helper import User
 
 brand = Blueprint('brand', __name__)
 
 # handling the database quiries related to brands to handle brands
 class Write:
     @staticmethod
-    def insert_brand(brand_id, brand_data):
+    def insert_brand(brand_id, user_id, brand_data):
         cursor = mysql.connection.cursor()
         try:
             query = """
@@ -18,13 +19,14 @@ class Write:
                     brand_id,
                     entity_name,
                     brand_name,
-                    niche,
+                    brand_niche,
                     gstin,
-                    plan,
-                    address,
-                    est_year,
+                    hooter_plan,
+                    registered_address,
+                    establishment_year,
+                    poc,
                     created_at
-                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
             """
             cursor.execute(query, (
                 brand_id,
@@ -35,45 +37,17 @@ class Write:
                 brand_data.get('plan'),
                 brand_data.get('address'),
                 brand_data.get('estYear'),
-                datetime.datetime.now()
+                user_id,
+                datetime.datetime.now().date()
             ))
             mysql.connection.commit()
-        except Exception:
+        except Exception as e:
+            print(f'error occured while registering brand as \n{e}')
             mysql.connection.rollback()
-            raise
+            return 'failed'
         finally:
             cursor.close()
-
-    @staticmethod
-    def insert_poc(brand_id, poc_data):
-        cursor = mysql.connection.cursor()
-        try:
-            query = """
-                INSERT INTO poc (
-                    poc_id,
-                    brand_id,
-                    name,
-                    number,
-                    email,
-                    designation,
-                    access
-                ) VALUES (%s,%s,%s,%s,%s,%s,%s)
-            """
-            cursor.execute(query, (
-                str(uuid.uuid4()),
-                brand_id,
-                poc_data.get('name'),
-                poc_data.get('number'),
-                poc_data.get('email'),
-                poc_data.get('designation'),
-                poc_data.get('access')
-            ))
-            mysql.connection.commit()
-        except Exception:
-            mysql.connection.rollback()
-            raise
-        finally:
-            cursor.close()
+        return 'ok'
 
     @staticmethod
     def map_user_brand(user_id, brand_id):
@@ -85,7 +59,8 @@ class Write:
             """
             cursor.execute(query, (brand_id, user_id))
             mysql.connection.commit()
-        except Exception:
+        except Exception as e:
+            print(f'error occured while mapping user to the brand as \n {e}')
             mysql.connection.rollback()
             raise
         finally:
@@ -124,19 +99,39 @@ async def register_entity():
 
     brand_data = response.get('brand')
     poc_data = response.get('poc')
+    print(poc_data)
 
     if not brand_data or not poc_data:
         return jsonify({'status': 'error', 'message': 'invalid payload'}), 400
+    
+    # except gstin any missing data will return 400 status
+    for _ in brand_data:
+        if _ != 'gstin' and (brand_data.get(_) is None or brand_data.get(_) == ''):
+            return jsonify({'status': 'error', 'message': 'invalid payload'}), 400
+    
+    # checking if all the keys except password when self is true 
+    for _ in poc_data:
+        if poc_data.get('self') == 'false' and (poc_data.get('password') == None or poc_data.get('password')==''):           
+            return jsonify({'status': 'error', 'message': 'invalid payload'}), 400
+        elif poc_data.get('self') == 'true' and _ == 'password' or _ == 'confPassword':
+            pass
+        else:
+            return jsonify({'status': 'error', 'message': 'invalid payload'}), 400
+
+
 
     brand_id = Brand.create_id()
+    user_id = session.get('user')
+    #inserting the poc 
+    result =  Write.insert_brand(brand_id, user_id, brand_data)
+    if result == 'error':
+        return jsonify({'status': 'failed', 'message': 'error occured while registering the brand'}), 500
 
     try:
-        Write.insert_brand(brand_id, brand_data)
-
         # Check if the user is self POC
         if poc_data.get('self') is True:
             # User is self POC - don't insert POC, just map user to brand
-            user_id = session.get('user_id')
+            user_id = session.get('user')
             if not user_id:
                 return jsonify({'status': 'error', 'message': 'user not logged in'}), 401
             Write.map_user_brand(user_id, brand_id)
@@ -144,7 +139,29 @@ async def register_entity():
             # User is not POC - create new POC with generated user_id
             poc_user_id = User.create_userid()
             poc_data['user_id'] = poc_user_id
-            Write.insert_poc(brand_id, poc_data)
+            print(poc_data)
+
+            #access specifiers
+            user_access_specifiers=None
+            with open('./access_specifiers.json', 'r') as file:
+                user_access_specifiers = json.load(file)
+            access_specifier = user_access_specifiers.get('access')
+            
+            # checking if user specified the access
+            if poc_data['access'] not in access_specifier or poc_data.get('password')==None:
+                return jsonify({'status': 'invalid input', 'message': 'access specifiers are not valid'}), 422
+
+            user_creds={
+                'userid': poc_user_id,
+                'name': poc_data['name'],
+                'number': poc_data['name'],
+                'email': poc_data['email'],
+                'access': poc_data['access'],
+                'designation': poc_data['designation'],
+                'hashed_password': User.hash_password(poc_data.get('password'))
+                }
+            write_db.signup_user(user_creds)
+            Write.map_user_brand(poc_user_id, brand_id)
 
         return jsonify({
             'status': 'ok',
@@ -152,7 +169,7 @@ async def register_entity():
         }), 201
 
     except Exception as e:
-        print(e)
+        print(f'error encountered while registering the brand\n{e}')
         return jsonify({'status': 'error', 'message': 'server error'}), 500
 
 
