@@ -58,9 +58,13 @@ class Helper:
     def time():
         time = str(datetime.datetime.now().strftime('%H:%M:%S'))
         return time
+    
+    @staticmethod
+    def check_required_payload(json, keys):
+        return all(key in json for key in keys)
 
 
 
 
 if __name__ == "__main__":
-    print(User.hash_password('962412'))
+    print(Helper.check_required_payload({'name': 'farhan', 'num': '123'}, ['name', 'email']))

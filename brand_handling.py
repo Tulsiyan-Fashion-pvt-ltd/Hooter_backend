@@ -1,6 +1,6 @@
 from flask import Blueprint, session, request, jsonify
 from database import mysql, Write as write_db, Fetch as fetch_db
-from helper import User
+from helper import User, Helper
 import uuid
 import datetime
 import json
@@ -109,16 +109,6 @@ async def register_entity():
         if _ != 'gstin' and (brand_data.get(_) is None or brand_data.get(_) == ''):
             return jsonify({'status': 'error', 'message': 'invalid payload'}), 400
     
-    # checking if all the keys except password when self is true 
-    for _ in poc_data:
-        if poc_data.get('self') == 'false' and (poc_data.get('password') == None or poc_data.get('password')==''):           
-            return jsonify({'status': 'error', 'message': 'invalid payload'}), 400
-        elif poc_data.get('self') == 'true' and _ == 'password' or _ == 'confPassword':
-            pass
-        else:
-            return jsonify({'status': 'error', 'message': 'invalid payload'}), 400
-
-
 
     brand_id = Brand.create_id()
     user_id = session.get('user')
@@ -129,13 +119,23 @@ async def register_entity():
 
     try:
         # Check if the user is self POC
-        if poc_data.get('self') is True:
+        if poc_data.get('self') == 'true':
             # User is self POC - don't insert POC, just map user to brand
             user_id = session.get('user')
             if not user_id:
                 return jsonify({'status': 'error', 'message': 'user not logged in'}), 401
+            print(user_id, brand_id)
             Write.map_user_brand(user_id, brand_id)
         else:
+            #checking if all the requied field is there
+            required_field = ['self', 'name', 'number', 'email', 'designation', 'access', 'password']
+            valid_payload = Helper.check_required_payload(poc_data, required_field)
+
+            if valid_payload is not True:
+                report = jsonify({'status': 'error', 'message': 'payload does not provide necessary values'}), 400
+                print(report)
+                return report
+             
             # User is not POC - create new POC with generated user_id
             poc_user_id = User.create_userid()
             poc_data['user_id'] = poc_user_id
@@ -165,7 +165,7 @@ async def register_entity():
 
         return jsonify({
             'status': 'ok',
-            'brand_id': brand_id
+            'message': 'registered the brand successfully'
         }), 201
 
     except Exception as e:
