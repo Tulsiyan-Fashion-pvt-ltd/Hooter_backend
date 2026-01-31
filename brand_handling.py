@@ -99,7 +99,7 @@ async def register_entity():
 
     brand_data = response.get('brand')
     poc_data = response.get('poc')
-    print(poc_data)
+    # print(poc_data)
 
     if not brand_data or not poc_data:
         return jsonify({'status': 'error', 'message': 'invalid payload'}), 400
@@ -124,7 +124,7 @@ async def register_entity():
             user_id = session.get('user')
             if not user_id:
                 return jsonify({'status': 'error', 'message': 'user not logged in'}), 401
-            print(user_id, brand_id)
+            
             Write.map_user_brand(user_id, brand_id)
         else:
             #checking if all the requied field is there
