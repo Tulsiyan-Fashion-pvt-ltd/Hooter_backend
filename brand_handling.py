@@ -30,8 +30,8 @@ class Write:
             """
             cursor.execute(query, (
                 brand_id,
-                brand_data.get('entity-name'),
-                brand_data.get('brand-name'),
+                brand_data.get('entity_name'),
+                brand_data.get('brand_name'),
                 brand_data.get('niche'),
                 brand_data.get('gstin'),
                 brand_data.get('plan'),
@@ -99,7 +99,12 @@ async def register_entity():
 
     brand_data = response.get('brand')
     poc_data = response.get('poc')
-    # print(poc_data)
+    print(brand_data, poc_data)
+
+
+    # only allow the super_admin user to use this route
+    if (fetch_db.user_access(session.get('user')) == None):
+        return jsonify({'status': 'access denied', 'message': 'you do not have the access kindly contact Hooter super admins'}), 401
 
     if not brand_data or not poc_data:
         return jsonify({'status': 'error', 'message': 'invalid payload'}), 400
@@ -112,7 +117,17 @@ async def register_entity():
 
     brand_id = Brand.create_id()
     user_id = session.get('user')
-    #inserting the poc 
+    #inserting the brand
+    brand_data = {
+        'entity_name': brand_data.get('entity-name') if brand_data.get('entity-name') and brand_data.get('entity-name') != '' else None,
+        'brand_name': brand_data.get('brand-name') if brand_data.get('brand-name') and brand_data.get('brand-name') != '' else None,
+        'niche': brand_data.get('niche') if brand_data.get('niche') and brand_data.get('niche') != '' else None,
+        'gstin': brand_data.get('gstin') if brand_data.get('gstin') and brand_data.get('gstin') != '' else None,
+        'plan': brand_data.get('plan') if brand_data.get('plan') and brand_data.get('plan') != '' else None,
+        'address': brand_data.get('address') if brand_data.get('address') and brand_data.get('address') != '' else None,
+        'estyear': brand_data.get('estyear') if brand_data.get('estyear') and brand_data.get('estyear') != '' else None
+    }
+
     result =  Write.insert_brand(brand_id, user_id, brand_data)
     if result == 'error':
         return jsonify({'status': 'failed', 'message': 'error occured while registering the brand'}), 500
@@ -139,7 +154,6 @@ async def register_entity():
             # User is not POC - create new POC with generated user_id
             poc_user_id = User.create_userid()
             poc_data['user_id'] = poc_user_id
-            print(poc_data)
 
             #access specifiers
             user_access_specifiers=None
@@ -153,11 +167,11 @@ async def register_entity():
 
             user_creds={
                 'userid': poc_user_id,
-                'name': poc_data['name'],
-                'number': poc_data['name'],
-                'email': poc_data['email'],
-                'access': poc_data['access'],
-                'designation': poc_data['designation'],
+                'name': poc_data['name'] if poc_data['name'] and poc_data['name'] != '' else None,
+                'number': poc_data['number'] if poc_data['number'] and poc_data['number'] != '' else None,
+                'email': poc_data['email'] if poc_data['email'] and poc_data['email'] != '' else None,
+                'access': poc_data['access'] if poc_data['access'] and poc_data['access'] != '' else None,
+                'designation': poc_data['designation'] if poc_data['designation'] and poc_data['designation'] != '' else None,
                 'hashed_password': User.hash_password(poc_data.get('password'))
                 }
             write_db.signup_user(user_creds)

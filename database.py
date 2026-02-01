@@ -101,3 +101,23 @@ class Fetch:
             cursor.close()
 
         return user_credentials
+    
+    @staticmethod
+    def user_access(user_id):
+        user = user_id
+        user_access=None
+        cursor = mysql.connection.cursor()
+        try:
+            cursor.execute('''
+                            select user_access 
+                           from user_creds
+                           where user_id=%s 
+                        ''', (user_id, ))
+
+            user_access = cursor.fetchone()
+            user_access = user_access[0]
+        except Exception as e:
+            print(f'error encountered while fetching the user access\n{e}')
+        finally:
+            cursor.close()
+        return user_access
