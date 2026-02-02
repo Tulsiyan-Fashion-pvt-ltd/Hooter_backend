@@ -13,6 +13,7 @@ CORS(app, supports_credentials=True,
 app.secret_key = os.environ.get('HOOTER_SECRET_KEY')
 
 app.config['MYSQL_HOST'] = os.environ.get('HOOTER_DB_HOST')
+app.config['MYSQL_PORT'] = int(os.environ.get('HOOTER_DB_PORT'))
 app.config['MYSQL_USER'] = os.environ.get('HOOTER_DB_USER')
 app.config['MYSQL_PASSWORD'] = os.environ.get('HOOTER_DB_PASSWORD')
 app.config['MYSQL_DB'] = os.environ.get('HOOTER_DB')

@@ -1,5 +1,6 @@
 from flask_mysqldb import MySQL
 from flask import session
+from datetime import datetime
 
 mysql = MySQL()
 
@@ -25,9 +26,9 @@ class Write:
                            values(%s, %s)
                            ''', (userid, hashed_password))
 
-            cursor.execute('''insert into user_creds(user_id, user_name, phone_number, user_email, user_access, user_designation)
-                           values(%s, %s, %s, %s, %s, %s)
-                            ''', (userid, name, number, email, 'super_user', designation))
+            cursor.execute('''insert into user_creds(user_id, user_name, phone_number, user_email, user_access, user_designation, created_at)
+                           values(%s, %s, %s, %s, %s, %s, %s)
+                            ''', (userid, name, number, email, 'super_user', designation, datetime.now().date()))
 
             mysql.connection.commit()
         except Exception as e:

@@ -99,11 +99,12 @@ async def register_entity():
 
     brand_data = response.get('brand')
     poc_data = response.get('poc')
-    print(brand_data, poc_data)
+    # print(brand_data, poc_data)
 
 
     # only allow the super_admin user to use this route
-    if (fetch_db.user_access(session.get('user')) == None):
+    user_access = fetch_db.user_access(session.get('user'))
+    if (user_access == None or user_access != 'super_admin'):
         return jsonify({'status': 'access denied', 'message': 'you do not have the access kindly contact Hooter super admins'}), 401
 
     if not brand_data or not poc_data:
