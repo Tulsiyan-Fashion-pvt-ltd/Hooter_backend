@@ -1,7 +1,11 @@
+import json
 import uuid
+import time
+import requests
 from database import mysql, Fetch
-from services.shopify_graphql import ShopifyGraphQLClient
-from encryption import TokenEncryption
+from services.shopify_graphql import ShopifyRetryableError
+from services.shopify_helpers import get_store_config
+from services.exceptions import AuthorizationError, ShopifyAPIError, ValidationError
 
 
 class CatalogueService:
@@ -59,23 +63,17 @@ class CatalogueService:
         try:
             # STEP 1: Verify ownership
             if not CatalogueService.verify_store_ownership(store_id, user_id):
-                raise Exception("Unauthorized: You do not own this store")
+                raise AuthorizationError("Unauthorized: You do not own this store")
             
-            # STEP 2: Get store with encrypted credentials
-            store = Fetch.get_store_by_id(store_id, user_id)
-            if not store:
-                raise Exception("Store not found or access denied")
-            
-            # STEP 3: Decrypt token for Shopify API call
-            decrypted_token = TokenEncryption.decrypt_token(
-                store["shopify_access_token_encrypted"]
-            )
-            
-            # STEP 4: Initialize Shopify client
-            shopify_client = ShopifyGraphQLClient(
-                shop_name=store["shopify_shop_name"],
-                access_token=decrypted_token
-            )
+            # STEP 2-4: Get store config + Shopify client
+            store_config = get_store_config(store_id, user_id)
+            shopify_client = store_config["client"]
+            store = store_config["store"]
+
+            # STEP 4.1: Validate image URLs (if provided)
+            invalid_images = CatalogueService.validate_image_urls(images)
+            if invalid_images:
+                raise ValidationError(json.dumps({"images": invalid_images}))
             
             # STEP 5: Build product input with variants
             product_input = {
@@ -100,24 +98,34 @@ class CatalogueService:
                     for v in variants
                 ]
             
-            # STEP 6: Create on Shopify with variants
-            shopify_product = shopify_client.create_product_with_variants(product_input)
+            # STEP 6: Create on Shopify with variants (retry on transient errors)
+            shopify_product = CatalogueService._retry_shopify_call(
+                lambda: shopify_client.create_product_with_variants(product_input)
+            )
             
             # STEP 7: Upload images
             shopify_images = []
             if images:
                 for img in images:
-                    media = shopify_client.create_product_media(
+                    media = CatalogueService._retry_shopify_call(
+                        lambda: shopify_client.create_product_media(
                         product_id=shopify_product["id"],
                         image_url=img.get("image_url"),
                         alt_text=img.get("alt_text", "Product image")
-                    )
+                    ))
                     shopify_images.append({
                         "shopify_media_id": media["id"],
                         "position": img.get("position", len(shopify_images)),
                         "image_url": img.get("image_url"),
                         "alt_text": img.get("alt_text")
                     })
+
+            # Optional: reorder images to desired positions
+            if shopify_images:
+                media_ids = [img["shopify_media_id"] for img in sorted(shopify_images, key=lambda x: x["position"])]
+                CatalogueService._retry_shopify_call(
+                    lambda: shopify_client.reorder_product_media(shopify_product["id"], media_ids)
+                )
             
             # STEP 8: Save to database
             cursor = mysql.connection.cursor()
@@ -192,6 +200,18 @@ class CatalogueService:
                     )
                 
                 mysql.connection.commit()
+
+                CatalogueService._log_audit(
+                    catalogue_id=catalogue_id,
+                    store_id=store_id,
+                    user_id=user_id,
+                    action="CREATE",
+                    changes={
+                        "shopify_product_id": shopify_product["id"],
+                        "variants_count": len(shopify_product["variants"]),
+                        "images_count": len(shopify_images)
+                    }
+                )
                 
                 return {
                     "catalogue_id": catalogue_id,
@@ -211,6 +231,299 @@ class CatalogueService:
         finally:
             if cursor:
                 cursor.close()
+
+    @staticmethod
+    def validate_image_urls(images: list) -> list:
+        """Validate image URLs by issuing HEAD requests."""
+        invalid = []
+        for img in images or []:
+            url = (img or {}).get("image_url")
+            if not url:
+                invalid.append({"image_url": None, "reason": "missing"})
+                continue
+            try:
+                response = requests.head(url, timeout=5, allow_redirects=True)
+                if response.status_code >= 400:
+                    invalid.append({"image_url": url, "reason": f"status_{response.status_code}"})
+            except Exception:
+                invalid.append({"image_url": url, "reason": "unreachable"})
+        return invalid
+
+    @staticmethod
+    def _retry_shopify_call(callable_fn, attempts: int = 3, backoff_seconds: float = 2.0):
+        """Basic retry for Shopify calls on transient errors."""
+        last_error = None
+        for attempt in range(1, attempts + 1):
+            try:
+                return callable_fn()
+            except (requests.Timeout, requests.ConnectionError, ShopifyRetryableError) as exc:
+                last_error = exc
+                time.sleep(backoff_seconds * attempt)
+            except Exception:
+                raise
+        raise Exception(f"Shopify call failed after retries: {str(last_error)}")
+
+    @staticmethod
+    def _log_audit(catalogue_id: str, store_id: int, user_id: str, action: str, changes: dict):
+        """Insert audit log entry."""
+        cursor = mysql.connection.cursor()
+        try:
+            cursor.execute(
+                """
+                INSERT INTO catalogue_audit_log (catalogue_id, store_id, user_id, action, changes)
+                VALUES (%s, %s, %s, %s, %s)
+                """,
+                (catalogue_id, store_id, user_id, action, json.dumps(changes or {}))
+            )
+            mysql.connection.commit()
+        except Exception as e:
+            mysql.connection.rollback()
+            print(f"Failed to log audit entry: {str(e)}")
+        finally:
+            cursor.close()
+
+    @staticmethod
+    def _get_or_create_idempotency(idempotency_key: str, user_id: str, store_id: int) -> dict:
+        """Retrieve idempotent response or None."""
+        if not idempotency_key:
+            return None
+        cursor = mysql.connection.cursor()
+        try:
+            cursor.execute(
+                """
+                SELECT response_json FROM catalogue_idempotency
+                WHERE idempotency_key = %s AND user_id = %s AND store_id = %s
+                """,
+                (idempotency_key, user_id, store_id)
+            )
+            result = cursor.fetchone()
+            if result:
+                return json.loads(result[0])
+            return None
+        finally:
+            cursor.close()
+
+    @staticmethod
+    def _store_idempotency_response(idempotency_key: str, user_id: str, store_id: int, response_payload: dict):
+        """Persist idempotency response if key provided."""
+        if not idempotency_key:
+            return
+        cursor = mysql.connection.cursor()
+        try:
+            cursor.execute(
+                """
+                INSERT INTO catalogue_idempotency (idempotency_key, user_id, store_id, response_json)
+                VALUES (%s, %s, %s, %s)
+                """,
+                (idempotency_key, user_id, store_id, json.dumps(response_payload))
+            )
+            mysql.connection.commit()
+        except Exception:
+            mysql.connection.rollback()
+        finally:
+            cursor.close()
+
+    @staticmethod
+    def sync_inventory_for_catalogue(catalogue_id: str, user_id: str, quantities: dict = None) -> dict:
+        """Sync inventory for all variants in a catalogue with Shopify."""
+        cursor = mysql.connection.cursor()
+        try:
+            cursor.execute(
+                """
+                SELECT c.store_id, m.shopify_product_id
+                FROM catalogue c
+                LEFT JOIN catalogue_shopify_mapping m ON c.catalogue_id = m.catalogue_id
+                WHERE c.catalogue_id = %s AND c.user_id = %s
+                """,
+                (catalogue_id, user_id)
+            )
+            row = cursor.fetchone()
+            if not row:
+                return {"status": "error", "message": "Catalogue not found"}
+            store_id, shopify_product_id = row
+
+            store_config = get_store_config(store_id, user_id)
+            shopify_client = store_config["client"]
+
+            locations = shopify_client.get_locations()
+            if not locations:
+                return {"status": "error", "message": "No Shopify locations found"}
+            location_id = locations[0]["id"]
+
+            cursor.execute(
+                """
+                SELECT variant_id, inventory_item_id
+                FROM catalogue_variants
+                WHERE catalogue_id = %s
+                """,
+                (catalogue_id,)
+            )
+            variants = cursor.fetchall()
+
+            synced = 0
+            for variant_id, inventory_item_id in variants:
+                shopify_client.activate_inventory(inventory_item_id, location_id)
+                quantity = 0
+                if quantities and variant_id in quantities:
+                    quantity = quantities[variant_id]
+                shopify_client.set_inventory_quantities(inventory_item_id, location_id, quantity)
+                cursor.execute(
+                    """
+                    INSERT INTO catalogue_inventory (variant_id, location_id, available_quantity)
+                    VALUES (%s, %s, %s)
+                    ON DUPLICATE KEY UPDATE available_quantity = VALUES(available_quantity),
+                        last_synced_at = CURRENT_TIMESTAMP,
+                        sync_status = 'IN_SYNC'
+                    """,
+                    (variant_id, location_id, quantity)
+                )
+                synced += 1
+
+            mysql.connection.commit()
+            CatalogueService._log_audit(
+                catalogue_id=catalogue_id,
+                store_id=store_id,
+                user_id=user_id,
+                action="INVENTORY",
+                changes={"variants_synced": synced, "location_id": location_id}
+            )
+            return {"status": "success", "synced": synced, "location_id": location_id}
+        except Exception as e:
+            mysql.connection.rollback()
+            return {"status": "error", "message": str(e)}
+        finally:
+            cursor.close()
+
+    @staticmethod
+    def update_catalogue(catalogue_id: str, user_id: str, payload: dict) -> dict:
+        """Update catalogue and sync to Shopify."""
+        cursor = mysql.connection.cursor()
+        try:
+            cursor.execute(
+                """
+                SELECT c.store_id, m.shopify_product_id
+                FROM catalogue c
+                LEFT JOIN catalogue_shopify_mapping m ON c.catalogue_id = m.catalogue_id
+                WHERE c.catalogue_id = %s AND c.user_id = %s
+                """,
+                (catalogue_id, user_id)
+            )
+            row = cursor.fetchone()
+            if not row:
+                return {"status": "error", "message": "Catalogue not found"}
+            store_id, shopify_product_id = row
+
+            store_config = get_store_config(store_id, user_id)
+            shopify_client = store_config["client"]
+
+            product_input = {}
+            for field, key in [
+                ("title", "title"),
+                ("description", "descriptionHtml"),
+                ("vendor", "vendor"),
+                ("product_type", "productType"),
+                ("tags", "tags")
+            ]:
+                if field in payload and payload[field] is not None:
+                    if field == "tags":
+                        product_input[key] = payload[field].split(",") if payload[field] else []
+                    else:
+                        product_input[key] = payload[field]
+
+            if product_input:
+                shopify_client.update_product(shopify_product_id, product_input)
+
+            updates = []
+            params = []
+            if "title" in payload:
+                updates.append("title = %s")
+                params.append(payload.get("title"))
+            if "description" in payload:
+                updates.append("description = %s")
+                params.append(payload.get("description"))
+            if "vendor" in payload:
+                updates.append("vendor = %s")
+                params.append(payload.get("vendor"))
+            if "product_type" in payload:
+                updates.append("product_type = %s")
+                params.append(payload.get("product_type"))
+            if "tags" in payload:
+                updates.append("tags = %s")
+                params.append(payload.get("tags"))
+
+            if updates:
+                params.extend([catalogue_id, user_id])
+                cursor.execute(
+                    f"UPDATE catalogue SET {', '.join(updates)} WHERE catalogue_id = %s AND user_id = %s",
+                    params
+                )
+
+            mysql.connection.commit()
+            CatalogueService._log_audit(
+                catalogue_id=catalogue_id,
+                store_id=store_id,
+                user_id=user_id,
+                action="UPDATE",
+                changes=payload
+            )
+            return {"status": "success", "catalogue_id": catalogue_id}
+        except Exception as e:
+            mysql.connection.rollback()
+            return {"status": "error", "message": str(e)}
+        finally:
+            cursor.close()
+
+    @staticmethod
+    def delete_catalogue(catalogue_id: str, user_id: str, soft_delete: bool = True) -> dict:
+        """Delete or archive catalogue and delete on Shopify."""
+        cursor = mysql.connection.cursor()
+        try:
+            cursor.execute(
+                """
+                SELECT c.store_id, m.shopify_product_id
+                FROM catalogue c
+                LEFT JOIN catalogue_shopify_mapping m ON c.catalogue_id = m.catalogue_id
+                WHERE c.catalogue_id = %s AND c.user_id = %s
+                """,
+                (catalogue_id, user_id)
+            )
+            row = cursor.fetchone()
+            if not row:
+                return {"status": "error", "message": "Catalogue not found"}
+            store_id, shopify_product_id = row
+
+            store_config = get_store_config(store_id, user_id)
+            shopify_client = store_config["client"]
+            shopify_client.delete_product(shopify_product_id)
+
+            if soft_delete:
+                cursor.execute(
+                    """
+                    UPDATE catalogue SET status = 'ARCHIVED'
+                    WHERE catalogue_id = %s AND user_id = %s
+                    """,
+                    (catalogue_id, user_id)
+                )
+            else:
+                cursor.execute(
+                    "DELETE FROM catalogue WHERE catalogue_id = %s AND user_id = %s",
+                    (catalogue_id, user_id)
+                )
+
+            mysql.connection.commit()
+            CatalogueService._log_audit(
+                catalogue_id=catalogue_id,
+                store_id=store_id,
+                user_id=user_id,
+                action="DELETE",
+                changes={"soft_delete": soft_delete}
+            )
+            return {"status": "success", "catalogue_id": catalogue_id}
+        except Exception as e:
+            mysql.connection.rollback()
+            return {"status": "error", "message": str(e)}
+        finally:
+            cursor.close()
 
     @staticmethod
     def get_catalogue_by_id(catalogue_id: str, user_id: str = None) -> dict:
@@ -319,7 +632,14 @@ class CatalogueService:
                 cursor.close()
 
     @staticmethod
-    def list_catalogues(user_id: str, store_id: int = None, limit: int = 50, offset: int = 0) -> list:
+    def list_catalogues(
+        user_id: str,
+        store_id: int = None,
+        limit: int = 50,
+        offset: int = 0,
+        status: str = None,
+        search: str = None
+    ) -> list:
         """
         Retrieve catalogue list for a user with optional store filtering.
 
@@ -336,44 +656,39 @@ class CatalogueService:
         try:
             cursor = mysql.connection.cursor()
 
+            where_clauses = ["c.user_id = %s"]
+            params = [user_id]
+
             if store_id:
-                cursor.execute(
-                    """
-                    SELECT c.catalogue_id, c.store_id, c.title, c.price,
-                           c.vendor, c.status, c.user_id, c.created_at,
-                           m.shopify_product_id,
-                           COUNT(DISTINCT cv.variant_id) as variant_count,
-                           COUNT(DISTINCT ci.image_id) as image_count
-                    FROM catalogue c
-                    LEFT JOIN catalogue_shopify_mapping m ON c.catalogue_id = m.catalogue_id
-                    LEFT JOIN catalogue_variants cv ON c.catalogue_id = cv.catalogue_id
-                    LEFT JOIN catalogue_images ci ON c.catalogue_id = ci.catalogue_id
-                    WHERE c.user_id = %s AND c.store_id = %s
-                    GROUP BY c.catalogue_id
-                    ORDER BY c.created_at DESC
-                    LIMIT %s OFFSET %s
-                    """,
-                    (user_id, store_id, limit, offset)
-                )
-            else:
-                cursor.execute(
-                    """
-                    SELECT c.catalogue_id, c.store_id, c.title, c.price,
-                           c.vendor, c.status, c.user_id, c.created_at,
-                           m.shopify_product_id,
-                           COUNT(DISTINCT cv.variant_id) as variant_count,
-                           COUNT(DISTINCT ci.image_id) as image_count
-                    FROM catalogue c
-                    LEFT JOIN catalogue_shopify_mapping m ON c.catalogue_id = m.catalogue_id
-                    LEFT JOIN catalogue_variants cv ON c.catalogue_id = cv.catalogue_id
-                    LEFT JOIN catalogue_images ci ON c.catalogue_id = ci.catalogue_id
-                    WHERE c.user_id = %s
-                    GROUP BY c.catalogue_id
-                    ORDER BY c.created_at DESC
-                    LIMIT %s OFFSET %s
-                    """,
-                    (user_id, limit, offset)
-                )
+                where_clauses.append("c.store_id = %s")
+                params.append(store_id)
+
+            if status:
+                where_clauses.append("c.status = %s")
+                params.append(status.upper())
+
+            if search:
+                where_clauses.append("(c.title LIKE %s OR c.vendor LIKE %s OR c.tags LIKE %s)")
+                search_term = f"%{search}%"
+                params.extend([search_term, search_term, search_term])
+
+            query = f"""
+                SELECT c.catalogue_id, c.store_id, c.title, c.price,
+                       c.vendor, c.status, c.user_id, c.created_at,
+                       m.shopify_product_id,
+                       COUNT(DISTINCT cv.variant_id) as variant_count,
+                       COUNT(DISTINCT ci.image_id) as image_count
+                FROM catalogue c
+                LEFT JOIN catalogue_shopify_mapping m ON c.catalogue_id = m.catalogue_id
+                LEFT JOIN catalogue_variants cv ON c.catalogue_id = cv.catalogue_id
+                LEFT JOIN catalogue_images ci ON c.catalogue_id = ci.catalogue_id
+                WHERE {' AND '.join(where_clauses)}
+                GROUP BY c.catalogue_id
+                ORDER BY c.created_at DESC
+                LIMIT %s OFFSET %s
+            """
+            params.extend([limit, offset])
+            cursor.execute(query, tuple(params))
 
             results = cursor.fetchall()
             return [
@@ -396,3 +711,109 @@ class CatalogueService:
         finally:
             if cursor:
                 cursor.close()
+
+    @staticmethod
+    def update_catalogue_from_webhook(payload: dict) -> dict:
+        """Update catalogue from Shopify product/update webhook payload."""
+        cursor = mysql.connection.cursor()
+        try:
+            shopify_product_id = str(payload.get("id"))
+            cursor.execute(
+                """
+                SELECT c.catalogue_id, c.store_id, c.user_id
+                FROM catalogue_shopify_mapping m
+                JOIN catalogue c ON c.catalogue_id = m.catalogue_id
+                WHERE m.shopify_product_id = %s
+                """,
+                (shopify_product_id,)
+            )
+            row = cursor.fetchone()
+            if not row:
+                return {"status": "error", "message": "Product mapping not found"}
+            catalogue_id, store_id, user_id = row
+
+            title = payload.get("title")
+            description = payload.get("body_html")
+            vendor = payload.get("vendor")
+            product_type = payload.get("product_type")
+            tags = payload.get("tags")
+
+            cursor.execute(
+                """
+                UPDATE catalogue SET title = %s, description = %s, vendor = %s,
+                    product_type = %s, tags = %s
+                WHERE catalogue_id = %s
+                """,
+                (title, description, vendor, product_type, tags, catalogue_id)
+            )
+            mysql.connection.commit()
+            CatalogueService._log_audit(
+                catalogue_id=catalogue_id,
+                store_id=store_id,
+                user_id=user_id,
+                action="SYNC",
+                changes={
+                    "source": "shopify_webhook",
+                    "shopify_product_id": shopify_product_id
+                }
+            )
+            return {"status": "success", "catalogue_id": catalogue_id}
+        except Exception as e:
+            mysql.connection.rollback()
+            return {"status": "error", "message": str(e)}
+        finally:
+            cursor.close()
+
+    @staticmethod
+    def update_inventory_from_webhook(payload: dict) -> dict:
+        """Update inventory from Shopify inventory level webhook payload."""
+        cursor = mysql.connection.cursor()
+        try:
+            inventory_item_id = payload.get("inventory_item_id")
+            location_id = payload.get("location_id")
+            available = payload.get("available")
+            if inventory_item_id is None or location_id is None:
+                return {"status": "error", "message": "missing inventory_item_id or location_id"}
+
+            cursor.execute(
+                """
+                SELECT variant_id, catalogue_id
+                FROM catalogue_variants
+                WHERE inventory_item_id = %s
+                """,
+                (inventory_item_id,)
+            )
+            row = cursor.fetchone()
+            if not row:
+                return {"status": "error", "message": "variant not found"}
+            variant_id, catalogue_id = row
+
+            cursor.execute(
+                """
+                INSERT INTO catalogue_inventory (variant_id, location_id, available_quantity)
+                VALUES (%s, %s, %s)
+                ON DUPLICATE KEY UPDATE available_quantity = VALUES(available_quantity),
+                    last_synced_at = CURRENT_TIMESTAMP,
+                    sync_status = 'IN_SYNC'
+                """,
+                (variant_id, str(location_id), int(available) if available is not None else 0)
+            )
+            mysql.connection.commit()
+            CatalogueService._log_audit(
+                catalogue_id=catalogue_id,
+                store_id=None,
+                user_id=None,
+                action="INVENTORY",
+                changes={
+                    "source": "shopify_webhook",
+                    "inventory_item_id": inventory_item_id,
+                    "location_id": location_id,
+                    "available": available
+                }
+            )
+            return {"status": "success", "variant_id": variant_id, "catalogue_id": catalogue_id}
+        except Exception as e:
+            mysql.connection.rollback()
+            return {"status": "error", "message": str(e)}
+        finally:
+            cursor.close()

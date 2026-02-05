@@ -6,6 +6,7 @@ from database import __init_sql__
 import os
 from brand_handling import brand
 from catalogue import catalogue
+from stores import stores
 from dotenv import load_dotenv
 
 load_dotenv()  # Load environment variables from .env file
@@ -25,6 +26,7 @@ app.register_blueprint(page)
 app.register_blueprint(requests)
 app.register_blueprint(brand)
 app.register_blueprint(catalogue)
+app.register_blueprint(stores)
 
 
 # Initialize SQL within application context to avoid "working outside"

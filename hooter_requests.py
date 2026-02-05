@@ -1,6 +1,7 @@
 from flask import Blueprint, request, Response, jsonify, session
 from database import Write, Fetch
 from helper import Validate, User, Helper
+from services.shopify_helpers import validate_shopify_token, ShopifyAPIError
 
 requests = Blueprint('request', __name__)
 
@@ -151,6 +152,15 @@ def add_store():
             'message': 'shopify_shop_name and shopify_access_token are required'
         }), 400
     
+    # Validate Shopify token before storing
+    try:
+        validate_shopify_token(shopify_shop_name, shopify_access_token)
+    except ShopifyAPIError as exc:
+        return jsonify({
+            'status': 'error',
+            'message': str(exc)
+        }), 400
+
     # Add store via database
     result = Write.add_store(
         user_id=user_id,

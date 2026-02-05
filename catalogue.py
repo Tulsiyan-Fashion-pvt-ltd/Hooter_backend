@@ -1,6 +1,11 @@
 import json
+import base64
+import hmac
+import hashlib
+import os
 from flask import Blueprint, request, jsonify, session
 from services.catalogue_service import CatalogueService
+from services.exceptions import AuthorizationError, ShopifyAPIError, ValidationError
 from database import Fetch
 
 catalogue = Blueprint("catalogue", __name__)
@@ -98,6 +103,16 @@ def create_catalogue(user_id):
                 "message": "store_id is required"
             }), 400
 
+        # Idempotency support
+        idempotency_key = request.headers.get("Idempotency-Key")
+        cached_response = CatalogueService._get_or_create_idempotency(
+            idempotency_key=idempotency_key,
+            user_id=user_id,
+            store_id=store_id
+        )
+        if cached_response:
+            return jsonify({"status": "success", "data": cached_response}), 200
+
         # Create catalogue with complete data
         result = CatalogueService.create_catalogue_complete(
             title=title,
@@ -109,6 +124,13 @@ def create_catalogue(user_id):
             variants=variants,
             images=images,
             user_id=user_id
+        )
+
+        CatalogueService._store_idempotency_response(
+            idempotency_key=idempotency_key,
+            user_id=user_id,
+            store_id=store_id,
+            response_payload=result
         )
 
         return jsonify({
@@ -130,6 +152,26 @@ def create_catalogue(user_id):
                 "status": "error",
                 "message": str(ve)
             }), 400
+
+    except ValidationError as ve:
+        return jsonify({
+            "status": "error",
+            "message": "Validation failed",
+            "errors": json.loads(str(ve)) if str(ve).startswith("{") else str(ve)
+        }), 400
+
+    except AuthorizationError as ae:
+        return jsonify({
+            "status": "error",
+            "message": str(ae)
+        }), 403
+
+    except ShopifyAPIError as se:
+        return jsonify({
+            "status": "error",
+            "message": "Shopify API error",
+            "errors": str(se)
+        }), 502
 
     except Exception as e:
         # Log exception for debugging
@@ -194,6 +236,8 @@ def list_catalogues(user_id):
         store_id = request.args.get("store_id", type=int)
         limit = int(request.args.get("limit", 50))
         offset = int(request.args.get("offset", 0))
+        status = request.args.get("status")
+        search = request.args.get("search")
 
         # Validate pagination parameters
         limit = min(limit, 100)  # Max 100 records per request
@@ -212,7 +256,9 @@ def list_catalogues(user_id):
             user_id=user_id,
             store_id=store_id,
             limit=limit,
-            offset=offset
+            offset=offset,
+            status=status,
+            search=search
         )
 
         return jsonify({
@@ -259,3 +305,145 @@ def get_user_stores(user_id):
             "status": "error",
             "message": f"Failed to retrieve stores: {str(e)}"
         }), 500
+
+
+@catalogue.route("/catalogue/<catalogue_id>", methods=["PATCH"])
+@_require_auth
+def update_catalogue(user_id, catalogue_id):
+    """Update catalogue and sync to Shopify."""
+    try:
+        data = request.get_json() or {}
+        result = CatalogueService.update_catalogue(catalogue_id, user_id, data)
+        status_code = 200 if result.get("status") == "success" else 400
+        return jsonify(result), status_code
+    except AuthorizationError as ae:
+        return jsonify({"status": "error", "message": str(ae)}), 403
+    except ShopifyAPIError as se:
+        return jsonify({"status": "error", "message": "Shopify API error", "errors": str(se)}), 502
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": f"Failed to update catalogue: {str(e)}"
+        }), 500
+
+
+@catalogue.route("/catalogue/<catalogue_id>", methods=["DELETE"])
+@_require_auth
+def delete_catalogue(user_id, catalogue_id):
+    """Delete or archive catalogue and Shopify product."""
+    try:
+        soft_delete = request.args.get("soft", "true").lower() == "true"
+        result = CatalogueService.delete_catalogue(catalogue_id, user_id, soft_delete=soft_delete)
+        status_code = 200 if result.get("status") == "success" else 400
+        return jsonify(result), status_code
+    except AuthorizationError as ae:
+        return jsonify({"status": "error", "message": str(ae)}), 403
+    except ShopifyAPIError as se:
+        return jsonify({"status": "error", "message": "Shopify API error", "errors": str(se)}), 502
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": f"Failed to delete catalogue: {str(e)}"
+        }), 500
+
+
+@catalogue.route("/catalogue/<catalogue_id>/inventory", methods=["POST"])
+@_require_auth
+def sync_inventory(user_id, catalogue_id):
+    """Sync inventory for catalogue variants."""
+    try:
+        data = request.get_json() or {}
+        quantities = data.get("quantities", {})
+        result = CatalogueService.sync_inventory_for_catalogue(catalogue_id, user_id, quantities)
+        status_code = 200 if result.get("status") == "success" else 400
+        return jsonify(result), status_code
+    except AuthorizationError as ae:
+        return jsonify({"status": "error", "message": str(ae)}), 403
+    except ShopifyAPIError as se:
+        return jsonify({"status": "error", "message": "Shopify API error", "errors": str(se)}), 502
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": f"Failed to sync inventory: {str(e)}"
+        }), 500
+
+
+@catalogue.route("/catalogue/bulk", methods=["POST"])
+@_require_auth
+def bulk_create_catalogue(user_id):
+    """Bulk create catalogues."""
+    try:
+        data = request.get_json() or {}
+        items = data.get("items", [])
+        if not items:
+            return jsonify({"status": "error", "message": "items array required"}), 400
+
+        results = []
+        for item in items:
+            result = CatalogueService.create_catalogue_complete(
+                title=str(item.get("title", "")).strip(),
+                description=str(item.get("description", "")).strip(),
+                vendor=str(item.get("vendor", "")).strip(),
+                product_type=str(item.get("product_type", "")).strip(),
+                tags=str(item.get("tags", "")).strip(),
+                store_id=item.get("store_id"),
+                variants=item.get("variants", []),
+                images=item.get("images", []),
+                user_id=user_id
+            )
+            results.append(result)
+
+        return jsonify({"status": "success", "data": results, "count": len(results)}), 201
+    except ValidationError as ve:
+        return jsonify({
+            "status": "error",
+            "message": "Validation failed",
+            "errors": json.loads(str(ve)) if str(ve).startswith("{") else str(ve)
+        }), 400
+    except AuthorizationError as ae:
+        return jsonify({"status": "error", "message": str(ae)}), 403
+    except ShopifyAPIError as se:
+        return jsonify({"status": "error", "message": "Shopify API error", "errors": str(se)}), 502
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": f"Failed bulk create: {str(e)}"
+        }), 500
+
+
+def _verify_shopify_webhook(request) -> bool:
+    secret = os.environ.get("SHOPIFY_WEBHOOK_SECRET", "")
+    if not secret:
+        return False
+    hmac_header = request.headers.get("X-Shopify-Hmac-SHA256", "")
+    digest = hmac.new(secret.encode(), request.get_data(), hashlib.sha256).digest()
+    computed = base64.b64encode(digest).decode()
+    return hmac.compare_digest(computed, hmac_header)
+
+
+@catalogue.route("/webhooks/shopify/product-update", methods=["POST"])
+def webhook_product_update():
+    """Handle Shopify product update webhooks."""
+    if not _verify_shopify_webhook(request):
+        return jsonify({"status": "error", "message": "invalid signature"}), 401
+
+    payload = request.get_json() or {}
+    shopify_product_id = payload.get("id")
+    if not shopify_product_id:
+        return jsonify({"status": "error", "message": "missing product id"}), 400
+
+    result = CatalogueService.update_catalogue_from_webhook(payload)
+    status_code = 200 if result.get("status") == "success" else 400
+    return jsonify(result), status_code
+
+
+@catalogue.route("/webhooks/shopify/inventory-update", methods=["POST"])
+def webhook_inventory_update():
+    """Handle Shopify inventory updates webhooks."""
+    if not _verify_shopify_webhook(request):
+        return jsonify({"status": "error", "message": "invalid signature"}), 401
+
+    payload = request.get_json() or {}
+    result = CatalogueService.update_inventory_from_webhook(payload)
+    status_code = 200 if result.get("status") == "success" else 400
+    return jsonify(result), status_code

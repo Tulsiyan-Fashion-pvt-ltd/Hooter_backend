@@ -93,6 +93,8 @@ class Write:
     @staticmethod
     def update_store(store_id: int, user_id: str, **kwargs) -> dict:
         """Update store details."""
+        from encryption import TokenEncryption
+
         cursor = mysql.connection.cursor()
         try:
             # Verify ownership
@@ -108,8 +110,13 @@ class Write:
             
             for key, value in kwargs.items():
                 if key in allowed_fields:
-                    updates.append(f'{key} = %s')
-                    params.append(value)
+                    if key == 'shopify_access_token':
+                        encrypted_token = TokenEncryption.encrypt_token(value)
+                        updates.append('shopify_access_token_encrypted = %s')
+                        params.append(encrypted_token)
+                    else:
+                        updates.append(f'{key} = %s')
+                        params.append(value)
 
             if not updates:
                 return {'status': 'error', 'message': 'No valid fields to update'}
@@ -229,7 +236,7 @@ class Fetch:
         stores = []
         try:
             cursor.execute('''
-                SELECT store_id, shopify_shop_name, shopify_access_token, store_name, is_primary, is_active
+                SELECT store_id, shopify_shop_name, shopify_access_token_encrypted, store_name, is_primary, is_active
                 FROM stores
                 WHERE user_id = %s AND is_active = TRUE
                 ORDER BY is_primary DESC, created_at DESC
@@ -240,7 +247,7 @@ class Fetch:
                 {
                     'store_id': row[0],
                     'shopify_shop_name': row[1],
-                    'shopify_access_token': row[2],
+                    'shopify_access_token_encrypted': row[2],
                     'store_name': row[3],
                     'is_primary': row[4],
                     'is_active': row[5]
@@ -296,7 +303,7 @@ class Fetch:
         store = None
         try:
             cursor.execute('''
-                SELECT store_id, user_id, shopify_shop_name, shopify_access_token, store_name, is_primary
+                SELECT store_id, user_id, shopify_shop_name, shopify_access_token_encrypted, store_name, is_primary
                 FROM stores
                 WHERE user_id = %s AND is_primary = TRUE AND is_active = TRUE
                 LIMIT 1
@@ -308,7 +315,7 @@ class Fetch:
                     'store_id': result[0],
                     'user_id': result[1],
                     'shopify_shop_name': result[2],
-                    'shopify_access_token': result[3],
+                    'shopify_access_token_encrypted': result[3],
                     'store_name': result[4],
                     'is_primary': result[5]
                 }
@@ -460,6 +467,40 @@ def init_catalogue_tables(app):
                 UNIQUE KEY unique_variant_location (variant_id, location_id),
                 INDEX idx_variant_id (variant_id),
                 FOREIGN KEY (variant_id) REFERENCES catalogue_variants(variant_id) ON DELETE CASCADE
+            )
+        ''')
+
+        # Create audit log table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS catalogue_audit_log (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                catalogue_id VARCHAR(36),
+                store_id INT,
+                user_id VARCHAR(100),
+                action ENUM('CREATE', 'UPDATE', 'DELETE', 'SYNC', 'INVENTORY') NOT NULL,
+                changes JSON,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_catalogue_id (catalogue_id),
+                INDEX idx_user_id (user_id),
+                FOREIGN KEY (catalogue_id) REFERENCES catalogue(catalogue_id) ON DELETE SET NULL,
+                FOREIGN KEY (store_id) REFERENCES stores(store_id) ON DELETE SET NULL,
+                FOREIGN KEY (user_id) REFERENCES user_creds(user_id) ON DELETE SET NULL
+            )
+        ''')
+
+        # Create idempotency table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS catalogue_idempotency (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                idempotency_key VARCHAR(128) NOT NULL,
+                user_id VARCHAR(100) NOT NULL,
+                store_id INT NOT NULL,
+                response_json LONGTEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE KEY uniq_idem_user_store (idempotency_key, user_id, store_id),
+                INDEX idx_idempotency_key (idempotency_key),
+                FOREIGN KEY (store_id) REFERENCES stores(store_id) ON DELETE CASCADE,
+                FOREIGN KEY (user_id) REFERENCES user_creds(user_id) ON DELETE CASCADE
             )
         ''')
 

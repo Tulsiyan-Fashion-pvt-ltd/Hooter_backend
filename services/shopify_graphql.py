@@ -1,5 +1,16 @@
+import logging
 import requests
 import time
+
+from services.exceptions import ShopifyAPIError
+
+
+class ShopifyRetryableError(Exception):
+    """Retryable Shopify API error for transient failures."""
+
+
+logger = logging.getLogger(__name__)
+
 
 
 class ShopifyGraphQLClient:
@@ -97,7 +108,9 @@ class ShopifyGraphQLClient:
         ShopifyGraphQLClient.handle_rate_limit(data)
         
         if data["data"]["productCreate"]["userErrors"]:
-            raise Exception(data["data"]["productCreate"]["userErrors"])
+            errors = data["data"]["productCreate"]["userErrors"]
+            logger.error("Shopify productCreate errors: %s", errors)
+            raise ShopifyAPIError(errors)
         
         product = data["data"]["productCreate"]["product"]
         
@@ -172,7 +185,9 @@ class ShopifyGraphQLClient:
         ShopifyGraphQLClient.handle_rate_limit(data)
         
         if data["data"]["productCreateMedia"]["userErrors"]:
-            raise Exception(data["data"]["productCreateMedia"]["userErrors"])
+            errors = data["data"]["productCreateMedia"]["userErrors"]
+            logger.error("Shopify productCreateMedia errors: %s", errors)
+            raise ShopifyAPIError(errors)
         
         return {
             "id": data["data"]["productCreateMedia"]["media"]["id"]
@@ -224,7 +239,280 @@ class ShopifyGraphQLClient:
 
         user_errors = data["data"]["productCreate"]["userErrors"]
         if user_errors:
-            raise Exception(user_errors)
+            logger.error("Shopify legacy productCreate errors: %s", user_errors)
+            raise ShopifyAPIError(user_errors)
 
         return data["data"]["productCreate"]["product"]
+
+    def update_product(self, product_id: str, product_input: dict) -> dict:
+        """Update a Shopify product."""
+        query = """
+        mutation productUpdate($input: ProductInput!) {
+          productUpdate(input: $input) {
+            product { id title }
+            userErrors { field message }
+          }
+        }
+        """
+
+        variables = {"input": {"id": product_id, **product_input}}
+        response = requests.post(
+            self.endpoint,
+            json={"query": query, "variables": variables},
+            headers=self.headers,
+            timeout=15
+        )
+        response.raise_for_status()
+        data = response.json()
+        ShopifyGraphQLClient.handle_rate_limit(data)
+        errors = data["data"]["productUpdate"]["userErrors"]
+        if errors:
+            logger.error("Shopify productUpdate errors: %s", errors)
+            raise ShopifyAPIError(errors)
+        return data["data"]["productUpdate"]["product"]
+
+    def delete_product(self, product_id: str) -> dict:
+        """Delete a Shopify product (hard delete)."""
+        query = """
+        mutation productDelete($input: ProductDeleteInput!) {
+          productDelete(input: $input) {
+            deletedProductId
+            userErrors { field message }
+          }
+        }
+        """
+        variables = {"input": {"id": product_id}}
+        response = requests.post(
+            self.endpoint,
+            json={"query": query, "variables": variables},
+            headers=self.headers,
+            timeout=15
+        )
+        response.raise_for_status()
+        data = response.json()
+        ShopifyGraphQLClient.handle_rate_limit(data)
+        errors = data["data"]["productDelete"]["userErrors"]
+        if errors:
+            logger.error("Shopify productDelete errors: %s", errors)
+            raise ShopifyAPIError(errors)
+        return {"deletedProductId": data["data"]["productDelete"]["deletedProductId"]}
+
+    def reorder_product_media(self, product_id: str, media_ids: list) -> list:
+        """Reorder product media according to provided media IDs."""
+        query = """
+        mutation productReorderMedia($productId: ID!, $mediaIds: [ID!]!) {
+          productReorderMedia(productId: $productId, mediaIds: $mediaIds) {
+            product {
+              media(first: 100) {
+                edges { node { id } }
+              }
+            }
+            userErrors { field message }
+          }
+        }
+        """
+        variables = {"productId": product_id, "mediaIds": media_ids}
+        response = requests.post(
+            self.endpoint,
+            json={"query": query, "variables": variables},
+            headers=self.headers,
+            timeout=15
+        )
+        response.raise_for_status()
+        data = response.json()
+        ShopifyGraphQLClient.handle_rate_limit(data)
+        errors = data["data"]["productReorderMedia"]["userErrors"]
+        if errors:
+            logger.error("Shopify productReorderMedia errors: %s", errors)
+            raise ShopifyAPIError(errors)
+        return [edge["node"]["id"] for edge in data["data"]["productReorderMedia"]["product"]["media"]["edges"]]
+
+    def get_locations(self) -> list:
+        """Fetch Shopify locations for inventory sync."""
+        query = """
+        query locations($first: Int!) {
+          locations(first: $first) {
+            edges {
+              node { id name }
+            }
+          }
+        }
+        """
+        response = requests.post(
+            self.endpoint,
+            json={"query": query, "variables": {"first": 50}},
+            headers=self.headers,
+            timeout=15
+        )
+        response.raise_for_status()
+        data = response.json()
+        ShopifyGraphQLClient.handle_rate_limit(data)
+        edges = data["data"]["locations"]["edges"]
+        return [{"id": edge["node"]["id"], "name": edge["node"]["name"]} for edge in edges]
+
+    def activate_inventory(self, inventory_item_id: str, location_id: str) -> dict:
+        """Activate inventory at a location for an inventory item."""
+        query = """
+        mutation inventoryActivate($inventoryItemId: ID!, $locationId: ID!) {
+          inventoryActivate(inventoryItemId: $inventoryItemId, locationId: $locationId) {
+            inventoryLevel { id }
+            userErrors { field message }
+          }
+        }
+        """
+        response = requests.post(
+            self.endpoint,
+            json={"query": query, "variables": {"inventoryItemId": inventory_item_id, "locationId": location_id}},
+            headers=self.headers,
+            timeout=15
+        )
+        response.raise_for_status()
+        data = response.json()
+        ShopifyGraphQLClient.handle_rate_limit(data)
+        errors = data["data"]["inventoryActivate"]["userErrors"]
+        if errors:
+            logger.error("Shopify inventoryActivate errors: %s", errors)
+            raise ShopifyAPIError(errors)
+        return {"inventoryLevelId": data["data"]["inventoryActivate"]["inventoryLevel"]["id"]}
+
+    def set_inventory_quantities(self, inventory_item_id: str, location_id: str, available: int) -> dict:
+        """Set inventory on hand quantities."""
+        query = """
+        mutation inventorySetOnHandQuantities($input: InventorySetOnHandQuantitiesInput!) {
+          inventorySetOnHandQuantities(input: $input) {
+            inventoryLevels {
+              id
+              available
+            }
+            userErrors { field message }
+          }
+        }
+        """
+        variables = {
+            "input": {
+                "setQuantities": [
+                    {
+                        "inventoryItemId": inventory_item_id,
+                        "locationId": location_id,
+                        "availableQuantity": int(available)
+                    }
+                ]
+            }
+        }
+        response = requests.post(
+            self.endpoint,
+            json={"query": query, "variables": variables},
+            headers=self.headers,
+            timeout=15
+        )
+        response.raise_for_status()
+        data = response.json()
+        ShopifyGraphQLClient.handle_rate_limit(data)
+        errors = data["data"]["inventorySetOnHandQuantities"]["userErrors"]
+        if errors:
+            logger.error("Shopify inventorySetOnHandQuantities errors: %s", errors)
+            raise ShopifyAPIError(errors)
+        return data["data"]["inventorySetOnHandQuantities"]["inventoryLevels"][0]
+
+    def update_variant(self, variant_id: str, variant_input: dict) -> dict:
+        """Update a product variant."""
+        query = """
+        mutation productVariantUpdate($input: ProductVariantInput!) {
+          productVariantUpdate(input: $input) {
+            productVariant { id sku price }
+            userErrors { field message }
+          }
+        }
+        """
+        variables = {"input": {"id": variant_id, **variant_input}}
+        response = requests.post(
+            self.endpoint,
+            json={"query": query, "variables": variables},
+            headers=self.headers,
+            timeout=15
+        )
+        response.raise_for_status()
+        data = response.json()
+        ShopifyGraphQLClient.handle_rate_limit(data)
+        errors = data["data"]["productVariantUpdate"]["userErrors"]
+        if errors:
+            logger.error("Shopify productVariantUpdate errors: %s", errors)
+            raise ShopifyAPIError(errors)
+        return data["data"]["productVariantUpdate"]["productVariant"]
+
+    def create_variant(self, product_id: str, variant_input: dict) -> dict:
+        """Create a new variant for a product."""
+        query = """
+        mutation productVariantCreate($input: ProductVariantInput!) {
+          productVariantCreate(input: $input) {
+            productVariant { id sku price inventoryItem { id } }
+            userErrors { field message }
+          }
+        }
+        """
+        variables = {"input": {"productId": product_id, **variant_input}}
+        response = requests.post(
+            self.endpoint,
+            json={"query": query, "variables": variables},
+            headers=self.headers,
+            timeout=15
+        )
+        response.raise_for_status()
+        data = response.json()
+        ShopifyGraphQLClient.handle_rate_limit(data)
+        errors = data["data"]["productVariantCreate"]["userErrors"]
+        if errors:
+            logger.error("Shopify productVariantCreate errors: %s", errors)
+            raise ShopifyAPIError(errors)
+        return data["data"]["productVariantCreate"]["productVariant"]
+
+    def delete_variant(self, variant_id: str) -> dict:
+        """Delete a variant by ID."""
+        query = """
+        mutation productVariantDelete($id: ID!) {
+          productVariantDelete(id: $id) {
+            deletedProductVariantId
+            userErrors { field message }
+          }
+        }
+        """
+        response = requests.post(
+            self.endpoint,
+            json={"query": query, "variables": {"id": variant_id}},
+            headers=self.headers,
+            timeout=15
+        )
+        response.raise_for_status()
+        data = response.json()
+        ShopifyGraphQLClient.handle_rate_limit(data)
+        errors = data["data"]["productVariantDelete"]["userErrors"]
+        if errors:
+            logger.error("Shopify productVariantDelete errors: %s", errors)
+            raise ShopifyAPIError(errors)
+        return {"deletedProductVariantId": data["data"]["productVariantDelete"]["deletedProductVariantId"]}
+
+    def list_product_media(self, product_id: str) -> list:
+        """List product media IDs (used for reordering)."""
+        query = """
+        query productMedia($id: ID!) {
+          product(id: $id) {
+            media(first: 100) {
+              edges { node { id } }
+            }
+          }
+        }
+        """
+        response = requests.post(
+            self.endpoint,
+            json={"query": query, "variables": {"id": product_id}},
+            headers=self.headers,
+            timeout=15
+        )
+        response.raise_for_status()
+        data = response.json()
+        ShopifyGraphQLClient.handle_rate_limit(data)
+        edges = data["data"]["product"]["media"]["edges"]
+        return [edge["node"]["id"] for edge in edges]
+
+
 
