@@ -21,6 +21,7 @@ app.config['MYSQL_HOST'] = os.environ.get('HOOTER_DB_HOST')
 app.config['MYSQL_USER'] = os.environ.get('HOOTER_DB_USER')
 app.config['MYSQL_PASSWORD'] = os.environ.get('HOOTER_DB_PASSWORD')
 app.config['MYSQL_DB'] = os.environ.get('HOOTER_DB')
+app.config['MYSQL_PORT'] = int(os.environ.get('HOOTER_DB_PORT', '3306'))
 
 app.register_blueprint(page)
 app.register_blueprint(requests)
