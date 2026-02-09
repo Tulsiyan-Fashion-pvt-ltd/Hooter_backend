@@ -14,7 +14,10 @@ logger = logging.getLogger(__name__)
 
 
 class ShopifyGraphQLClient:
-    def __init__(self, shop_name: str, access_token: str, api_version: str = "2024-01"):
+    def __init__(self, shop_name: str, access_token: str, api_version: str = "2023-04"):
+        self.shop_name = shop_name
+        self.access_token = access_token
+        self.api_version = api_version
         self.endpoint = (
             f"https://{shop_name}.myshopify.com/"
             f"admin/api/{api_version}/graphql.json"
@@ -64,71 +67,69 @@ class ShopifyGraphQLClient:
 
     def create_product_with_variants(self, product_input: dict) -> dict:
         """
-        Create product with variants in single mutation.
-        
+        Create product with variants using REST API.
+
         Args:
             product_input: Dict with title, variants, vendor, etc.
-        
+
         Returns:
             Dict with product ID, title, and variants
         """
-        query = """
-        mutation productCreate($input: ProductInput!) {
-          productCreate(input: $input) {
-            product {
-              id
-              title
-              variants(first: 10) {
-                edges {
-                  node {
-                    id
-                    sku
-                    price
-                    inventoryItem { id }
-                  }
-                }
-              }
+        # Build REST API payload
+        product_data = {
+            "product": {
+                "title": product_input.get("title"),
+                "body_html": product_input.get("descriptionHtml"),
+                "vendor": product_input.get("vendor"),
+                "product_type": product_input.get("productType"),
+                "tags": ",".join(product_input.get("tags", [])),
+                "variants": []
             }
-            userErrors { field, message }
-          }
         }
-        """
-        
+
+        # Add variants
+        variants = product_input.get("variants", [])
+        for variant in variants:
+            product_data["product"]["variants"].append({
+                "sku": variant.get("sku"),
+                "price": variant.get("price"),
+                "compare_at_price": variant.get("compareAtPrice"),
+                "weight": variant.get("weight"),
+                "weight_unit": variant.get("weightUnit", "kg").lower(),
+                "title": variant.get("title")
+            })
+
+        # REST API endpoint
+        rest_endpoint = f"https://{self.shop_name}.myshopify.com/admin/api/{self.api_version}/products.json"
+
         response = requests.post(
-            self.endpoint,
-            json={"query": query, "variables": {"input": product_input}},
-            headers=self.headers,
-            timeout=15
+            rest_endpoint,
+            json=product_data,
+            headers={
+                "Content-Type": "application/json",
+                "X-Shopify-Access-Token": self.access_token
+            },
+            timeout=30
         )
-        
+
         response.raise_for_status()
         data = response.json()
-        
-        # Check for rate limiting
-        ShopifyGraphQLClient.handle_rate_limit(data)
-        
-        if data["data"]["productCreate"]["userErrors"]:
-            errors = data["data"]["productCreate"]["userErrors"]
-            logger.error("Shopify productCreate errors: %s", errors)
-            raise ShopifyAPIError(errors)
-        
-        product = data["data"]["productCreate"]["product"]
-        
-        # Flatten variants from edges
-        variants = [
+
+        product = data["product"]
+        created_variants = [
             {
-                "id": edge["node"]["id"],
-                "sku": edge["node"]["sku"],
-                "price": edge["node"]["price"],
-                "inventoryItem": edge["node"]["inventoryItem"]
+                "id": f"gid://shopify/ProductVariant/{v['id']}",
+                "sku": v.get("sku"),
+                "price": str(v.get("price", 0)),
+                "inventoryItem": {"id": f"gid://shopify/InventoryItem/{v.get('inventory_item_id')}"}
             }
-            for edge in product["variants"]["edges"]
+            for v in product["variants"]
         ]
-        
+
         return {
-            "id": product["id"],
+            "id": f"gid://shopify/Product/{product['id']}",
             "title": product["title"],
-            "variants": variants
+            "variants": created_variants
         }
 
     def create_product_media(self, product_id: str, image_url: str, alt_text: str) -> dict:
@@ -272,30 +273,25 @@ class ShopifyGraphQLClient:
         return data["data"]["productUpdate"]["product"]
 
     def delete_product(self, product_id: str) -> dict:
-        """Delete a Shopify product (hard delete)."""
-        query = """
-        mutation productDelete($input: ProductDeleteInput!) {
-          productDelete(input: $input) {
-            deletedProductId
-            userErrors { field message }
-          }
-        }
-        """
-        variables = {"input": {"id": product_id}}
-        response = requests.post(
-            self.endpoint,
-            json={"query": query, "variables": variables},
-            headers=self.headers,
+        """Delete a Shopify product (hard delete) using REST API."""
+        # Extract numeric ID from gid if needed
+        if product_id.startswith("gid://shopify/Product/"):
+            product_id = product_id.split("/")[-1]
+
+        rest_endpoint = f"https://{self.shop_name}.myshopify.com/admin/api/{self.api_version}/products/{product_id}.json"
+
+        response = requests.delete(
+            rest_endpoint,
+            headers={
+                "Content-Type": "application/json",
+                "X-Shopify-Access-Token": self.access_token
+            },
             timeout=15
         )
+
         response.raise_for_status()
-        data = response.json()
-        ShopifyGraphQLClient.handle_rate_limit(data)
-        errors = data["data"]["productDelete"]["userErrors"]
-        if errors:
-            logger.error("Shopify productDelete errors: %s", errors)
-            raise ShopifyAPIError(errors)
-        return {"deletedProductId": data["data"]["productDelete"]["deletedProductId"]}
+        # REST delete returns empty body on success
+        return {"deletedProductId": product_id}
 
     def reorder_product_media(self, product_id: str, media_ids: list) -> list:
         """Reorder product media according to provided media IDs."""
@@ -459,6 +455,12 @@ class ShopifyGraphQLClient:
         )
         response.raise_for_status()
         data = response.json()
+
+        # Check for GraphQL errors
+        if "errors" in data:
+            logger.error("Shopify GraphQL errors: %s", data["errors"])
+            raise ShopifyAPIError(data["errors"])
+
         ShopifyGraphQLClient.handle_rate_limit(data)
         errors = data["data"]["productVariantCreate"]["userErrors"]
         if errors:

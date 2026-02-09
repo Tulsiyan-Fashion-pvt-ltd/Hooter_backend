@@ -92,8 +92,7 @@ class CatalogueService:
                         "price": str(v.get("price")),
                         "compareAtPrice": str(v.get("compare_at_price")) if v.get("compare_at_price") else None,
                         "weight": v.get("weight"),
-                        "weightUnit": v.get("weight_unit", "KG").upper(),
-                        "title": v.get("title")
+                        "weightUnit": v.get("weight_unit", "KG").upper()
                     }
                     for v in variants
                 ]

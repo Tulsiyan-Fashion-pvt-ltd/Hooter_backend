@@ -26,7 +26,7 @@ def validate_shopify_token(shop_name: str, access_token: str) -> None:
     """Validate Shopify access token with a harmless query."""
     client = ShopifyGraphQLClient(shop_name, access_token)
     query = """
-    query validateShop($first: Int!) {
+    query validateShop {
       shop { name }
     }
     """
@@ -34,7 +34,7 @@ def validate_shopify_token(shop_name: str, access_token: str) -> None:
         import requests
         resp = requests.post(
             client.endpoint,
-            json={"query": query, "variables": {"first": 1}},
+            json={"query": query},
             headers=client.headers,
             timeout=10
         )
