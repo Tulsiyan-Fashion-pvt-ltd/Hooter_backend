@@ -663,7 +663,7 @@ def init_stores_tables(app):
                 INDEX idx_user_id (user_id),
                 INDEX idx_shop_name (shopify_shop_name),
                 FOREIGN KEY (user_id) REFERENCES user_creds(user_id) ON DELETE CASCADE
-            )
+            ) ENGINE=InnoDB
         ''')
 
         mysql.connection.commit()
@@ -693,7 +693,7 @@ def init_brand_tables(app):
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 INDEX idx_brand_name (brand_name)
-            )
+            ) ENGINE=InnoDB
         ''')
 
         # Create brand access table for user-brand mapping
@@ -710,7 +710,7 @@ def init_brand_tables(app):
                 INDEX idx_user_id (user_id),
                 FOREIGN KEY (brand_id) REFERENCES brand(brand_id) ON DELETE CASCADE,
                 FOREIGN KEY (user_id) REFERENCES user_creds(user_id) ON DELETE CASCADE
-            )
+            ) ENGINE=InnoDB
         ''')
 
         mysql.connection.commit()
@@ -740,7 +740,7 @@ def init_fashion_tables(app):
                 INDEX idx_brand_id (brand_id),
                 INDEX idx_brand_uid (brand_id, uid),
                 FOREIGN KEY (brand_id) REFERENCES brand(brand_id) ON DELETE CASCADE
-            )
+            ) ENGINE=InnoDB
         ''')
 
         # Create fashion table - main product table (replaces catalogue)
@@ -782,7 +782,7 @@ def init_fashion_tables(app):
                 INDEX idx_sku (sku),
                 FOREIGN KEY (brand_id) REFERENCES brand(brand_id) ON DELETE CASCADE,
                 FOREIGN KEY (uid) REFERENCES uid_record(uid) ON DELETE CASCADE
-            )
+            ) ENGINE=InnoDB
         ''')
 
         # Create low_resol_images table (replaces catalogue_images)
@@ -797,7 +797,7 @@ def init_fashion_tables(app):
                 INDEX idx_uid (uid),
                 INDEX idx_position (position),
                 FOREIGN KEY (uid) REFERENCES uid_record(uid) ON DELETE CASCADE
-            )
+            ) ENGINE=InnoDB
         ''')
 
         # Create hsn_record table - HSN/tax classification
@@ -808,7 +808,7 @@ def init_fashion_tables(app):
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 INDEX idx_uid (uid),
                 FOREIGN KEY (uid) REFERENCES uid_record(uid) ON DELETE CASCADE
-            )
+            ) ENGINE=InnoDB
         ''')
 
         # Create product_info_change_stack table (replaces catalogue_audit_log)
@@ -830,7 +830,7 @@ def init_fashion_tables(app):
                 FOREIGN KEY (uid) REFERENCES uid_record(uid) ON DELETE CASCADE,
                 FOREIGN KEY (brand_id) REFERENCES brand(brand_id) ON DELETE CASCADE,
                 FOREIGN KEY (user_id) REFERENCES user_creds(user_id) ON DELETE SET NULL
-            )
+            ) ENGINE=InnoDB
         ''')
 
         # Create shopify_product_mapping table (replaces catalogue_shopify_mapping)
@@ -854,7 +854,7 @@ def init_fashion_tables(app):
                 FOREIGN KEY (uid) REFERENCES uid_record(uid) ON DELETE CASCADE,
                 FOREIGN KEY (brand_id) REFERENCES brand(brand_id) ON DELETE CASCADE,
                 FOREIGN KEY (store_id) REFERENCES stores(store_id) ON DELETE CASCADE
-            )
+            ) ENGINE=InnoDB
         ''')
 
         # Keep idempotency table for duplicate prevention
@@ -871,7 +871,7 @@ def init_fashion_tables(app):
                 INDEX idx_brand_id (brand_id),
                 FOREIGN KEY (brand_id) REFERENCES brand(brand_id) ON DELETE CASCADE,
                 FOREIGN KEY (user_id) REFERENCES user_creds(user_id) ON DELETE CASCADE
-            )
+            ) ENGINE=InnoDB
         ''')
 
         mysql.connection.commit()
