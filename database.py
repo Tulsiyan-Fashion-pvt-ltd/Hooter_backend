@@ -4,7 +4,7 @@ mysql = MySQL()
 
 def __init_sql__(app):
     mysql.init_app(app)
-    print('sql initialized')
+    # SQL initialized
     init_brand_tables(app)
     init_stores_tables(app)
     init_fashion_tables(app)
@@ -210,8 +210,8 @@ class Write:
         """Create a new product (fashion entry) with extended attributes."""
         cursor = mysql.connection.cursor()
         try:
-            # Create uid record first
-            cursor.execute('INSERT INTO uid_record (uid) VALUES (%s)', (uid,))
+            # Create uid record first (associate with brand)
+            cursor.execute('INSERT INTO uid_record (uid, brand_id) VALUES (%s, %s)', (uid, brand_id))
 
             # Insert fashion product
             cursor.execute('''
@@ -667,7 +667,6 @@ def init_stores_tables(app):
         ''')
 
         mysql.connection.commit()
-        print('Stores table initialized successfully')
 
     except Exception as e:
         mysql.connection.rollback()
@@ -715,7 +714,6 @@ def init_brand_tables(app):
         ''')
 
         mysql.connection.commit()
-        print('Brand tables initialized successfully')
 
     except Exception as e:
         mysql.connection.rollback()
@@ -732,11 +730,16 @@ def init_fashion_tables(app):
     try:
         cursor = mysql.connection.cursor()
 
-        # Create uid_record table - maintains unique product identifiers
+        # Create uid_record table - maintains unique product identifiers and brand association
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS uid_record (
                 uid VARCHAR(36) PRIMARY KEY,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                brand_id INT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_uid (uid),
+                INDEX idx_brand_id (brand_id),
+                INDEX idx_brand_uid (brand_id, uid),
+                FOREIGN KEY (brand_id) REFERENCES brand(brand_id) ON DELETE CASCADE
             )
         ''')
 
@@ -816,7 +819,9 @@ def init_fashion_tables(app):
                 brand_id INT NOT NULL,
                 user_id VARCHAR(100),
                 action ENUM('CREATE', 'UPDATE', 'DELETE', 'SYNC', 'INVENTORY') NOT NULL,
-                changes JSON,
+                changed_attribute JSON,
+                update_date DATE DEFAULT (CURRENT_DATE),
+                update_time TIME DEFAULT (CURRENT_TIME),
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 INDEX idx_uid (uid),
                 INDEX idx_brand_id (brand_id),
@@ -833,17 +838,21 @@ def init_fashion_tables(app):
             CREATE TABLE IF NOT EXISTS shopify_product_mapping (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 uid VARCHAR(36) NOT NULL,
+                brand_id INT NOT NULL,
                 shopify_product_id VARCHAR(255) NOT NULL,
                 store_id INT NOT NULL,
                 last_sync_status ENUM('SUCCESS', 'FAILED') DEFAULT 'SUCCESS',
                 sync_error_message LONGTEXT,
+                synced_at TIMESTAMP NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 UNIQUE KEY unique_uid_store (uid, store_id),
                 INDEX idx_uid (uid),
+                INDEX idx_brand_id (brand_id),
                 INDEX idx_shopify_product_id (shopify_product_id),
                 INDEX idx_store_id (store_id),
                 FOREIGN KEY (uid) REFERENCES uid_record(uid) ON DELETE CASCADE,
+                FOREIGN KEY (brand_id) REFERENCES brand(brand_id) ON DELETE CASCADE,
                 FOREIGN KEY (store_id) REFERENCES stores(store_id) ON DELETE CASCADE
             )
         ''')
@@ -854,18 +863,18 @@ def init_fashion_tables(app):
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 idempotency_key VARCHAR(128) NOT NULL,
                 user_id VARCHAR(100) NOT NULL,
-                store_id INT NOT NULL,
+                brand_id INT NOT NULL,
                 response_json LONGTEXT NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE KEY uniq_idem_user_store (idempotency_key, user_id, store_id),
+                UNIQUE KEY uniq_idem_user_brand (idempotency_key, user_id, brand_id),
                 INDEX idx_idempotency_key (idempotency_key),
-                FOREIGN KEY (store_id) REFERENCES stores(store_id) ON DELETE CASCADE,
+                INDEX idx_brand_id (brand_id),
+                FOREIGN KEY (brand_id) REFERENCES brand(brand_id) ON DELETE CASCADE,
                 FOREIGN KEY (user_id) REFERENCES user_creds(user_id) ON DELETE CASCADE
             )
         ''')
 
         mysql.connection.commit()
-        print('Fashion tables initialized successfully')
 
     except Exception as e:
         mysql.connection.rollback()

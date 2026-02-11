@@ -8,3 +8,7 @@ class ShopifyAPIError(Exception):
 
 class ValidationError(Exception):
     """Raised when input validation fails."""
+
+
+class IdempotencyConflict(Exception):
+    """Raised when an idempotency key conflict is detected."""

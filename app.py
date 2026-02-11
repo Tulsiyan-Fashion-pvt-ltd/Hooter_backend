@@ -5,7 +5,7 @@ from hooter_requests import requests #importing the request blueprint from reque
 from database import __init_sql__
 import os
 from brand_handling import brand
-from catalogue import catalogue
+from products import products
 from stores import stores
 from dotenv import load_dotenv
 
@@ -26,7 +26,7 @@ app.config['MYSQL_PORT'] = int(os.environ.get('HOOTER_DB_PORT', '3306'))
 app.register_blueprint(page)
 app.register_blueprint(requests)
 app.register_blueprint(brand)
-app.register_blueprint(catalogue)
+app.register_blueprint(products)
 app.register_blueprint(stores)
 
 
