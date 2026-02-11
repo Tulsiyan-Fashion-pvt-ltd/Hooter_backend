@@ -12,224 +12,135 @@ class CatalogueService:
     """Service for managing catalogue operations with Shopify sync and multi-client support."""
 
     @staticmethod
-    def verify_store_ownership(store_id: int, user_id: str) -> bool:
-        """Verify that a user owns a specific store."""
-        cursor = None
-        try:
-            cursor = mysql.connection.cursor()
-            cursor.execute(
-                'SELECT store_id FROM stores WHERE store_id = %s AND user_id = %s AND is_active = TRUE',
-                (store_id, user_id)
-            )
-            result = cursor.fetchone()
-            return result is not None
-        except Exception as e:
-            print(f'Error verifying store ownership: {str(e)}')
-            return False
-        finally:
-            if cursor:
-                cursor.close()
+    def verify_brand_ownership(brand_id: int, user_id: str) -> bool:
+        """Verify that a user has access to a brand."""
+        from database import Fetch
+        return Fetch.verify_brand_ownership(brand_id, user_id)
 
     @staticmethod
-    def create_catalogue_complete(
+    def create_product_complete(
         title: str,
         description: str,
         vendor: str,
         product_type: str,
         tags: str,
+        brand_id: int,
         store_id: int,
         variants: list,
         images: list,
         user_id: str
     ) -> dict:
         """
-        Complete product creation with variants and images.
-        
-        Args:
-            title: Product title
-            description: Product description
-            vendor: Product vendor/manufacturer
-            product_type: Product category
-            tags: Comma-separated tags
-            store_id: Shopify store ID
-            variants: List of variant dicts with sku, price, etc.
-            images: List of image dicts with image_url, alt_text, position
-            user_id: User ID who owns the store
-        
-        Returns:
-            dict with catalogue_id, shopify_product_id, variants_count, images_count
+        Complete product creation with variants and images, brand-centric.
         """
-        cursor = None
-        try:
-            # STEP 1: Verify ownership
-            if not CatalogueService.verify_store_ownership(store_id, user_id):
-                raise AuthorizationError("Unauthorized: You do not own this store")
-            
-            # STEP 2-4: Get store config + Shopify client
-            store_config = get_store_config(store_id, user_id)
-            shopify_client = store_config["client"]
-            store = store_config["store"]
+        from database import Write, Fetch
+        # STEP 1: Verify brand ownership
+        if not CatalogueService.verify_brand_ownership(brand_id, user_id):
+            raise AuthorizationError("Unauthorized: You do not have access to this brand")
 
-            # STEP 4.1: Validate image URLs (if provided)
-            invalid_images = CatalogueService.validate_image_urls(images)
-            if invalid_images:
-                raise ValidationError(json.dumps({"images": invalid_images}))
-            
-            # STEP 5: Build product input with variants
-            product_input = {
-                "title": title,
-                "descriptionHtml": description,
-                "vendor": vendor,
-                "productType": product_type,
-                "tags": tags.split(",") if tags else [],
-            }
-            
-            # Add variants if provided
-            if variants:
-                product_input["variants"] = [
-                    {
-                        "sku": v.get("sku"),
-                        "price": str(v.get("price")),
-                        "compareAtPrice": str(v.get("compare_at_price")) if v.get("compare_at_price") else None,
-                        "weight": v.get("weight"),
-                        "weightUnit": v.get("weight_unit", "KG").upper()
-                    }
-                    for v in variants
-                ]
-            
-            # STEP 6: Create on Shopify with variants (retry on transient errors)
-            shopify_product = CatalogueService._retry_shopify_call(
-                lambda: shopify_client.create_product_with_variants(product_input)
-            )
-            
-            # STEP 7: Upload images
-            shopify_images = []
-            if images:
-                for img in images:
-                    media = CatalogueService._retry_shopify_call(
-                        lambda: shopify_client.create_product_media(
+        # STEP 2: Get Shopify client
+        store_config = get_store_config(store_id, user_id)
+        shopify_client = store_config["client"]
+
+        # STEP 3: Validate image URLs
+        invalid_images = CatalogueService.validate_image_urls(images)
+        if invalid_images:
+            raise ValidationError(json.dumps({"images": invalid_images}))
+
+        # STEP 4: Build product input
+        product_input = {
+            "title": title,
+            "descriptionHtml": description,
+            "vendor": vendor,
+            "productType": product_type,
+            "tags": tags.split(",") if tags else [],
+        }
+        if variants:
+            product_input["variants"] = [
+                {
+                    "sku": v.get("sku"),
+                    "price": str(v.get("price")),
+                    "compareAtPrice": str(v.get("compare_at_price")) if v.get("compare_at_price") else None,
+                    "weight": v.get("weight"),
+                    "weightUnit": v.get("weight_unit", "KG").upper()
+                }
+                for v in variants
+            ]
+
+        # STEP 5: Create on Shopify
+        shopify_product = CatalogueService._retry_shopify_call(
+            lambda: shopify_client.create_product_with_variants(product_input)
+        )
+
+        # STEP 6: Upload images
+        shopify_images = []
+        if images:
+            for img in images:
+                media = CatalogueService._retry_shopify_call(
+                    lambda: shopify_client.create_product_media(
                         product_id=shopify_product["id"],
                         image_url=img.get("image_url"),
                         alt_text=img.get("alt_text", "Product image")
                     ))
-                    shopify_images.append({
-                        "shopify_media_id": media["id"],
-                        "position": img.get("position", len(shopify_images)),
-                        "image_url": img.get("image_url"),
-                        "alt_text": img.get("alt_text")
-                    })
+                shopify_images.append({
+                    "shopify_media_id": media["id"],
+                    "position": img.get("position", len(shopify_images)),
+                    "image_url": img.get("image_url"),
+                    "alt_text": img.get("alt_text")
+                })
+        if shopify_images:
+            media_ids = [img["shopify_media_id"] for img in sorted(shopify_images, key=lambda x: x["position"])]
+            CatalogueService._retry_shopify_call(
+                lambda: shopify_client.reorder_product_media(shopify_product["id"], media_ids)
+            )
 
-            # Optional: reorder images to desired positions
-            if shopify_images:
-                media_ids = [img["shopify_media_id"] for img in sorted(shopify_images, key=lambda x: x["position"])]
-                CatalogueService._retry_shopify_call(
-                    lambda: shopify_client.reorder_product_media(shopify_product["id"], media_ids)
-                )
-            
-            # STEP 8: Save to database
-            cursor = mysql.connection.cursor()
-            catalogue_id = str(uuid.uuid4())
-            
-            try:
-                # Insert base product
-                cursor.execute(
-                    """
-                    INSERT INTO catalogue (
-                        catalogue_id, store_id, user_id, title, description,
-                        vendor, product_type, tags, status, price
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                    """,
-                    (
-                        catalogue_id, store_id, user_id, title, description,
-                        vendor, product_type, tags, "ACTIVE",
-                        variants[0].get("price") if variants else 0
-                    )
-                )
-                
-                # Insert Shopify mapping
-                cursor.execute(
-                    """
-                    INSERT INTO catalogue_shopify_mapping (
-                        catalogue_id, shopify_product_id, store_id, last_sync_status
-                    ) VALUES (%s, %s, %s, %s)
-                    """,
-                    (catalogue_id, shopify_product["id"], store_id, "SUCCESS")
-                )
-                
-                # Insert variants
-                for shopify_variant in shopify_product["variants"]:
-                    variant_id = str(uuid.uuid4())
-                    cursor.execute(
-                        """
-                        INSERT INTO catalogue_variants (
-                            variant_id, catalogue_id, shopify_variant_id,
-                            sku, price, inventory_item_id, status
-                        ) VALUES (%s, %s, %s, %s, %s, %s, %s)
-                        """,
-                        (
-                            variant_id,
-                            catalogue_id,
-                            shopify_variant["id"],
-                            shopify_variant.get("sku"),
-                            shopify_variant.get("price", 0),
-                            shopify_variant["inventoryItem"]["id"],
-                            "ACTIVE"
-                        )
-                    )
-                
-                # Insert images
-                for img_data in shopify_images:
-                    image_id = str(uuid.uuid4())
-                    cursor.execute(
-                        """
-                        INSERT INTO catalogue_images (
-                            image_id, catalogue_id, shopify_media_id,
-                            image_url, alt_text, position, uploaded_by
-                        ) VALUES (%s, %s, %s, %s, %s, %s, %s)
-                        """,
-                        (
-                            image_id,
-                            catalogue_id,
-                            img_data["shopify_media_id"],
-                            img_data["image_url"],
-                            img_data["alt_text"],
-                            img_data["position"],
-                            user_id
-                        )
-                    )
-                
-                mysql.connection.commit()
-
-                CatalogueService._log_audit(
-                    catalogue_id=catalogue_id,
-                    store_id=store_id,
-                    user_id=user_id,
-                    action="CREATE",
-                    changes={
-                        "shopify_product_id": shopify_product["id"],
-                        "variants_count": len(shopify_product["variants"]),
-                        "images_count": len(shopify_images)
-                    }
-                )
-                
-                return {
-                    "catalogue_id": catalogue_id,
-                    "shopify_product_id": shopify_product["id"],
-                    "variants_count": len(shopify_product["variants"]),
-                    "images_count": len(shopify_images),
-                    "status": "SUCCESS"
-                }
-            
-            except Exception as db_error:
-                mysql.connection.rollback()
-                raise Exception(f"Database operation failed: {str(db_error)}")
-        
-        except Exception:
-            raise
-        
-        finally:
-            if cursor:
-                cursor.close()
+        # STEP 7: Save to DB (fashion, low_resol_images, shopify_product_mapping)
+        import uuid
+        uid = str(uuid.uuid4())
+        Write.create_product(
+            uid=uid,
+            brand_id=brand_id,
+            title=title,
+            description=description,
+            vendor=vendor,
+            product_type=product_type,
+            tags=tags,
+            status="ACTIVE",
+            price=variants[0].get("price") if variants else 0,
+            compare_at_price=variants[0].get("compare_at_price") if variants else None,
+            sku=variants[0].get("sku") if variants else None,
+            weight=variants[0].get("weight") if variants else None,
+            weight_unit=variants[0].get("weight_unit") if variants else None
+        )
+        # Insert images
+        cursor = mysql.connection.cursor()
+        for img_data in shopify_images:
+            cursor.execute(
+                '''INSERT INTO low_resol_images (uid, image_url, position, alt_text) VALUES (%s, %s, %s, %s)''',
+                (uid, img_data["image_url"], img_data["position"], img_data["alt_text"])
+            )
+        # Insert Shopify mapping
+        cursor.execute(
+            '''INSERT INTO shopify_product_mapping (uid, shopify_product_id, store_id, last_sync_status) VALUES (%s, %s, %s, %s)''',
+            (uid, shopify_product["id"], store_id, "SUCCESS")
+        )
+        mysql.connection.commit()
+        # Audit log
+        cursor.execute(
+            '''INSERT INTO product_info_change_stack (uid, brand_id, user_id, action, changes) VALUES (%s, %s, %s, %s, %s)''',
+            (uid, brand_id, user_id, "CREATE", json.dumps({
+                "shopify_product_id": shopify_product["id"],
+                "images_count": len(shopify_images)
+            }))
+        )
+        mysql.connection.commit()
+        cursor.close()
+        return {
+            "uid": uid,
+            "shopify_product_id": shopify_product["id"],
+            "images_count": len(shopify_images),
+            "status": "SUCCESS"
+        }
 
     @staticmethod
     def validate_image_urls(images: list) -> list:
@@ -394,27 +305,23 @@ class CatalogueService:
             cursor.close()
 
     @staticmethod
-    def update_catalogue(catalogue_id: str, user_id: str, payload: dict) -> dict:
-        """Update catalogue and sync to Shopify."""
+    def update_product(uid: str, brand_id: int, user_id: str, payload: dict) -> dict:
+        """Update product and sync to Shopify."""
         cursor = mysql.connection.cursor()
         try:
+            # Ownership check
+            if not CatalogueService.verify_brand_ownership(brand_id, user_id):
+                return {"status": "error", "message": "Unauthorized"}
             cursor.execute(
-                """
-                SELECT c.store_id, m.shopify_product_id
-                FROM catalogue c
-                LEFT JOIN catalogue_shopify_mapping m ON c.catalogue_id = m.catalogue_id
-                WHERE c.catalogue_id = %s AND c.user_id = %s
-                """,
-                (catalogue_id, user_id)
+                '''SELECT spm.store_id, spm.shopify_product_id FROM shopify_product_mapping spm WHERE spm.uid = %s''',
+                (uid,)
             )
             row = cursor.fetchone()
             if not row:
-                return {"status": "error", "message": "Catalogue not found"}
+                return {"status": "error", "message": "Product mapping not found"}
             store_id, shopify_product_id = row
-
             store_config = get_store_config(store_id, user_id)
             shopify_client = store_config["client"]
-
             product_input = {}
             for field, key in [
                 ("title", "title"),
@@ -428,44 +335,27 @@ class CatalogueService:
                         product_input[key] = payload[field].split(",") if payload[field] else []
                     else:
                         product_input[key] = payload[field]
-
             if product_input:
                 shopify_client.update_product(shopify_product_id, product_input)
-
+            # Update local DB
             updates = []
             params = []
-            if "title" in payload:
-                updates.append("title = %s")
-                params.append(payload.get("title"))
-            if "description" in payload:
-                updates.append("description = %s")
-                params.append(payload.get("description"))
-            if "vendor" in payload:
-                updates.append("vendor = %s")
-                params.append(payload.get("vendor"))
-            if "product_type" in payload:
-                updates.append("product_type = %s")
-                params.append(payload.get("product_type"))
-            if "tags" in payload:
-                updates.append("tags = %s")
-                params.append(payload.get("tags"))
-
+            allowed_fields = ["title", "description", "vendor", "product_type", "tags", "status", "price", "compare_at_price", "sku", "barcode", "weight", "weight_unit", "collections", "brand_color", "product_remark", "series_length_ankle", "series_rise_waist", "series_knee", "gender", "fit_type", "print_type", "material", "material_composition", "care_instruction", "art_technique", "stitch_type"]
+            for key in allowed_fields:
+                if key in payload:
+                    updates.append(f'{key} = %s')
+                    params.append(payload[key])
             if updates:
-                params.extend([catalogue_id, user_id])
-                cursor.execute(
-                    f"UPDATE catalogue SET {', '.join(updates)} WHERE catalogue_id = %s AND user_id = %s",
-                    params
-                )
-
+                params.extend([uid, brand_id])
+                cursor.execute(f"UPDATE fashion SET {', '.join(updates)} WHERE uid = %s AND brand_id = %s", params)
             mysql.connection.commit()
-            CatalogueService._log_audit(
-                catalogue_id=catalogue_id,
-                store_id=store_id,
-                user_id=user_id,
-                action="UPDATE",
-                changes=payload
+            # Audit log
+            cursor.execute(
+                '''INSERT INTO product_info_change_stack (uid, brand_id, user_id, action, changes) VALUES (%s, %s, %s, %s, %s)''',
+                (uid, brand_id, user_id, "UPDATE", json.dumps(payload))
             )
-            return {"status": "success", "catalogue_id": catalogue_id}
+            mysql.connection.commit()
+            return {"status": "success", "uid": uid}
         except Exception as e:
             mysql.connection.rollback()
             return {"status": "error", "message": str(e)}
@@ -473,51 +363,40 @@ class CatalogueService:
             cursor.close()
 
     @staticmethod
-    def delete_catalogue(catalogue_id: str, user_id: str, soft_delete: bool = True) -> dict:
-        """Delete or archive catalogue and delete on Shopify."""
+    def delete_product(uid: str, brand_id: int, user_id: str, soft_delete: bool = True) -> dict:
+        """Delete or archive product and delete on Shopify."""
         cursor = mysql.connection.cursor()
         try:
+            if not CatalogueService.verify_brand_ownership(brand_id, user_id):
+                return {"status": "error", "message": "Unauthorized"}
             cursor.execute(
-                """
-                SELECT c.store_id, m.shopify_product_id
-                FROM catalogue c
-                LEFT JOIN catalogue_shopify_mapping m ON c.catalogue_id = m.catalogue_id
-                WHERE c.catalogue_id = %s AND c.user_id = %s
-                """,
-                (catalogue_id, user_id)
+                '''SELECT spm.store_id, spm.shopify_product_id FROM shopify_product_mapping spm WHERE spm.uid = %s''',
+                (uid,)
             )
             row = cursor.fetchone()
             if not row:
-                return {"status": "error", "message": "Catalogue not found"}
+                return {"status": "error", "message": "Product mapping not found"}
             store_id, shopify_product_id = row
-
             store_config = get_store_config(store_id, user_id)
             shopify_client = store_config["client"]
             shopify_client.delete_product(shopify_product_id)
-
             if soft_delete:
                 cursor.execute(
-                    """
-                    UPDATE catalogue SET status = 'ARCHIVED'
-                    WHERE catalogue_id = %s AND user_id = %s
-                    """,
-                    (catalogue_id, user_id)
+                    '''UPDATE fashion SET status = 'ARCHIVED' WHERE uid = %s AND brand_id = %s''',
+                    (uid, brand_id)
                 )
             else:
                 cursor.execute(
-                    "DELETE FROM catalogue WHERE catalogue_id = %s AND user_id = %s",
-                    (catalogue_id, user_id)
+                    '''DELETE FROM fashion WHERE uid = %s AND brand_id = %s''',
+                    (uid, brand_id)
                 )
-
             mysql.connection.commit()
-            CatalogueService._log_audit(
-                catalogue_id=catalogue_id,
-                store_id=store_id,
-                user_id=user_id,
-                action="DELETE",
-                changes={"soft_delete": soft_delete}
+            cursor.execute(
+                '''INSERT INTO product_info_change_stack (uid, brand_id, user_id, action, changes) VALUES (%s, %s, %s, %s, %s)''',
+                (uid, brand_id, user_id, "DELETE", json.dumps({"soft_delete": soft_delete}))
             )
-            return {"status": "success", "catalogue_id": catalogue_id}
+            mysql.connection.commit()
+            return {"status": "success", "uid": uid}
         except Exception as e:
             mysql.connection.rollback()
             return {"status": "error", "message": str(e)}
@@ -525,191 +404,20 @@ class CatalogueService:
             cursor.close()
 
     @staticmethod
-    def get_catalogue_by_id(catalogue_id: str, user_id: str = None) -> dict:
-        """
-        Retrieve catalogue details by ID with optional user ownership check.
-
-        Args:
-            catalogue_id: UUID of the catalogue
-            user_id: Optional user ID to verify ownership
-
-        Returns:
-            dict: Catalogue data with Shopify mapping, variants, and images
-        """
-        cursor = None
-        try:
-            cursor = mysql.connection.cursor()
-            
-            if user_id:
-                cursor.execute(
-                    """
-                    SELECT c.catalogue_id, c.store_id, c.title, c.description, c.price,
-                           c.vendor, c.product_type, c.tags, c.status, c.user_id, c.created_at,
-                           m.shopify_product_id, m.last_sync_status
-                    FROM catalogue c
-                    LEFT JOIN catalogue_shopify_mapping m ON c.catalogue_id = m.catalogue_id
-                    WHERE c.catalogue_id = %s AND c.user_id = %s
-                    """,
-                    (catalogue_id, user_id)
-                )
-            else:
-                cursor.execute(
-                    """
-                    SELECT c.catalogue_id, c.store_id, c.title, c.description, c.price,
-                           c.vendor, c.product_type, c.tags, c.status, c.user_id, c.created_at,
-                           m.shopify_product_id, m.last_sync_status
-                    FROM catalogue c
-                    LEFT JOIN catalogue_shopify_mapping m ON c.catalogue_id = m.catalogue_id
-                    WHERE c.catalogue_id = %s
-                    """,
-                    (catalogue_id,)
-                )
-
-            result = cursor.fetchone()
-            if result:
-                # Fetch variants for this product
-                cursor.execute(
-                    """
-                    SELECT variant_id, sku, price, title, status
-                    FROM catalogue_variants
-                    WHERE catalogue_id = %s
-                    """,
-                    (catalogue_id,)
-                )
-                variants = [
-                    {
-                        "variant_id": row[0],
-                        "sku": row[1],
-                        "price": row[2],
-                        "title": row[3],
-                        "status": row[4]
-                    }
-                    for row in cursor.fetchall()
-                ]
-                
-                # Fetch images for this product
-                cursor.execute(
-                    """
-                    SELECT image_id, image_url, alt_text, position
-                    FROM catalogue_images
-                    WHERE catalogue_id = %s
-                    ORDER BY position
-                    """,
-                    (catalogue_id,)
-                )
-                images = [
-                    {
-                        "image_id": row[0],
-                        "image_url": row[1],
-                        "alt_text": row[2],
-                        "position": row[3]
-                    }
-                    for row in cursor.fetchall()
-                ]
-                
-                return {
-                    "catalogue_id": result[0],
-                    "store_id": result[1],
-                    "title": result[2],
-                    "description": result[3],
-                    "price": result[4],
-                    "vendor": result[5],
-                    "product_type": result[6],
-                    "tags": result[7],
-                    "status": result[8],
-                    "user_id": result[9],
-                    "created_at": result[10],
-                    "shopify_product_id": result[11],
-                    "sync_status": result[12],
-                    "variants": variants,
-                    "images": images
-                }
+    def get_product_by_uid(uid: str, brand_id: int, user_id: str) -> dict:
+        """Retrieve product details by UID and brand, with ownership check."""
+        from database import Fetch
+        if not CatalogueService.verify_brand_ownership(brand_id, user_id):
             return None
-
-        finally:
-            if cursor:
-                cursor.close()
+        return Fetch.get_product_by_uid(uid, brand_id)
 
     @staticmethod
-    def list_catalogues(
-        user_id: str,
-        store_id: int = None,
-        limit: int = 50,
-        offset: int = 0,
-        status: str = None,
-        search: str = None
-    ) -> list:
-        """
-        Retrieve catalogue list for a user with optional store filtering.
-
-        Args:
-            user_id: User ID (required for security)
-            store_id: Optional filter by specific store
-            limit: Number of records to return
-            offset: Pagination offset
-
-        Returns:
-            list: Catalogue records with variants and images count
-        """
-        cursor = None
-        try:
-            cursor = mysql.connection.cursor()
-
-            where_clauses = ["c.user_id = %s"]
-            params = [user_id]
-
-            if store_id:
-                where_clauses.append("c.store_id = %s")
-                params.append(store_id)
-
-            if status:
-                where_clauses.append("c.status = %s")
-                params.append(status.upper())
-
-            if search:
-                where_clauses.append("(c.title LIKE %s OR c.vendor LIKE %s OR c.tags LIKE %s)")
-                search_term = f"%{search}%"
-                params.extend([search_term, search_term, search_term])
-
-            query = f"""
-                SELECT c.catalogue_id, c.store_id, c.title, c.price,
-                       c.vendor, c.status, c.user_id, c.created_at,
-                       m.shopify_product_id,
-                       COUNT(DISTINCT cv.variant_id) as variant_count,
-                       COUNT(DISTINCT ci.image_id) as image_count
-                FROM catalogue c
-                LEFT JOIN catalogue_shopify_mapping m ON c.catalogue_id = m.catalogue_id
-                LEFT JOIN catalogue_variants cv ON c.catalogue_id = cv.catalogue_id
-                LEFT JOIN catalogue_images ci ON c.catalogue_id = ci.catalogue_id
-                WHERE {' AND '.join(where_clauses)}
-                GROUP BY c.catalogue_id
-                ORDER BY c.created_at DESC
-                LIMIT %s OFFSET %s
-            """
-            params.extend([limit, offset])
-            cursor.execute(query, tuple(params))
-
-            results = cursor.fetchall()
-            return [
-                {
-                    "catalogue_id": row[0],
-                    "store_id": row[1],
-                    "title": row[2],
-                    "price": row[3],
-                    "vendor": row[4],
-                    "status": row[5],
-                    "user_id": row[6],
-                    "created_at": row[7],
-                    "shopify_product_id": row[8],
-                    "variants_count": row[9],
-                    "images_count": row[10]
-                }
-                for row in results
-            ]
-
-        finally:
-            if cursor:
-                cursor.close()
+    def list_products(brand_id: int, user_id: str, limit: int = 50, offset: int = 0, status: str = None, search: str = None) -> list:
+        """List products for a brand with optional filtering and ownership check."""
+        from database import Fetch
+        if not CatalogueService.verify_brand_ownership(brand_id, user_id):
+            return []
+        return Fetch.list_products(brand_id, limit, offset, status, search)
 
     @staticmethod
     def update_catalogue_from_webhook(payload: dict) -> dict:

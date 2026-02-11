@@ -35,9 +35,9 @@ def _require_auth(f):
     return decorated_function
 
 
-@catalogue.route("/catalogue", methods=["POST"])
+@catalogue.route("/products", methods=["POST"])
 @_require_auth
-def create_catalogue(user_id):
+def create_product(user_id):
     """
     Create a new catalogue entry with variants and images, then sync to Shopify.
 
@@ -86,57 +86,32 @@ def create_catalogue(user_id):
         vendor = str(data.get("vendor", "")).strip()
         product_type = str(data.get("product_type", "")).strip()
         tags = str(data.get("tags", "")).strip()
+        brand_id = data.get("brand_id")
         store_id = data.get("store_id")
         variants = data.get("variants", [])
         images = data.get("images", [])
-
-        # Validate required fields
         if not title or not description:
-            return jsonify({
-                "status": "error",
-                "message": "title and description are required"
-            }), 400
-
-        if store_id is None:
-            return jsonify({
-                "status": "error",
-                "message": "store_id is required"
-            }), 400
-
-        # Idempotency support
-        idempotency_key = request.headers.get("Idempotency-Key")
-        cached_response = CatalogueService._get_or_create_idempotency(
-            idempotency_key=idempotency_key,
-            user_id=user_id,
-            store_id=store_id
-        )
-        if cached_response:
-            return jsonify({"status": "success", "data": cached_response}), 200
-
-        # Create catalogue with complete data
-        result = CatalogueService.create_catalogue_complete(
-            title=title,
-            description=description,
-            vendor=vendor,
-            product_type=product_type,
-            tags=tags,
-            store_id=store_id,
-            variants=variants,
-            images=images,
-            user_id=user_id
-        )
-
-        CatalogueService._store_idempotency_response(
-            idempotency_key=idempotency_key,
-            user_id=user_id,
-            store_id=store_id,
-            response_payload=result
-        )
-
-        return jsonify({
-            "status": "success",
-            "data": result
-        }), 201
+            return jsonify({"status": "error", "message": "title and description are required"}), 400
+        if brand_id is None or store_id is None:
+            return jsonify({"status": "error", "message": "brand_id and store_id are required"}), 400
+        try:
+            result = CatalogueService.create_product_complete(
+                title=title,
+                description=description,
+                vendor=vendor,
+                product_type=product_type,
+                tags=tags,
+                brand_id=brand_id,
+                store_id=store_id,
+                variants=variants,
+                images=images,
+                user_id=user_id
+            )
+        except (AuthorizationError, ShopifyAPIError, ValidationError) as exc:
+            return jsonify({"status": "error", "message": str(exc)}), 400
+        except Exception as exc:
+            return jsonify({"status": "error", "message": f"Internal error: {exc}"}), 500
+        return jsonify({"status": "success", **result}), 201
 
     except ValueError as ve:
         # Validation error
@@ -183,9 +158,9 @@ def create_catalogue(user_id):
         }), 500
 
 
-@catalogue.route("/catalogue/<catalogue_id>", methods=["GET"])
+@catalogue.route("/products/<uid>", methods=["GET"])
 @_require_auth
-def get_catalogue(user_id, catalogue_id):
+def get_product_by_uid(user_id, uid):
     """
     Retrieve catalogue details by ID.
     User can only access their own catalogues.
@@ -197,18 +172,13 @@ def get_catalogue(user_id, catalogue_id):
         JSON response with catalogue data
     """
     try:
-        result = CatalogueService.get_catalogue_by_id(catalogue_id, user_id)
-
+        brand_id = request.args.get("brand_id", type=int)
+        if not brand_id:
+            return jsonify({"status": "error", "message": "brand_id is required"}), 400
+        result = CatalogueService.get_product_by_uid(uid, brand_id, user_id)
         if not result:
-            return jsonify({
-                "status": "error",
-                "message": "Catalogue not found or access denied"
-            }), 404
-
-        return jsonify({
-            "status": "success",
-            "data": result
-        }), 200
+            return jsonify({"status": "error", "message": "Product not found"}), 404
+        return jsonify({"status": "success", "data": result}), 200
 
     except Exception as e:
         print(f"Error retrieving catalogue: {str(e)}")
@@ -218,9 +188,9 @@ def get_catalogue(user_id, catalogue_id):
         }), 500
 
 
-@catalogue.route("/catalogues", methods=["GET"])
+@catalogue.route("/products", methods=["GET"])
 @_require_auth
-def list_catalogues(user_id):
+def list_products(user_id):
     """
     List catalogues for authenticated user.
 
@@ -233,39 +203,22 @@ def list_catalogues(user_id):
         JSON response with catalogue list
     """
     try:
-        store_id = request.args.get("store_id", type=int)
-        limit = int(request.args.get("limit", 50))
-        offset = int(request.args.get("offset", 0))
+        brand_id = request.args.get("brand_id", type=int)
         status = request.args.get("status")
         search = request.args.get("search")
-
-        # Validate pagination parameters
-        limit = min(limit, 100)  # Max 100 records per request
-        offset = max(offset, 0)
-
-        # If store_id provided, verify user owns it
-        if store_id:
-            store = Fetch.get_store_by_id(store_id, user_id)
-            if not store:
-                return jsonify({
-                    "status": "error",
-                    "message": "Store not found or access denied"
-                }), 403
-
-        results = CatalogueService.list_catalogues(
+        limit = request.args.get("limit", 50, type=int)
+        offset = request.args.get("offset", 0, type=int)
+        if not brand_id:
+            return jsonify({"status": "error", "message": "brand_id is required"}), 400
+        result = CatalogueService.list_products(
+            brand_id=brand_id,
             user_id=user_id,
-            store_id=store_id,
-            limit=limit,
-            offset=offset,
             status=status,
-            search=search
+            search=search,
+            limit=limit,
+            offset=offset
         )
-
-        return jsonify({
-            "status": "success",
-            "data": results,
-            "count": len(results)
-        }), 200
+        return jsonify({"status": "success", "data": result, "count": len(result)}), 200
 
     except ValueError as ve:
         return jsonify({
@@ -307,13 +260,16 @@ def get_user_stores(user_id):
         }), 500
 
 
-@catalogue.route("/catalogue/<catalogue_id>", methods=["PATCH"])
+@catalogue.route("/products/<uid>", methods=["PATCH"])
 @_require_auth
-def update_catalogue(user_id, catalogue_id):
+def update_product(user_id, uid):
     """Update catalogue and sync to Shopify."""
     try:
         data = request.get_json() or {}
-        result = CatalogueService.update_catalogue(catalogue_id, user_id, data)
+        brand_id = data.get("brand_id")
+        if not brand_id:
+            return jsonify({"status": "error", "message": "brand_id is required"}), 400
+        result = CatalogueService.update_product(uid, brand_id, user_id, data)
         status_code = 200 if result.get("status") == "success" else 400
         return jsonify(result), status_code
     except AuthorizationError as ae:
@@ -327,13 +283,16 @@ def update_catalogue(user_id, catalogue_id):
         }), 500
 
 
-@catalogue.route("/catalogue/<catalogue_id>", methods=["DELETE"])
+@catalogue.route("/products/<uid>", methods=["DELETE"])
 @_require_auth
-def delete_catalogue(user_id, catalogue_id):
+def delete_product(user_id, uid):
     """Delete or archive catalogue and Shopify product."""
     try:
+        brand_id = request.args.get("brand_id", type=int)
         soft_delete = request.args.get("soft", "true").lower() == "true"
-        result = CatalogueService.delete_catalogue(catalogue_id, user_id, soft_delete=soft_delete)
+        if not brand_id:
+            return jsonify({"status": "error", "message": "brand_id is required"}), 400
+        result = CatalogueService.delete_product(uid, brand_id, user_id, soft_delete=soft_delete)
         status_code = 200 if result.get("status") == "success" else 400
         return jsonify(result), status_code
     except AuthorizationError as ae:
@@ -368,9 +327,9 @@ def sync_inventory(user_id, catalogue_id):
         }), 500
 
 
-@catalogue.route("/catalogue/bulk", methods=["POST"])
+@catalogue.route("/products/bulk", methods=["POST"])
 @_require_auth
-def bulk_create_catalogue(user_id):
+def bulk_create_product(user_id):
     """Bulk create catalogues."""
     try:
         data = request.get_json() or {}
@@ -380,12 +339,13 @@ def bulk_create_catalogue(user_id):
 
         results = []
         for item in items:
-            result = CatalogueService.create_catalogue_complete(
+            result = CatalogueService.create_product_complete(
                 title=str(item.get("title", "")).strip(),
                 description=str(item.get("description", "")).strip(),
                 vendor=str(item.get("vendor", "")).strip(),
                 product_type=str(item.get("product_type", "")).strip(),
                 tags=str(item.get("tags", "")).strip(),
+                brand_id=item.get("brand_id"),
                 store_id=item.get("store_id"),
                 variants=item.get("variants", []),
                 images=item.get("images", []),
