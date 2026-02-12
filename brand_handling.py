@@ -1,5 +1,5 @@
 from flask import Blueprint, session, request, jsonify
-from database import mysql, Write as write_db, Fetch as fetch_db
+from database import mysql, Userdb
 from helper import User, Helper
 import uuid
 import datetime
@@ -7,6 +7,8 @@ import json
 from helper import User, Brand
 
 brand = Blueprint('brand', __name__)
+
+
 
 # handling the database quiries related to brands to handle brands
 class Write:
@@ -82,7 +84,7 @@ async def register_entity():
 
 
     # only allow the super_admin user to use this route
-    user_access = fetch_db.user_access(session.get('user'))
+    user_access = Userdb.Fetch().user_access(session.get('user'))
     if (user_access == None or user_access != 'super_admin'):
         return jsonify({'status': 'access denied', 'message': 'you do not have the access kindly contact Hooter super admins'}), 401
 
@@ -151,7 +153,7 @@ async def register_entity():
                 'designation': poc_data['designation'] if poc_data['designation'] and poc_data['designation'] != '' else None,
                 'hashed_password': User.hash_password(poc_data.get('password'))
                 }
-            write_db.signup_user(user_creds)
+            Userdb.Write().signup_user(user_creds)
             Write.map_user_brand(poc_user_id, brand_id)
 
         return jsonify({

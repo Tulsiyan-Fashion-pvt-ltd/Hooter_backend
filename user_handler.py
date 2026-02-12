@@ -1,8 +1,11 @@
 from flask import Blueprint, request, Response, jsonify, session
-from database import Write, Fetch
+from database import Userdb
 from helper import Validate, User, Helper
 
 handle_user = Blueprint('handle_user', __name__)
+
+Write = Userdb.Write()
+Fetch = Userdb.Fetch()
 
 @handle_user.route('/signup', methods=['POST'])
 async def signup():
