@@ -1,91 +1,263 @@
 {
   "niche": [
     {
-      "fashion": [
-        {
-          "apparel": {
-            "tops": ["men", "women", "kids", "unisex"],
-            "bottoms": ["men", "women", "kids", "unisex"],
-            "outerwear": ["men", "women", "kids", "unisex"],
-            "ethnic_wear": ["men", "women", "kids"],
-            "activewear": ["men", "women", "kids", "unisex"],
-            "innerwear": ["men", "women", "kids", "unisex"],
-            "loungewear": ["men", "women", "kids", "unisex"],
-            "formal_wear": ["men", "women", "kids"],
-            "casual_wear": ["men", "women", "kids", "unisex"],
-            "streetwear": ["men", "women", "kids", "unisex"]
-          },
-          "footwear": {
-            "sneakers": ["men", "women", "kids", "unisex"],
-            "formal_shoes": ["men", "women"],
-            "casual_shoes": ["men", "women", "kids", "unisex"],
-            "boots": ["men", "women", "kids"],
-            "sandals": ["men", "women", "kids", "unisex"],
-            "slippers": ["men", "women", "kids", "unisex"]
-          },
-          "accessories": {
-            "bags": ["men", "women", "kids", "unisex"],
-            "watches": ["men", "women", "kids", "unisex"],
-            "belts": ["men", "women"],
-            "wallets": ["men", "women"],
-            "caps": ["men", "women", "kids", "unisex"],
-            "sunglasses": ["men", "women", "kids", "unisex"],
-            "jewelry": ["women", "kids"],
-            "scarves": ["men", "women", "kids", "unisex"]
-          }
+      "fashion": {
+        "apparel": {
+          "tops": [
+            "men",
+            "women",
+            "kids",
+            "unisex"
+          ],
+          "bottoms": [
+            "men",
+            "women",
+            "kids",
+            "unisex"
+          ],
+          "outerwear": [
+            "men",
+            "women",
+            "kids",
+            "unisex"
+          ],
+          "ethnic_wear": [
+            "men",
+            "women",
+            "kids"
+          ],
+          "activewear": [
+            "men",
+            "women",
+            "kids",
+            "unisex"
+          ],
+          "innerwear": [
+            "men",
+            "women",
+            "kids",
+            "unisex"
+          ],
+          "loungewear": [
+            "men",
+            "women",
+            "kids",
+            "unisex"
+          ],
+          "formal_wear": [
+            "men",
+            "women",
+            "kids"
+          ],
+          "casual_wear": [
+            "men",
+            "women",
+            "kids",
+            "unisex"
+          ],
+          "streetwear": [
+            "men",
+            "women",
+            "kids",
+            "unisex"
+          ]
         },
-        {
-          "luxury": {
-            "designer_clothing": ["men", "women", "kids"],
-            "designer_bags": ["women", "men"],
-            "designer_shoes": ["men", "women"],
-            "luxury_watches": ["men", "women"],
-            "high_end_accessories": ["men", "women"]
-          }
+        "footwear": {
+          "sneakers": [
+            "men",
+            "women",
+            "kids",
+            "unisex"
+          ],
+          "formal_shoes": [
+            "men",
+            "women"
+          ],
+          "casual_shoes": [
+            "men",
+            "women",
+            "kids",
+            "unisex"
+          ],
+          "boots": [
+            "men",
+            "women",
+            "kids"
+          ],
+          "sandals": [
+            "men",
+            "women",
+            "kids",
+            "unisex"
+          ],
+          "slippers": [
+            "men",
+            "women",
+            "kids",
+            "unisex"
+          ]
         },
-        {
-          "fast_fashion": {
-            "trendy_clothing": ["men", "women", "kids"],
-            "budget_footwear": ["men", "women", "kids"],
-            "fast_accessories": ["men", "women", "kids"]
-          }
+        "accessories": {
+          "bags": [
+            "men",
+            "women",
+            "kids",
+            "unisex"
+          ],
+          "watches": [
+            "men",
+            "women",
+            "kids",
+            "unisex"
+          ],
+          "belts": [
+            "men",
+            "women"
+          ],
+          "wallets": [
+            "men",
+            "women"
+          ],
+          "caps": [
+            "men",
+            "women",
+            "kids",
+            "unisex"
+          ],
+          "sunglasses": [
+            "men",
+            "women",
+            "kids",
+            "unisex"
+          ],
+          "jewelry": [
+            "women",
+            "kids"
+          ],
+          "scarves": [
+            "men",
+            "women",
+            "kids",
+            "unisex"
+          ]
         },
-        {
-          "sustainable_fashion": {
-            "organic_clothing": ["men", "women", "kids"],
-            "recycled_fashion": ["men", "women", "kids"],
-            "eco_friendly_accessories": ["men", "women", "kids"]
-          }
+        "luxury": {
+          "designer_clothing": [
+            "men",
+            "women",
+            "kids"
+          ],
+          "designer_bags": [
+            "women",
+            "men"
+          ],
+          "designer_shoes": [
+            "men",
+            "women"
+          ],
+          "luxury_watches": [
+            "men",
+            "women"
+          ],
+          "high_end_accessories": [
+            "men",
+            "women"
+          ]
         },
-        {
-          "plus_size": {
-            "plus_size_clothing": ["men", "women"],
-            "plus_size_footwear": ["men", "women"],
-            "plus_size_innerwear": ["men", "women"]
-          }
+        "fast_fashion": {
+          "trendy_clothing": [
+            "men",
+            "women",
+            "kids"
+          ],
+          "budget_footwear": [
+            "men",
+            "women",
+            "kids"
+          ],
+          "fast_accessories": [
+            "men",
+            "women",
+            "kids"
+          ]
         },
-        {
-          "seasonal_wear": {
-            "winter_wear": ["men", "women", "kids", "unisex"],
-            "summer_wear": ["men", "women", "kids", "unisex"],
-            "rain_wear": ["men", "women", "kids", "unisex"]
-          }
+        "sustainable_fashion": {
+          "organic_clothing": [
+            "men",
+            "women",
+            "kids"
+          ],
+          "recycled_fashion": [
+            "men",
+            "women",
+            "kids"
+          ],
+          "eco_friendly_accessories": [
+            "men",
+            "women",
+            "kids"
+          ]
         },
-        {
-          "custom_tailored": {
-            "tailored_suits": ["men", "women"],
-            "custom_shirts": ["men", "women"],
-            "custom_ethnic": ["men", "women"]
-          }
+        "plus_size": {
+          "plus_size_clothing": [
+            "men",
+            "women"
+          ],
+          "plus_size_footwear": [
+            "men",
+            "women"
+          ],
+          "plus_size_innerwear": [
+            "men",
+            "women"
+          ]
         },
-        {
-          "kids_fashion": {
-            "boys_clothing": ["kids"],
-            "girls_clothing": ["kids"],
-            "baby_clothing": ["kids"]
-          }
+        "seasonal_wear": {
+          "winter_wear": [
+            "men",
+            "women",
+            "kids",
+            "unisex"
+          ],
+          "summer_wear": [
+            "men",
+            "women",
+            "kids",
+            "unisex"
+          ],
+          "rain_wear": [
+            "men",
+            "women",
+            "kids",
+            "unisex"
+          ]
+        },
+        "custom_tailored": {
+          "tailored_suits": [
+            "men",
+            "women"
+          ],
+          "custom_shirts": [
+            "men",
+            "women"
+          ],
+          "custom_ethnic": [
+            "men",
+            "women"
+          ]
+        },
+        "kids_fashion": {
+          "boys_clothing": [
+            "kids"
+          ],
+          "girls_clothing": [
+            "kids"
+          ],
+          "baby_clothing": [
+            "kids"
+          ]
         }
-      ]
+      }
     }
   ]
 }

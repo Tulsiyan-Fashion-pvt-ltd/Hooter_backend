@@ -2,6 +2,7 @@ import uuid
 import datetime
 import re
 import hashlib
+import json
 
 class User:
     
@@ -64,7 +65,36 @@ class Helper:
         return all(key in json for key in keys)
 
 
+class Brand:
+    @staticmethod
+    def create_id() -> str:
+        prefix = 'brand_'
+
+        unique_id = str(uuid.uuid4())[:14]
+        date = str(datetime.datetime.now().date()).replace('-', '')
+        id = prefix+unique_id+date
+        return id
+    
+    @staticmethod
+    def fetch_niches() -> list:
+        try:
+            with open('./niche.json', 'r')as file:
+                read = json.load(file)
+            return (list(read.get('niche')[0].keys()))
+        except Exception as e:
+            print(f"error while reading the niche.json file as \n{e}")
+            return list()
+
+    @staticmethod
+    def access_specifiers():
+        #access specifiers
+        user_access_specifiers=None
+        with open('./access_specifiers.json', 'r') as file:
+            user_access_specifiers = json.load(file)
+        access_specifier = user_access_specifiers.get('access')
+        return access_specifier
+
 
 
 if __name__ == "__main__":
-    print(Helper.check_required_payload({'name': 'farhan', 'num': '123'}, ['name', 'email']))
+    print(Brand.access_specifiers())

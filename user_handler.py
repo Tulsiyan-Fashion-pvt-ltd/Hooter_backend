@@ -2,9 +2,9 @@ from flask import Blueprint, request, Response, jsonify, session
 from database import Write, Fetch
 from helper import Validate, User, Helper
 
-requests = Blueprint('request', __name__)
+handle_user = Blueprint('handle_user', __name__)
 
-@requests.route('/signup', methods=['POST'])
+@handle_user.route('/signup', methods=['POST'])
 async def signup():
     data = request.get_json()
     name=data.get('name')
@@ -40,7 +40,7 @@ async def signup():
 
 
 
-@requests.route('/login', methods=['POST'])
+@handle_user.route('/login', methods=['POST'])
 async def login():
     #get the date from the api request
     data = request.get_json()
@@ -70,7 +70,7 @@ async def login():
         return jsonify({'status': 'bad request', 'message': 'invalid email'}), 400
     
 # request to fetch user session
-@requests.route('/session', methods=['GET'])
+@handle_user.route('/session', methods=['GET'])
 async def check_session():
     user = session.get('user')
 
@@ -80,13 +80,13 @@ async def check_session():
         return jsonify({'login': 'deny'}), 401
     
 
-@requests.route('/logout')
+@handle_user.route('/logout')
 def logout():
     session.clear()
     return jsonify({'status': 'ok', 'message': 'user logout'}), 200
 
 
-@requests.route('/request-user-credentials')
+@handle_user.route('/request-user-credentials')
 async def fetch_user_creds():
     user = session.get('user')
     if user==None:

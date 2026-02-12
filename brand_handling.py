@@ -4,7 +4,7 @@ from helper import User, Helper
 import uuid
 import datetime
 import json
-from helper import User
+from helper import User, Brand
 
 brand = Blueprint('brand', __name__)
 
@@ -71,27 +71,6 @@ class Fetch:
     pass
 
 
-class Brand:
-    @staticmethod
-    def create_id() -> str:
-        prefix = 'brand_'
-
-        unique_id = str(uuid.uuid4())[:14]
-        date = str(datetime.datetime.now().date()).replace('-', '')
-        id = prefix+unique_id+date
-        return id
-    
-    @staticmethod
-    def fetch_niches() -> list:
-        try:
-            with open('./niche.json', 'r')as file:
-                read = json.load(file)
-            return (list(read.get('niche')[0].keys()))
-        except Exception as e:
-            print(f"error while reading the niche.json file as \n{e}")
-            return list()
-
-
 # route to register the business
 @brand.route('/register', methods=['POST'])
 async def register_entity():
@@ -156,11 +135,8 @@ async def register_entity():
             poc_user_id = User.create_userid()
             poc_data['user_id'] = poc_user_id
 
-            #access specifiers
-            user_access_specifiers=None
-            with open('./access_specifiers.json', 'r') as file:
-                user_access_specifiers = json.load(file)
-            access_specifier = user_access_specifiers.get('access')
+            # fetch access allower access_specifiers
+            access_specifier = Brand.access_specifiers()
             
             # checking if user specified the access
             if poc_data['access'] not in access_specifier or poc_data.get('password')==None:
