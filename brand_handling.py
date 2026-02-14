@@ -1,5 +1,5 @@
 from flask import Blueprint, session, request, jsonify
-from database import mysql
+from database import mysql, Write
 import uuid
 import datetime
 import json
@@ -37,15 +37,29 @@ class Brand:
 
 # route to register the business
 @brand.route('/register', methods=['POST'])
-async def register_entity():
-    response = request.get_json()
+def register_entity():
+    user_id = session.get('user')
+    if not user_id:
+        return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
 
-    print(response.get('poc'))
-    return jsonify({'status': 'ok'}), 200
+    data = request.get_json()
+    if not data:
+        return jsonify({'status': 'error', 'message': 'No data provided'}), 400
+
+    brand_name = data.get('brand_name')
+    if not brand_name:
+        return jsonify({'status': 'error', 'message': 'brand_name is required'}), 400
+
+    # Create the brand
+    result = Write.create_brand(brand_name, user_id)
+    if result.get('status') == 'ok':
+        return jsonify(result), 201
+    else:
+        return jsonify(result), 400
 
 
 @brand.route('/request-niches', methods=['GET'])
-async def request_niches():
+def request_niches():
     niches = Brand.fetch_niches()
     return jsonify({'status': 'ok', "niches": niches}), 200
 

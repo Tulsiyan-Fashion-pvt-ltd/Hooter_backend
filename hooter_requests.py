@@ -5,6 +5,61 @@ from services.shopify_helpers import validate_shopify_token, ShopifyAPIError
 
 requests = Blueprint('request', __name__)
 
+@requests.route('/register', methods=['POST'])
+def register():
+    """
+    Register a new user (alias for /signup for API compatibility).
+    
+    Required JSON fields:
+    {
+        "email": "user@example.com",
+        "password": "SecurePass123",
+        "name": "John Doe" (optional),
+        "number": "1234567890" (optional),
+        "designation": "Owner" (optional, default: "Owner")
+    }
+    """
+    data = request.get_json()
+    name = data.get('name', '')
+    number = data.get('number', '')
+    email = data.get('email')
+    password = data.get('password')
+    designation = data.get('designation', 'Owner')
+    
+    # Validate required fields
+    if not email or not password:
+        return jsonify({
+            'status': 'error',
+            'message': 'email and password are required'
+        }), 400
+    
+    # Validate email format
+    if not Validate.email(email):
+        return jsonify({'status': 'error', 'message': 'invalid email format'}), 400
+    
+    # Validate phone number if provided
+    if number and not Validate.in_phone_num(number):
+        return jsonify({'status': 'error', 'message': 'invalid phone number'}), 400
+    
+    # Create user
+    user_creds = {
+        'name': name or email.split('@')[0],
+        'userid': User.create_userid(),
+        'number': number or '',
+        'email': email,
+        'hashed_password': User.hash_password(password),
+        'designation': designation
+    }
+    
+    response = Write.signup_user(user_creds)
+    
+    if response and response.get('status') == 'error':
+        if response.get('message') == 'user_already_registered':
+            return jsonify({'status': 'already_registered'}), 409
+        return jsonify(response), 400
+    
+    return jsonify({'status': 'ok', 'message': 'User registered successfully'}), 200
+
 @requests.route('/signup', methods=['POST'])
 def signup():
     data = request.get_json()

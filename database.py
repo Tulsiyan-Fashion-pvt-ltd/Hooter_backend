@@ -5,6 +5,7 @@ mysql = MySQL()
 def __init_sql__(app):
     mysql.init_app(app)
     # SQL initialized
+    init_users_tables(app)
     init_brand_tables(app)
     init_stores_tables(app)
     init_fashion_tables(app)
@@ -509,7 +510,7 @@ class Fetch:
         cursor = mysql.connection.cursor()
         try:
             cursor.execute(
-                'SELECT id FROM brand_access WHERE brand_id = %s AND user_id = %s',
+                'SELECT brand_id FROM brand_access WHERE brand_id = %s AND user_id = %s',
                 (brand_id, user_id)
             )
             result = cursor.fetchone()
@@ -671,6 +672,52 @@ def init_stores_tables(app):
     except Exception as e:
         mysql.connection.rollback()
         print(f'Error initializing stores table: {str(e)}')
+
+    finally:
+        if cursor:
+            cursor.close()
+
+
+def init_users_tables(app):
+    """Initialize users and user credentials tables for authentication and multi-user support."""
+    cursor = None
+    try:
+        cursor = mysql.connection.cursor()
+
+        # Create users table - core authentication data
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                user_id VARCHAR(100) PRIMARY KEY,
+                user_password LONGTEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                INDEX idx_user_id (user_id)
+            ) ENGINE=InnoDB
+        ''')
+
+        # Create user_creds table - user profile and metadata
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS user_creds (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id VARCHAR(100) NOT NULL UNIQUE,
+                user_name VARCHAR(255),
+                phone_number VARCHAR(20),
+                user_email VARCHAR(255) NOT NULL UNIQUE,
+                user_access VARCHAR(50) DEFAULT 'user',
+                user_designation VARCHAR(100),
+                created_at DATE DEFAULT (CURDATE()),
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                INDEX idx_user_id (user_id),
+                INDEX idx_user_email (user_email),
+                FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+            ) ENGINE=InnoDB
+        ''')
+
+        mysql.connection.commit()
+
+    except Exception as e:
+        mysql.connection.rollback()
+        print(f'Error initializing users tables: {str(e)}')
 
     finally:
         if cursor:
