@@ -47,8 +47,8 @@ class TokenEncryption:
         if not token:
             return None
 
-        # Temporarily return plain token for testing
-        return token
+        cipher = TokenEncryption.get_cipher()
+        return cipher.encrypt(token.encode()).decode()
     
     @staticmethod
     def decrypt_token(encrypted_token: str) -> str:
@@ -65,5 +65,5 @@ class TokenEncryption:
         if not encrypted_token:
             return None
 
-        # Temporarily return plain token for testing
-        return encrypted_token
+        cipher = TokenEncryption.get_cipher()
+        return cipher.decrypt(encrypted_token.encode()).decode()

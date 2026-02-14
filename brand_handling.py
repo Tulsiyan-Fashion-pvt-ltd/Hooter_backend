@@ -1,17 +1,10 @@
 from flask import Blueprint, session, request, jsonify
-from database import mysql, Write
+from database import mysql, Write, Fetch
 import uuid
 import datetime
 import json
 
 brand = Blueprint('brand', __name__)
-
-# handling the database quiries related to brands to handle brands
-class Write:
-    pass
-
-class Fetch:
-    pass
 
 
 class Brand:
