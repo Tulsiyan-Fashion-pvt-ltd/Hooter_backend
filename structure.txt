@@ -1,19 +1,24 @@
 [01;34m.[0m
 ├── access_specifiers.json
 ├── app.py
-├── brand_handling.py
+├── brand_handlerdb.py
+├── brand_handler.py
 ├── database.py
 ├── helper.py
 ├── inr.py
+├── niche_attributes.json
 ├── niche.json
 ├── pages.py
 ├── [01;34m__pycache__[0m
+│   ├── brand_handler.cpython-314.pyc
+│   ├── brand_handlerdb.cpython-314.pyc
 │   ├── brand_handling.cpython-314.pyc
 │   ├── database.cpython-314.pyc
 │   ├── helper.cpython-314.pyc
 │   ├── pages.cpython-314.pyc
-│   └── requests.cpython-314.pyc
-├── requests.py
+│   ├── requests.cpython-314.pyc
+│   ├── user_handler.cpython-314.pyc
+│   └── user_hanlderdb.cpython-314.pyc
 ├── requirements.txt
 ├── [01;34mstatic[0m
 │   ├── [01;34mfavicon[0m
@@ -246,11 +251,12 @@
 │       └── [01;34mpages[0m
 │           └── homepage.css
 ├── structure.txt
-├── structure.txxt
-└── [01;34mtemplates[0m
-    ├── [01;34mcomponents[0m
-    │   ├── footer.html
-    │   └── header.html
-    └── index.html
+├── [01;34mtemplates[0m
+│   ├── [01;34mcomponents[0m
+│   │   ├── footer.html
+│   │   └── header.html
+│   └── index.html
+├── user_handler.py
+└── user_hanlderdb.py
 
-18 directories, 236 files
+18 directories, 242 files

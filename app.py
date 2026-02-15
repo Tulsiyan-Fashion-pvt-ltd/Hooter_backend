@@ -4,7 +4,7 @@ from pages import page # importing the page blueprint for the page routes
 from user_handler import handle_user #importing the request blueprint from requests
 from database import __init_sql__
 import os
-from brand_handling import brand
+from brand_handler import brand
 from products import products
 from stores import stores
 from dotenv import load_dotenv

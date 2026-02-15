@@ -1,5 +1,9 @@
+# this file initialises the mysql db gives mysql object which other files can import and take use of
+
 from flask_mysqldb import MySQL
 from flask import session
+from pymongo import MongoClient
+
 
 mysql = MySQL()
 
@@ -7,6 +11,9 @@ def __init_sql__(app):
     mysql.init_app(app)
     print('initialized the sql')
 
+
+# setting up the mongodb
+mongodb = MongoClient("mongodb://localhost:27017/")
 class Write:
     @staticmethod
     def signup_user(user_creds):  #taking the arguments as objects or dict
