@@ -1,6 +1,10 @@
 from flask import Blueprint, session, request, jsonify
+<<<<<<< HEAD:brand_handling.py
+from database import mysql
+=======
 from user_hanlderdb import Userdb
 from helper import User, Helper
+>>>>>>> main:brand_handler.py
 import uuid
 import datetime
 import json
@@ -9,12 +13,88 @@ from brand_handlerdb import Branddb
 
 brand = Blueprint('brand', __name__)
 
+<<<<<<< HEAD:brand_handling.py
+# handling the database quiries related to brands to handle brands
+class Write:
+    pass
+
+class Fetch:
+    pass
+
+
+class Brand:
+    @staticmethod
+    def insert_brand(brand_id, user_id, brand_data):
+        cursor = mysql.connection.cursor()
+        try:
+            query = """
+                INSERT INTO brand (
+                    brand_id,
+                    entity_name,
+                    brand_name,
+                    brand_niche,
+                    gstin,
+                    hooter_plan,
+                    registered_address,
+                    establishment_year,
+                    poc,
+                    created_at
+                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            """
+            cursor.execute(query, (
+                brand_id,
+                brand_data.get('entity_name'),
+                brand_data.get('brand_name'),
+                brand_data.get('niche'),
+                brand_data.get('gstin'),
+                brand_data.get('plan'),
+                brand_data.get('address'),
+                brand_data.get('estYear'),
+                user_id,
+                datetime.datetime.now().date()
+            ))
+            mysql.connection.commit()
+        except Exception as e:
+            print(f'error occured while registering brand as \n{e}')
+            mysql.connection.rollback()
+            return 'failed'
+        finally:
+            cursor.close()
+        return 'ok'
+
+    @staticmethod
+    def map_user_brand(user_id, brand_id):
+        cursor = mysql.connection.cursor()
+        try:
+            query = """
+                INSERT INTO brand_access (brand_id, user_id)
+                VALUES (%s,%s)
+            """
+            cursor.execute(query, (brand_id, user_id))
+            mysql.connection.commit()
+        except Exception as e:
+            print(f'error occured while mapping user to the brand as \n {e}')
+            mysql.connection.rollback()
+            raise
+        finally:
+            cursor.close()
+
+
+class Fetch:
+    pass
+
+=======
+>>>>>>> main:brand_handler.py
 
 # route to register the business
 @brand.route('/register', methods=['POST'])
 async def register_entity():
     response = request.get_json()
 
+<<<<<<< HEAD:brand_handling.py
+    print(response.get('poc'))
+    return jsonify({'status': 'ok'}), 200
+=======
     brand_data = response.get('brand')
     poc_data = response.get('poc')
     # print(brand_data, poc_data)
@@ -101,10 +181,11 @@ async def register_entity():
     except Exception as e:
         print(f'error encountered while registering the brand\n{e}')
         return jsonify({'status': 'error', 'message': 'server error'}), 500
+>>>>>>> main:brand_handler.py
 
 
 @brand.route('/request-niches', methods=['GET'])
-async def request_niches():
+def request_niches():
     niches = Brand.fetch_niches()
     return jsonify({'status': 'ok', "niches": niches}), 200
 
