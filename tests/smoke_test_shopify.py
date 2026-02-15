@@ -109,7 +109,7 @@ def main():
         "store_id": store_id,
         "variants": [
             {
-                "sku": "SMOKE-TEST-001",
+                "sku": "SMOKE-TEST-003",
                 "price": "1.00",
                 "title": "Default"
             }
