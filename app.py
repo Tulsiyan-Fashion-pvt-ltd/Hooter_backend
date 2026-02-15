@@ -1,7 +1,7 @@
 from flask import Flask
 from flask_cors import CORS
 from pages import page # importing the page blueprint for the page routes
-from hooter_requests import requests #importing the request blueprint from requests
+from user_handler import handle_user #importing the request blueprint from requests
 from database import __init_sql__
 import os
 from brand_handling import brand
@@ -18,13 +18,14 @@ CORS(app, supports_credentials=True,
 app.secret_key = os.environ.get('HOOTER_SECRET_KEY')
 
 app.config['MYSQL_HOST'] = os.environ.get('HOOTER_DB_HOST')
+app.config['MYSQL_PORT'] = int(os.environ.get('HOOTER_DB_PORT'))
 app.config['MYSQL_USER'] = os.environ.get('HOOTER_DB_USER')
 app.config['MYSQL_PASSWORD'] = os.environ.get('HOOTER_DB_PASSWORD')
 app.config['MYSQL_DB'] = os.environ.get('HOOTER_DB')
 app.config['MYSQL_PORT'] = int(os.environ.get('HOOTER_DB_PORT', '3306'))
 
 app.register_blueprint(page)
-app.register_blueprint(requests)
+app.register_blueprint(handle_user)
 app.register_blueprint(brand)
 app.register_blueprint(products)
 app.register_blueprint(stores)

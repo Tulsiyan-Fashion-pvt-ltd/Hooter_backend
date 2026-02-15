@@ -1,0 +1,256 @@
+[01;34m.[0m
+├── access_specifiers.json
+├── app.py
+├── brand_handling.py
+├── database.py
+├── helper.py
+├── inr.py
+├── niche.json
+├── pages.py
+├── [01;34m__pycache__[0m
+│   ├── brand_handling.cpython-314.pyc
+│   ├── database.cpython-314.pyc
+│   ├── helper.cpython-314.pyc
+│   ├── pages.cpython-314.pyc
+│   └── requests.cpython-314.pyc
+├── requests.py
+├── requirements.txt
+├── [01;34mstatic[0m
+│   ├── [01;34mfavicon[0m
+│   │   ├── [01;35mandroid-chrome-192x192.png[0m
+│   │   ├── [01;35mandroid-chrome-512x512.png[0m
+│   │   ├── [01;35mapple-touch-icon.png[0m
+│   │   ├── [01;35mfavicon-16x16.png[0m
+│   │   ├── [01;35mfavicon-32x32.png[0m
+│   │   ├── favicon.ico
+│   │   └── site.webmanifest
+│   ├── [01;34mfonts[0m
+│   │   ├── [01;34mBarlow[0m
+│   │   │   ├── Barlow-BlackItalic.ttf
+│   │   │   ├── Barlow-Black.ttf
+│   │   │   ├── Barlow-BoldItalic.ttf
+│   │   │   ├── Barlow-Bold.ttf
+│   │   │   ├── Barlow-ExtraBoldItalic.ttf
+│   │   │   ├── Barlow-ExtraBold.ttf
+│   │   │   ├── Barlow-ExtraLightItalic.ttf
+│   │   │   ├── Barlow-ExtraLight.ttf
+│   │   │   ├── Barlow-Italic.ttf
+│   │   │   ├── Barlow-LightItalic.ttf
+│   │   │   ├── Barlow-Light.ttf
+│   │   │   ├── Barlow-MediumItalic.ttf
+│   │   │   ├── Barlow-Medium.ttf
+│   │   │   ├── Barlow-Regular.ttf
+│   │   │   ├── Barlow-SemiBoldItalic.ttf
+│   │   │   ├── Barlow-SemiBold.ttf
+│   │   │   ├── Barlow-ThinItalic.ttf
+│   │   │   ├── Barlow-Thin.ttf
+│   │   │   └── OFL.txt
+│   │   ├── [01;34mDM_Sans[0m
+│   │   │   ├── DMSans-Italic-VariableFont_opsz,wght.ttf
+│   │   │   ├── DMSans-VariableFont_opsz,wght.ttf
+│   │   │   ├── OFL.txt
+│   │   │   ├── README.txt
+│   │   │   └── [01;34mstatic[0m
+│   │   │       ├── DMSans_18pt-BlackItalic.ttf
+│   │   │       ├── DMSans_18pt-Black.ttf
+│   │   │       ├── DMSans_18pt-BoldItalic.ttf
+│   │   │       ├── DMSans_18pt-Bold.ttf
+│   │   │       ├── DMSans_18pt-ExtraBoldItalic.ttf
+│   │   │       ├── DMSans_18pt-ExtraBold.ttf
+│   │   │       ├── DMSans_18pt-ExtraLightItalic.ttf
+│   │   │       ├── DMSans_18pt-ExtraLight.ttf
+│   │   │       ├── DMSans_18pt-Italic.ttf
+│   │   │       ├── DMSans_18pt-LightItalic.ttf
+│   │   │       ├── DMSans_18pt-Light.ttf
+│   │   │       ├── DMSans_18pt-MediumItalic.ttf
+│   │   │       ├── DMSans_18pt-Medium.ttf
+│   │   │       ├── DMSans_18pt-Regular.ttf
+│   │   │       ├── DMSans_18pt-SemiBoldItalic.ttf
+│   │   │       ├── DMSans_18pt-SemiBold.ttf
+│   │   │       ├── DMSans_18pt-ThinItalic.ttf
+│   │   │       ├── DMSans_18pt-Thin.ttf
+│   │   │       ├── DMSans_24pt-BlackItalic.ttf
+│   │   │       ├── DMSans_24pt-Black.ttf
+│   │   │       ├── DMSans_24pt-BoldItalic.ttf
+│   │   │       ├── DMSans_24pt-Bold.ttf
+│   │   │       ├── DMSans_24pt-ExtraBoldItalic.ttf
+│   │   │       ├── DMSans_24pt-ExtraBold.ttf
+│   │   │       ├── DMSans_24pt-ExtraLightItalic.ttf
+│   │   │       ├── DMSans_24pt-ExtraLight.ttf
+│   │   │       ├── DMSans_24pt-Italic.ttf
+│   │   │       ├── DMSans_24pt-LightItalic.ttf
+│   │   │       ├── DMSans_24pt-Light.ttf
+│   │   │       ├── DMSans_24pt-MediumItalic.ttf
+│   │   │       ├── DMSans_24pt-Medium.ttf
+│   │   │       ├── DMSans_24pt-Regular.ttf
+│   │   │       ├── DMSans_24pt-SemiBoldItalic.ttf
+│   │   │       ├── DMSans_24pt-SemiBold.ttf
+│   │   │       ├── DMSans_24pt-ThinItalic.ttf
+│   │   │       ├── DMSans_24pt-Thin.ttf
+│   │   │       ├── DMSans_36pt-BlackItalic.ttf
+│   │   │       ├── DMSans_36pt-Black.ttf
+│   │   │       ├── DMSans_36pt-BoldItalic.ttf
+│   │   │       ├── DMSans_36pt-Bold.ttf
+│   │   │       ├── DMSans_36pt-ExtraBoldItalic.ttf
+│   │   │       ├── DMSans_36pt-ExtraBold.ttf
+│   │   │       ├── DMSans_36pt-ExtraLightItalic.ttf
+│   │   │       ├── DMSans_36pt-ExtraLight.ttf
+│   │   │       ├── DMSans_36pt-Italic.ttf
+│   │   │       ├── DMSans_36pt-LightItalic.ttf
+│   │   │       ├── DMSans_36pt-Light.ttf
+│   │   │       ├── DMSans_36pt-MediumItalic.ttf
+│   │   │       ├── DMSans_36pt-Medium.ttf
+│   │   │       ├── DMSans_36pt-Regular.ttf
+│   │   │       ├── DMSans_36pt-SemiBoldItalic.ttf
+│   │   │       ├── DMSans_36pt-SemiBold.ttf
+│   │   │       ├── DMSans_36pt-ThinItalic.ttf
+│   │   │       ├── DMSans_36pt-Thin.ttf
+│   │   │       ├── DMSans-BlackItalic.ttf
+│   │   │       ├── DMSans-Black.ttf
+│   │   │       ├── DMSans-BoldItalic.ttf
+│   │   │       ├── DMSans-Bold.ttf
+│   │   │       ├── DMSans-ExtraBoldItalic.ttf
+│   │   │       ├── DMSans-ExtraBold.ttf
+│   │   │       ├── DMSans-ExtraLightItalic.ttf
+│   │   │       ├── DMSans-ExtraLight.ttf
+│   │   │       ├── DMSans-Italic.ttf
+│   │   │       ├── DMSans-LightItalic.ttf
+│   │   │       ├── DMSans-Light.ttf
+│   │   │       ├── DMSans-MediumItalic.ttf
+│   │   │       ├── DMSans-Medium.ttf
+│   │   │       ├── DMSans-Regular.ttf
+│   │   │       ├── DMSans-SemiBoldItalic.ttf
+│   │   │       ├── DMSans-SemiBold.ttf
+│   │   │       ├── DMSans-ThinItalic.ttf
+│   │   │       └── DMSans-Thin.ttf
+│   │   ├── [01;34mPoppins[0m
+│   │   │   ├── OFL.txt
+│   │   │   ├── Poppins-BlackItalic.ttf
+│   │   │   ├── Poppins-Black.ttf
+│   │   │   ├── Poppins-BoldItalic.ttf
+│   │   │   ├── Poppins-Bold.ttf
+│   │   │   ├── Poppins-ExtraBoldItalic.ttf
+│   │   │   ├── Poppins-ExtraBold.ttf
+│   │   │   ├── Poppins-ExtraLightItalic.ttf
+│   │   │   ├── Poppins-ExtraLight.ttf
+│   │   │   ├── Poppins-Italic.ttf
+│   │   │   ├── Poppins-LightItalic.ttf
+│   │   │   ├── Poppins-Light.ttf
+│   │   │   ├── Poppins-MediumItalic.ttf
+│   │   │   ├── Poppins-Medium.ttf
+│   │   │   ├── Poppins-Regular.ttf
+│   │   │   ├── Poppins-SemiBoldItalic.ttf
+│   │   │   ├── Poppins-SemiBold.ttf
+│   │   │   ├── Poppins-ThinItalic.ttf
+│   │   │   └── Poppins-Thin.ttf
+│   │   └── [01;34mRoboto[0m
+│   │       ├── OFL.txt
+│   │       ├── README.txt
+│   │       ├── Roboto-Italic-VariableFont_wdth,wght.ttf
+│   │       ├── Roboto-VariableFont_wdth,wght.ttf
+│   │       └── [01;34mstatic[0m
+│   │           ├── Roboto-BlackItalic.ttf
+│   │           ├── Roboto-Black.ttf
+│   │           ├── Roboto-BoldItalic.ttf
+│   │           ├── Roboto-Bold.ttf
+│   │           ├── Roboto_Condensed-BlackItalic.ttf
+│   │           ├── Roboto_Condensed-Black.ttf
+│   │           ├── Roboto_Condensed-BoldItalic.ttf
+│   │           ├── Roboto_Condensed-Bold.ttf
+│   │           ├── Roboto_Condensed-ExtraBoldItalic.ttf
+│   │           ├── Roboto_Condensed-ExtraBold.ttf
+│   │           ├── Roboto_Condensed-ExtraLightItalic.ttf
+│   │           ├── Roboto_Condensed-ExtraLight.ttf
+│   │           ├── Roboto_Condensed-Italic.ttf
+│   │           ├── Roboto_Condensed-LightItalic.ttf
+│   │           ├── Roboto_Condensed-Light.ttf
+│   │           ├── Roboto_Condensed-MediumItalic.ttf
+│   │           ├── Roboto_Condensed-Medium.ttf
+│   │           ├── Roboto_Condensed-Regular.ttf
+│   │           ├── Roboto_Condensed-SemiBoldItalic.ttf
+│   │           ├── Roboto_Condensed-SemiBold.ttf
+│   │           ├── Roboto_Condensed-ThinItalic.ttf
+│   │           ├── Roboto_Condensed-Thin.ttf
+│   │           ├── Roboto-ExtraBoldItalic.ttf
+│   │           ├── Roboto-ExtraBold.ttf
+│   │           ├── Roboto-ExtraLightItalic.ttf
+│   │           ├── Roboto-ExtraLight.ttf
+│   │           ├── Roboto-Italic.ttf
+│   │           ├── Roboto-LightItalic.ttf
+│   │           ├── Roboto-Light.ttf
+│   │           ├── Roboto-MediumItalic.ttf
+│   │           ├── Roboto-Medium.ttf
+│   │           ├── Roboto-Regular.ttf
+│   │           ├── Roboto-SemiBoldItalic.ttf
+│   │           ├── Roboto-SemiBold.ttf
+│   │           ├── Roboto_SemiCondensed-BlackItalic.ttf
+│   │           ├── Roboto_SemiCondensed-Black.ttf
+│   │           ├── Roboto_SemiCondensed-BoldItalic.ttf
+│   │           ├── Roboto_SemiCondensed-Bold.ttf
+│   │           ├── Roboto_SemiCondensed-ExtraBoldItalic.ttf
+│   │           ├── Roboto_SemiCondensed-ExtraBold.ttf
+│   │           ├── Roboto_SemiCondensed-ExtraLightItalic.ttf
+│   │           ├── Roboto_SemiCondensed-ExtraLight.ttf
+│   │           ├── Roboto_SemiCondensed-Italic.ttf
+│   │           ├── Roboto_SemiCondensed-LightItalic.ttf
+│   │           ├── Roboto_SemiCondensed-Light.ttf
+│   │           ├── Roboto_SemiCondensed-MediumItalic.ttf
+│   │           ├── Roboto_SemiCondensed-Medium.ttf
+│   │           ├── Roboto_SemiCondensed-Regular.ttf
+│   │           ├── Roboto_SemiCondensed-SemiBoldItalic.ttf
+│   │           ├── Roboto_SemiCondensed-SemiBold.ttf
+│   │           ├── Roboto_SemiCondensed-ThinItalic.ttf
+│   │           ├── Roboto_SemiCondensed-Thin.ttf
+│   │           ├── Roboto-ThinItalic.ttf
+│   │           └── Roboto-Thin.ttf
+│   ├── [01;34micons[0m
+│   │   ├── [01;35mfacebook.png[0m
+│   │   ├── [01;35minsta.png[0m
+│   │   ├── [01;35mlinkedin.png[0m
+│   │   ├── [01;35mlogo.png[0m
+│   │   ├── [01;35mlogo.svg[0m
+│   │   ├── [01;35mtwitter.png[0m
+│   │   └── [01;35myoutube.png[0m
+│   ├── [01;34mimages[0m
+│   │   ├── [01;35m58bc9277572fd907f6b25162a84565ecf4c4170b.png[0m
+│   │   ├── [01;35ma4ad5556ed1446252d87e82457d415cb6b3e4a89.jpg[0m
+│   │   ├── [01;35mcheck.png[0m
+│   │   ├── [01;35mcircle01.svg[0m
+│   │   ├── [01;35mcircle02.svg[0m
+│   │   ├── [01;35md14275c6add53ce0a5579ed5e1a164debc3a2bf6.png[0m
+│   │   ├── [01;35mdashboard.png[0m
+│   │   ├── [01;35mfocus.png[0m
+│   │   ├── [01;35mhero-dashboard.png[0m
+│   │   ├── [01;35mhomepage_art01.svg[0m
+│   │   ├── [01;35mhomepage_mesh_art02.png[0m
+│   │   ├── [01;35mhomepage_mesh_art03.png[0m
+│   │   ├── [01;35mhomepage_mesh_art04.png[0m
+│   │   ├── [01;35mhomepage_mesh_art05.png[0m
+│   │   ├── [01;35mhomepage_mesh_art06.png[0m
+│   │   ├── [01;35mhomepage_mesh_art07.png[0m
+│   │   ├── [01;35mhomepage_mesh_art08.png[0m
+│   │   ├── [01;35mhomepage_mesh_art09.png[0m
+│   │   ├── [01;35mhomepage_mesh_art10.png[0m
+│   │   ├── [01;35mhomepage_mesh_art.png[0m
+│   │   ├── [01;35mman_at_desk.png[0m
+│   │   ├── [01;35mmountain.png[0m
+│   │   ├── [01;35msolution-icon.png[0m
+│   │   ├── [01;35mstats.png[0m
+│   │   └── [01;35myear-scale.png[0m
+│   └── [01;34mstylesheet[0m
+│       ├── [01;34mlayout[0m
+│       │   ├── animations.css
+│       │   ├── footer.css
+│       │   ├── header.css
+│       │   └── universal_layout.css
+│       └── [01;34mpages[0m
+│           └── homepage.css
+├── structure.txt
+├── structure.txxt
+└── [01;34mtemplates[0m
+    ├── [01;34mcomponents[0m
+    │   ├── footer.html
+    │   └── header.html
+    └── index.html
+
+18 directories, 236 files

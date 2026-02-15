@@ -1,3 +1,4 @@
+aniso8601==7.0.0
 anyio==4.12.1
 argcomplete==3.6.3
 asgiref==3.11.0
@@ -6,8 +7,8 @@ beautifulsoup4==4.14.3
 blinker==1.9.0
 blivet==3.12.1
 blivet-gui==2.6.0
-boto3==1.42.28
-botocore==1.42.28
+boto3==1.42.33
+botocore==1.42.33
 Brlapi==0.8.7
 certifi==2025.7.9
 cffi==2.0.0
@@ -24,6 +25,11 @@ dnf==4.24.0
 fedora-third-party==0.10
 file-magic==0.4.0
 Flask==3.1.2
+Flask-GraphQL==2.0.1
+graphene==2.1.9
+graphql-core==2.3.2
+graphql-relay==2.0.1
+graphql-server-core==1.2.0
 h11==0.16.0
 httpcore==1.0.9
 httpx==0.28.1
@@ -51,8 +57,8 @@ pexpect==4.9.0
 pid==3.0.4
 pillow==11.3.0
 ply==3.11
-productmd==1.49
-progressbar2==4.5.0
+productmd==1.50
+promise==2.3
 psutil==7.0.0
 ptyprocess==0.7.0
 pwquality==1.4.5
@@ -71,11 +77,10 @@ python-augeas==1.2.0
 python-dateutil==2.9.0.post0
 python-linux-procfs==0.7.3
 python-meh==0.52
-python-utils==3.9.1
 pyudev==0.24.3
-pyxdg==0.27
+pyxdg==0.28
 PyYAML==6.0.2
-pyynl @ file:///builddir/build/BUILD/kernel-6.18.5-build/kernel-6.18.5/linux-6.18.5-200.fc43.x86_64/tools/net/ynl
+pyynl @ file:///builddir/build/BUILD/kernel-6.18.7-build/kernel-6.18.7/linux-6.18.7-200.fc43.x86_64/tools/net/ynl
 RapidFuzz==3.12.2
 referencing==0.36.2
 regex==2025.10.23
@@ -84,8 +89,7 @@ requests-file==2.0.0
 requests-ftp==0.3.1
 rpds-py==0.27.0
 rpm==6.0.1
-rpmautospec==0.8.3
-rpmautospec-core==0.1.5
+Rx==1.6.3
 s3transfer==0.16.0
 selinux @ file:///builddir/build/BUILD/libselinux-3.9-build/libselinux-3.9/src
 sentry-sdk==2.35.0
