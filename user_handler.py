@@ -1,5 +1,5 @@
 from flask import Blueprint, request, Response, jsonify, session
-from database import Write, Fetch
+from user_hanlderdb import Userdb
 from helper import Validate, User, Helper
 
 handle_user = Blueprint('handle_user', __name__)
@@ -27,7 +27,7 @@ async def signup():
             'designation': designation
             }
 
-        response = Write.signup_user(user_creds)
+        response = Userdb.Write.signup_user(user_creds)
 
         if response and response.get('status') == 'error':
             if response.get('message') == 'user_already_registered':
@@ -52,13 +52,13 @@ async def login():
         return jsonify({'status': 'invalid request', 'message': 'email or password not provided'}), 400
 
     if Validate.email(email):
-        userid = Fetch.userid_by_email(email)
+        userid = Userdb.Fetch.userid_by_email(email)
 
         # if the userid is null then return then do not log in
         if userid == None:
             return jsonify({'status': 'error', 'message': 'user not found with this email'}), 401
         hashed_password = User.hash_password(password)
-        login_check = Fetch.check_password(userid, hashed_password)
+        login_check = Userdb.Fetch.check_password(userid, hashed_password)
 
         if login_check == 1:
             session['user'] = userid
@@ -91,7 +91,7 @@ async def fetch_user_creds():
     user = session.get('user')
     if user==None:
         return jsonify({'status': 'unauthorised access', 'message': 'no loged in user found'}), 401
-    _ = Fetch.user_details(user)
+    _ = Userdb.Fetch.user_details(user)
     user_data = {
                 'name': _[0],
                 'number': _[1],
