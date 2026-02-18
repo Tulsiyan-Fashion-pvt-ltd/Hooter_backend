@@ -13,7 +13,7 @@ load_dotenv()  # Load environment variables from .env file
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True,
-    origins=["http://localhost:5173"])
+    origins=["http://localhost:5173", "workspace.h0oter.com"])
 
 app.secret_key = os.environ.get('HOOTER_SECRET_KEY')
 

@@ -73,16 +73,18 @@ async def login():
 @handle_user.route('/session', methods=['GET'])
 async def check_session():
     user = session.get('user')
-
+    print(user)
     if user:
         return jsonify({'login': 'ok'}), 200
     else:
         return jsonify({'login': 'deny'}), 401
     
 
-@handle_user.route('/logout')
+@handle_user.route('/logout', methods=['POST'])
 def logout():
+    print(session.get('user'))
     session.clear()
+    print(session.get('user'))
     return jsonify({'status': 'ok', 'message': 'user logout'}), 200
 
 
