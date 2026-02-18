@@ -3,6 +3,7 @@
 from flask_mysqldb import MySQL
 from flask import session
 from pymongo import MongoClient
+import asyncmy
 
 
 mysql = MySQL()

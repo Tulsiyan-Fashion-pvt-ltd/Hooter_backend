@@ -1,6 +1,7 @@
 from flask import Blueprint, request, Response, jsonify, session
 from user_hanlderdb import Userdb
 from helper import Validate, User, Helper
+import asyncio
 
 handle_user = Blueprint('handle_user', __name__)
 
@@ -73,7 +74,7 @@ async def login():
 @handle_user.route('/session', methods=['GET'])
 async def check_session():
     user = session.get('user')
-    print(user)
+    # print(user)
     if user:
         return jsonify({'login': 'ok'}), 200
     else:
@@ -81,7 +82,7 @@ async def check_session():
     
 
 @handle_user.route('/logout', methods=['POST'])
-def logout():
+async def logout():
     print(session.get('user'))
     session.clear()
     print(session.get('user'))
