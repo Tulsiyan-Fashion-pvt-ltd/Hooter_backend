@@ -1,4 +1,5 @@
 from flask import Flask
+from asgiref.wsgi import WsgiToAsgi
 from flask_cors import CORS
 from pages import page # importing the page blueprint for the page routes
 from user_handler import handle_user #importing the request blueprint from requests
@@ -34,6 +35,8 @@ app.register_blueprint(stores)
 # Initialize SQL within application context to avoid "working outside"
 with app.app_context():
     __init_sql__(app)  # initializing sql
+
+asgi_app = WsgiToAsgi(app)
 
 if __name__ == "__main__":
     app.run(debug=True, host='0.0.0.0', port=8800)
