@@ -3,7 +3,7 @@ from asgiref.wsgi import WsgiToAsgi
 from flask_cors import CORS
 from pages import page # importing the page blueprint for the page routes
 from user_handler import handle_user #importing the request blueprint from requests
-from database import __init_sql__
+from database import __init_sql__, create_pool, close_pool
 import os
 from brand_handler import brand
 from products import products
@@ -35,6 +35,17 @@ app.register_blueprint(stores)
 # Initialize SQL within application context to avoid "working outside"
 with app.app_context():
     __init_sql__(app)  # initializing sql
+
+
+# creating and closing of the connection pool
+@app.before_request
+async def sql_connection_startup():
+    await create_pool()
+
+@app.after_request
+async def sql_connection_shutdown():
+    await close_pool()
+
 
 asgi_app = WsgiToAsgi(app)
 

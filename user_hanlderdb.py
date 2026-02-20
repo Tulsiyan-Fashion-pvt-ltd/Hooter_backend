@@ -1,37 +1,66 @@
-from database import mysql
+from database import mysql, pool
 from flask import session
 from datetime import datetime
 
 class Userdb:
     class Write:
         @staticmethod
-        def signup_user(user_creds):  #taking the arguments as objects or dict
-            cursor = mysql.connection.cursor()
-            try:
-                userid = user_creds.get('userid')
-                hashed_password = user_creds.get('hashed_password')
-                name=user_creds.get('name')
-                number = user_creds.get('number')
-                email = user_creds.get('email')
-                designation = user_creds.get('designation')
-                access=user_creds.get('access') if user_creds.get('access') else 'super_user'
-                cursor.execute('''insert into users(user_id, user_password)
-                               values(%s, %s)
-                               ''', (userid, hashed_password))
-                cursor.execute('''insert into user_creds(user_id, user_name, phone_number, user_email, user_access, user_designation, created_at)
-                               values(%s, %s, %s, %s, %s, %s, %s)
-                                ''', (userid, name, number, email, access, designation, datetime.now().date()))
-                mysql.connection.commit()
-            except Exception as e:
-                mysql.connection.rollback()
-                cursor.close()
-                print(f'error encounetered while signing up the user as {e}\n sql rollback')
-                if (e.args[0] == 1062):
-                    return {'status': 'error', 'message': "user_already_registered"}
-                return {'status': 'error', 'message': "unable_to_register_user"}
-            finally:
-                cursor.close()
-            return {'status': 'ok', 'message': 'user_registeration_successfull'}
+        async def signup_user(user_creds):
+            async with pool.acquire() as conn:
+                async with conn.cursor() as cursor:
+                    try:
+                        userid = user_creds.get('userid')
+                        hashed_password = user_creds.get('hashed_password')
+                        name = user_creds.get('name')
+                        number = user_creds.get('number')
+                        email = user_creds.get('email')
+                        designation = user_creds.get('designation')
+    
+                        await cursor.execute(
+                            '''
+                            INSERT INTO users(user_id, user_password)
+                            VALUES(%s, %s)
+                            ''',
+                            (userid, hashed_password)
+                        )
+    
+                        await cursor.execute(
+                            '''
+                            INSERT INTO user_creds(
+                                user_id,
+                                user_name,
+                                phone_number,
+                                user_email,
+                                user_access,
+                                user_designation,
+                                created_at
+                            )
+                            VALUES(%s, %s, %s, %s, %s, %s, CURDATE())
+                            ''',
+                            (userid, name, number, email, 'super_user', designation)
+                        )
+    
+                        await conn.commit()
+    
+                    except Exception as e:
+                        await conn.rollback()
+                        print(f'Error encountered while signing up user: {e}')
+    
+                        if hasattr(e, "args") and e.args and e.args[0] == 1062:
+                            return {
+                                'status': 'error',
+                                'message': 'user_already_registered'
+                            }
+    
+                        return {
+                            'status': 'error',
+                            'message': 'unable_to_register_user'
+                        }
+    
+            return {
+                'status': 'ok',
+                'message': 'user_registration_successful'
+            }
 
 
 

@@ -4,7 +4,10 @@ from flask_mysqldb import MySQL
 from flask import session
 from pymongo import MongoClient
 import asyncmy
+import os
+from dotenv import load_dotenv
 
+load_dotenv() # to load the .env file
 
 mysql = MySQL()
 
@@ -13,43 +16,36 @@ def __init_sql__(app):
     print('initialized the sql')
 
 
+# global variable for the pool to access
+# import this pool variable from database.py
+pool = None
+
+
+# creating the sql connection pool for the async io
+async def create_pool():
+    global pool
+    pool = await asyncmy.create_pool(
+        host = os.environ.get('HOOTER_DB_HOST'),
+        port = int(os.environ.get('HOOTER_DB_PORT')),
+        user = os.environ.get('HOOTER_DB_USER'),
+        password = os.environ.get('HOOTER_DB_PASSWORD'),
+        db = os.environ.get('HOOTER_DB'),
+        minsize = 1,
+        maxsize = 20
+    )
+
+# closing the connection pool
+async def close_pool():
+    global pool
+    pool.close()
+    await pool.wait_closed()
+
+
 # setting up the mongodb
 mongodb = MongoClient("mongodb://localhost:27017/")
+
+
 class Write:
-    @staticmethod
-    def signup_user(user_creds):  #taking the arguments as objects or dict
-        cursor = mysql.connection.cursor()
-        try:
-            userid = user_creds.get('userid')
-            hashed_password = user_creds.get('hashed_password')
-            name=user_creds.get('name')
-            number = user_creds.get('number')
-            email = user_creds.get('email')
-            designation = user_creds.get('designation')
-
-
-            cursor.execute('''insert into users(user_id, user_password)
-                           values(%s, %s)
-                           ''', (userid, hashed_password))
-
-            cursor.execute('''insert into user_creds(user_id, user_name, phone_number, user_email, user_access, user_designation, created_at)
-                           values(%s, %s, %s, %s, %s, %s, CURDATE())
-                            ''', (userid, name, number, email, 'super_user', designation))
-
-            mysql.connection.commit()
-        except Exception as e:
-            mysql.connection.rollback()
-            cursor.close()
-            print(f'error encounetered while signing up the user as {e}\n sql rollback')
-
-            if (e.args[0] == 1062):
-                return {'status': 'error', 'message': "user_already_registered"}
-
-            return {'status': 'error', 'message': "unable_to_register_user"}
-        finally:
-            cursor.close()
-        return {'status': 'ok', 'message': 'user_registeration_successfull'}
-
     @staticmethod
     def add_store(user_id: str, shopify_shop_name: str, shopify_access_token: str, store_name: str = None, is_primary: bool = False) -> dict:
         """Add a new Shopify store for a user."""

@@ -28,7 +28,7 @@ async def signup():
             'designation': designation
             }
 
-        response = Userdb.Write.signup_user(user_creds)
+        response = await Userdb.Write.signup_user(user_creds)
 
         if response and response.get('status') == 'error':
             if response.get('message') == 'user_already_registered':
