@@ -1,11 +1,11 @@
-from flask import Blueprint, session, request, jsonify
-from user_hanlderdb import Userdb
+from quart import Blueprint, session, request, jsonify
+from handle_user.user_hanlderdb import Userdb
 from helper import User, Helper
 import uuid
 import datetime
 import json
 from helper import User, Brand
-from brand_handlerdb import Branddb
+from handle_brand.brand_handlerdb import Branddb
 
 brand = Blueprint('brand', __name__)
 
@@ -13,7 +13,7 @@ brand = Blueprint('brand', __name__)
 # route to register the business
 @brand.route('/register', methods=['POST'])
 async def register_entity():
-    response = request.get_json()
+    response = await request.get_json()
 
     brand_data = response.get('brand')
     poc_data = response.get('poc')

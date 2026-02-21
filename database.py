@@ -20,7 +20,6 @@ def __init_sql__(app):
 # import this pool variable from database.py
 pool = None
 
-
 # creating the sql connection pool for the async io
 async def create_pool():
     global pool
@@ -33,6 +32,8 @@ async def create_pool():
         minsize = 1,
         maxsize = 20
     )
+    return pool
+
 
 # closing the connection pool
 async def close_pool():
@@ -295,62 +296,6 @@ class Write:
 
 
 class Fetch:
-    @staticmethod
-    def userid_by_email(email):
-        cursor = mysql.connection.cursor()
-        userid = None
-
-        try:          
-            cursor.execute('''
-                           select user_id from user_creds where user_email=%s
-                           ''', (email, ))
-
-            userid = cursor.fetchone()
-            userid = userid[0] if userid and len(userid) != 0 else None
-        except Exception as e:
-            print(f"error while checking the checking the credentials for login as {e}")
-        finally:
-            cursor.close()
-        return userid
-    
-    @staticmethod
-    def check_password(userid, hashed_password):
-        cursor = mysql.connection.cursor()
-        result = None
-        try:
-            cursor.execute('''select 1 from users where user_id=%s and user_password=%s
-                           ''', (userid, hashed_password))
-            
-            result = cursor.fetchone()
-            result = result[0]
-        except Exception as e:
-            print(f'error occured while checking the password as {e}')
-        finally:
-            cursor.close()
-        return result
-    
-    @staticmethod
-    def user_details(userid):
-        user = userid
-        cursor = mysql.connection.cursor()
-        user_credentials = None # returned value
-        try:
-            if user == None:
-                return ()
-            else:
-                cursor.execute('''select user_name, phone_number, user_email, user_designation, user_access
-                               from user_creds
-                               where user_id=%s
-                               ''', (user, ))
-
-                user_credentials = cursor.fetchone()
-        except Exception as e:
-            print(f'encountered error while fetching user credentials \n{e}')
-        finally:
-            cursor.close()
-
-        return user_credentials
-
     @staticmethod
     def get_user_stores(user_id: str) -> list:
         """Fetch all stores for a user."""

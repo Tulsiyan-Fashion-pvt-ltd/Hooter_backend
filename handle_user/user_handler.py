@@ -1,5 +1,5 @@
-from flask import Blueprint, request, Response, jsonify, session
-from user_hanlderdb import Userdb
+from quart import Blueprint, request, Response, jsonify, session
+from handle_user.user_hanlderdb import Userdb
 from helper import Validate, User, Helper
 import asyncio
 
@@ -7,7 +7,7 @@ handle_user = Blueprint('handle_user', __name__)
 
 @handle_user.route('/signup', methods=['POST'])
 async def signup():
-    data = request.get_json()
+    data = await request.get_json()
     name=data.get('name')
     number = data.get('number')
     email = data.get('email')
@@ -43,8 +43,7 @@ async def signup():
 
 @handle_user.route('/login', methods=['POST'])
 async def login():
-    #get the date from the api request
-    data = request.get_json()
+    data = await request.get_json()
     email = data.get('email')
     password = data.get('password')
 
@@ -53,23 +52,24 @@ async def login():
         return jsonify({'status': 'invalid request', 'message': 'email or password not provided'}), 400
 
     if Validate.email(email):
-        userid = Userdb.Fetch.userid_by_email(email)
+        userid = await Userdb.Fetch.userid_by_email(email)
 
         # if the userid is null then return then do not log in
         if userid == None:
             return jsonify({'status': 'error', 'message': 'user not found with this email'}), 401
         hashed_password = User.hash_password(password)
-        login_check = Userdb.Fetch.check_password(userid, hashed_password)
+        login_check = await Userdb.Fetch.check_password(userid, hashed_password)
 
-        if login_check == 1:
+        if login_check == 'valid':
             session['user'] = userid
-
+            print(session.get('user'))
             return jsonify({'status': 'ok', 'message': 'login successfull'}), 200
         else:
             return jsonify({'status': 'unauthorised', 'message': 'incorrect password'}), 401
     else:
         return jsonify({'status': 'bad request', 'message': 'invalid email'}), 400
-    
+
+
 # request to fetch user session
 @handle_user.route('/session', methods=['GET'])
 async def check_session():
@@ -94,7 +94,7 @@ async def fetch_user_creds():
     user = session.get('user')
     if user==None:
         return jsonify({'status': 'unauthorised access', 'message': 'no loged in user found'}), 401
-    _ = Userdb.Fetch.user_details(user)
+    _ = await Userdb.Fetch.user_details(user)
     user_data = {
                 'name': _[0],
                 'number': _[1],

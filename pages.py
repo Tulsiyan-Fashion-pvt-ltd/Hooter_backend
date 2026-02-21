@@ -1,7 +1,7 @@
-from flask import Blueprint, render_template, redirect, session
+from quart import Blueprint, render_template
 
 page = Blueprint('page', __name__)
 
 @page.route('/')
-def index():
-    return render_template('index.html')
+async def index():
+    return await render_template('index.html')

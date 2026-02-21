@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, session
+from quart import Blueprint, request, jsonify, session
 from database import Write, Fetch
 from services.shopify_helpers import validate_shopify_token, ShopifyAPIError
 
