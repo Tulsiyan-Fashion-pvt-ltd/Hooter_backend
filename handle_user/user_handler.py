@@ -1,7 +1,6 @@
 from quart import Blueprint, request, Response, jsonify, session
 from handle_user.user_hanlderdb import Userdb
 from helper import Validate, User, Helper
-import asyncio
 
 handle_user = Blueprint('handle_user', __name__)
 
@@ -62,7 +61,7 @@ async def login():
 
         if login_check == 'valid':
             session['user'] = userid
-            print(session.get('user'))
+            # print(session.get('user'))
             return jsonify({'status': 'ok', 'message': 'login successfull'}), 200
         else:
             return jsonify({'status': 'unauthorised', 'message': 'incorrect password'}), 401
@@ -92,14 +91,17 @@ async def logout():
 @handle_user.route('/request-user-credentials')
 async def fetch_user_creds():
     user = session.get('user')
+    print(user)
     if user==None:
         return jsonify({'status': 'unauthorised access', 'message': 'no loged in user found'}), 401
     _ = await Userdb.Fetch.user_details(user)
+
+    print(_)
     user_data = {
-                'name': _[0],
-                'number': _[1],
-                'email': _[2],
-                'designation': _[3],
-                'access': _[4]
+                'name': _.get('user_name'),
+                'number': _.get('phone_number'),
+                'email': _.get('user_email'),
+                'designation': _.get('user_designation'),
+                'access': _.get('user_access')
                 }
     return jsonify({'status': 'ok', 'user_data': user_data}), 200

@@ -60,6 +60,9 @@ class Helper:
         time = str(datetime.datetime.now().strftime('%H:%M:%S'))
         return time
     
+    # if you want to check if the current payload is valid or not
+    # create a list of expected payloads
+    # and pass the json response payload of the request here
     @staticmethod
     def check_required_payload(json, keys):
         return all(key in json for key in keys)
@@ -86,12 +89,16 @@ class Brand:
             return list()
 
     @staticmethod
-    def access_specifiers():
+    async def access_specifiers():
         #access specifiers
         user_access_specifiers=None
-        with open('./access_specifiers.json', 'r') as file:
-            user_access_specifiers = json.load(file)
-        access_specifier = user_access_specifiers.get('access')
+        access_specifier=None
+        try:
+            with open('./access_specifiers.json', 'r') as file:
+                user_access_specifiers = json.load(file)
+            access_specifier = user_access_specifiers.get('access')
+        except Exception as e:
+            print(f'error encountered as\n{e}')
         return access_specifier
 
 

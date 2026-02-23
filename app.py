@@ -21,7 +21,7 @@ app.secret_key = os.environ.get('HOOTER_SECRET_KEY')
 app.config["SECRET_KEY"] = os.environ.get('HOOTER_SECRET_KEY')
 
 # only for texting nad development
-app.config["SESSION_COOKIE_SAMESITE"] = "None"
+# app.config["SESSION_COOKIE_SAMESITE"] = "None"
 app.config["SESSION_COOKIE_SECURE"] = False  # because you're using http locally
 
 app.config['MYSQL_HOST'] = os.environ.get('HOOTER_DB_HOST')
@@ -33,7 +33,9 @@ app.config['MYSQL_PORT'] = int(os.environ.get('HOOTER_DB_PORT', '3306'))
 
 app.register_blueprint(page)
 app.register_blueprint(handle_user)
-# app.register_blueprint(brand)
+app.register_blueprint(brand)
+
+# need to conver the programs and methods as per asgi
 # app.register_blueprint(products)
 # app.register_blueprint(stores)
 
