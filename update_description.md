@@ -1,7 +1,7 @@
 *  Farhan -> 23 feb 2026
 
 # switched from wsgi to asgi
-  We have switched from wsgi to asgi server using [https://pypi.org/project/Quart/0.13.0/](quart) instead of [https://pypi.org/project/Flask/](flask). Which means now we are taking the advantage of asynchronous programming.
+  We have switched from wsgi to asgi server using [quart](https://pypi.org/project/Quart/0.13.0/) instead of [flask](https://pypi.org/project/Flask/). Which means now we are taking the advantage of asynchronous programming.
   We have to use async and await built in keywords from python to make the functions asynchronous. Any I/O bound operation should be done under async function either writing database queries or dealing with apis.
 
   ## simple operations don't need to be async functions like calculations, id creation which doesn't need to awaited
@@ -19,7 +19,7 @@
           return jsonify({'login': 'deny'}), 401
   ```
 
-  Since we have switched from wsgi to asgi , we are using [https://pypi.org/project/asyncmy/](asyncmy) for handling the sql connections asynchronously using connecion pool. 
+  Since we have switched from wsgi to asgi , we are using [asyncmy](https://pypi.org/project/asyncmy/) for handling the sql connections asynchronously using connecion pool. 
 
 The pool starts before starting the service and stores in app
 ```
