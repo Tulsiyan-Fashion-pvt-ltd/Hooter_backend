@@ -1,8 +1,9 @@
 # this file initialises the mysql db gives mysql object which other files can import and take use of
 
 from flask_mysqldb import MySQL
-from flask import session
+from quart import current_app
 from pymongo import MongoClient
+from quart_motor import Motor
 import asyncmy
 import os
 from dotenv import load_dotenv
@@ -16,36 +17,23 @@ def __init_sql__(app):
     print('initialized the sql')
 
 
-# global variable for the pool to access
-# import this pool variable from database.py
-pool = None
+#initializing mongodb
+# import mongo from database in the files and use
+# await mongo.db.collection.operation()\
 
-# creating the sql connection pool for the async io
-async def create_pool():
-    global pool
-    pool = await asyncmy.create_pool(
-        host = os.environ.get('HOOTER_DB_HOST'),
-        port = int(os.environ.get('HOOTER_DB_PORT')),
-        user = os.environ.get('HOOTER_DB_USER'),
-        password = os.environ.get('HOOTER_DB_PASSWORD'),
-        db = os.environ.get('HOOTER_DB'),
-        minsize = 1,
-        maxsize = 20
-    )
-    return pool
+mongo = None
 
-
-# closing the connection pool
-async def close_pool():
-    global pool
-    pool.close()
-    await pool.wait_closed()
+def __init_mongodb__(app):
+    print(os.environ.get('MONGO_HOST'))
+    app.config['MONGO_URI'] = os.environ.get('MONGO_HOST')
+    mongo = Motor(app)
 
 
 # setting up the mongodb
 mongodb = MongoClient("mongodb://localhost:27017/")
 
-
+#to do
+#******************************************************** need to place them in the files respective to their operations *******************************************
 class Write:
     @staticmethod
     def add_store(user_id: str, shopify_shop_name: str, shopify_access_token: str, store_name: str = None, is_primary: bool = False) -> dict:

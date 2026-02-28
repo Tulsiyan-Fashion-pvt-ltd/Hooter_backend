@@ -18,27 +18,28 @@ class Branddb:
                                 brand_id,
                                 entity_name,
                                 brand_name,
-                                brand_niche,
                                 gstin,
                                 hooter_plan,
                                 registered_address,
-                                establishment_year,
+                                established_year,
                                 poc,
                                 created_at
-                            ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                            ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
                         """
                         await cursor.execute(query, (
                             brand_id,
                             brand_data.get('entity_name'),
                             brand_data.get('brand_name'),
-                            brand_data.get('niche'),
                             brand_data.get('gstin'),
                             brand_data.get('plan'),
                             brand_data.get('address'),
-                            brand_data.get('estYear'),
+                            brand_data.get('estyear'),
                             user_id,
                             datetime.now().date()
                         ))
+
+                        await cursor.execute('''INSERT INTO brand_access (brand_id, user_id)
+                            VALUES(%s, %s)''', (brand_id, user_id))
 
                         await connection.commit()
                     except Exception as e:

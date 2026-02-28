@@ -36,16 +36,13 @@ async def register_entity():
     brand_data = {
         'entity_name': brand_data.get('entity-name') if brand_data.get('entity-name') and brand_data.get('entity-name') != '' else None,
         'brand_name': brand_data.get('brand-name') if brand_data.get('brand-name') and brand_data.get('brand-name') != '' else None,
-        'niche': brand_data.get('niche') if brand_data.get('niche') and brand_data.get('niche') != '' else None,
+        # 'niche': brand_data.get('niche') if brand_data.get('niche') and brand_data.get('niche') != '' else None,
         'gstin': brand_data.get('gstin') if brand_data.get('gstin') and brand_data.get('gstin') != '' else None,
         'plan': brand_data.get('plan') if brand_data.get('plan') and brand_data.get('plan') != '' else None,
         'address': brand_data.get('address') if brand_data.get('address') and brand_data.get('address') != '' else None,
         'estyear': brand_data.get('estyear') if brand_data.get('estyear') and brand_data.get('estyear') != '' else None
     }
 
-    result = await Branddb.Write.insert_brand(brand_id, user_id, brand_data)
-    if result == 'failed':
-        return jsonify({'status': 'failed', 'message': 'error occured while registering the brand'}), 500
 
     try:
         # Check if the user is self POC
@@ -55,7 +52,12 @@ async def register_entity():
             if not user_id:
                 return jsonify({'status': 'error', 'message': 'user not logged in'}), 401
             
-            await Branddb.Write.map_user_brand(user_id, brand_id)
+            result = await Branddb.Write.insert_brand(brand_id, user_id, brand_data)
+
+            if result == 'failed':
+                return jsonify({'status': 'failed', 'message': 'error occured while registering the brand'}), 500
+
+            # await Branddb.Write.map_user_brand(user_id, brand_id)
         else:
             #checking if all the requied field is there
             required_field = ['self', 'name', 'number', 'email', 'designation', 'access', 'password']
@@ -63,12 +65,12 @@ async def register_entity():
 
             if valid_payload is not True:
                 report = jsonify({'status': 'error', 'message': 'payload does not provide necessary values'}), 400
-                print(report)
+                # print(report)
                 return report
              
             # User is not POC - create new POC with generated user_id
             poc_user_id = User.create_userid()
-            poc_data['user_id'] = poc_user_id
+            # poc_data['user_id'] = poc_user_id
 
             # fetch access allower access_specifiers
             access_specifier = Brand.access_specifiers()
@@ -87,7 +89,11 @@ async def register_entity():
                 'hashed_password': User.hash_password(poc_data.get('password'))
                 }
             await Userdb.Write().signup_user(user_creds)
-            await Branddb.Write.map_user_brand(poc_user_id, brand_id)
+            result = await Branddb.Write.insert_brand(brand_id, poc_user_id, brand_data)
+
+            if result == 'failed':
+                return jsonify({'status': 'failed', 'message': 'error occured while registering the brand'}), 500
+            # await Branddb.Write.map_user_brand(poc_user_id, brand_id)
 
         return jsonify({
             'status': 'ok',

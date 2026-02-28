@@ -1,4 +1,3 @@
-from database import mysql, pool
 from quart import current_app
 from datetime import datetime
 from asyncmy.cursors import DictCursor

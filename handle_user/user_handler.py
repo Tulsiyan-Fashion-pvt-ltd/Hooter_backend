@@ -29,7 +29,7 @@ async def signup():
 
         response = await Userdb.Write.signup_user(user_creds)
 
-        if response and response.get('status') == 'error':
+        if response and response.get('status') != 'ok':
             if response.get('message') == 'user_already_registered':
                 return jsonify({'status': 'already_registered'}), 409
         print('registered the user')
@@ -42,6 +42,8 @@ async def signup():
 
 @handle_user.route('/login', methods=['POST'])
 async def login():
+    # print(request.headers)
+    # print(request.cookies)
     data = await request.get_json()
     email = data.get('email')
     password = data.get('password')
@@ -72,6 +74,7 @@ async def login():
 # request to fetch user session
 @handle_user.route('/session', methods=['GET'])
 async def check_session():
+    # print(request.cookies)
     user = session.get('user')
     # print(user)
     if user:
@@ -82,9 +85,9 @@ async def check_session():
 
 @handle_user.route('/logout', methods=['POST'])
 async def logout():
-    print(session.get('user'))
+    # print(session.get('user'))
     session.clear()
-    print(session.get('user'))
+    # print(session.get('user'))
     return jsonify({'status': 'ok', 'message': 'user logout'}), 200
 
 
