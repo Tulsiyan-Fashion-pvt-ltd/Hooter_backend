@@ -38,7 +38,7 @@ class Write:
     @staticmethod
     def add_store(user_id: str, shopify_shop_name: str, shopify_access_token: str, store_name: str = None, is_primary: bool = False) -> dict:
         """Add a new Shopify store for a user."""
-        from encryption import TokenEncryption
+        from utils.encryption import TokenEncryption
         
         cursor = mysql.connection.cursor()
         try:
@@ -85,7 +85,7 @@ class Write:
     @staticmethod
     def update_store(store_id: int, user_id: str, **kwargs) -> dict:
         """Update store details."""
-        from encryption import TokenEncryption
+        from utils.encryption import TokenEncryption
 
         cursor = mysql.connection.cursor()
         try:

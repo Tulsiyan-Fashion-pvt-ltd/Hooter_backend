@@ -70,6 +70,6 @@ async def sql_connection_shutdown(response):
     app.pool.close()
     await app.pool.wait_closed()
 
-
 if __name__ == "__main__":
+    print('''>>>    \nuse @login_required when the login is required and using\nfrom utils.login_required import login_required''')
     app.run(debug=True, host='0.0.0.0', port=8800)
