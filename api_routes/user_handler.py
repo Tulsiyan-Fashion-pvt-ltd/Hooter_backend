@@ -1,6 +1,7 @@
 from quart import Blueprint, request, Response, jsonify, session
 from sql_queries.user_hanlderdb import Userdb
 from utils.helper import Validate, User, Helper
+from utils.login_required import login_required
 
 handle_user = Blueprint('handle_user', __name__)
 
@@ -84,6 +85,7 @@ async def check_session():
     
 
 @handle_user.route('/logout', methods=['POST'])
+@login_required
 async def logout():
     # print(session.get('user'))
     session.clear()
@@ -91,7 +93,8 @@ async def logout():
     return jsonify({'status': 'ok', 'message': 'user logout'}), 200
 
 
-@handle_user.route('/request-user-credentials')
+@handle_user.get('/request-user-credentials')
+@login_required
 async def fetch_user_creds():
     user = session.get('user')
     print(user)

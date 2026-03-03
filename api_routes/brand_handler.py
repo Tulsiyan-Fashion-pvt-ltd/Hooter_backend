@@ -2,11 +2,13 @@ from quart import Blueprint, session, request, jsonify
 from sql_queries.user_hanlderdb import Userdb
 from utils.helper import User, Helper, Brand
 from sql_queries.brand_handlerdb import Branddb
+from utils.login_required import login_required
 
 brand = Blueprint('brand', __name__)
 
 # route to register the business
 @brand.route('/register', methods=['POST'])
+@login_required
 async def register_entity():
     response = await request.get_json()
 
@@ -68,7 +70,7 @@ async def register_entity():
                 return report
              
             # User is not POC - create new POC with generated user_id
-            poc_user_id = User.create_userid()
+            poc_user_id = User.create_usencryptionerid()
             # poc_data['user_id'] = poc_user_id
 
             # fetch access allower access_specifiers
@@ -105,10 +107,19 @@ async def register_entity():
 
 
 @brand.route('/request-niches', methods=['GET'])
-def request_niches():
+async def request_niches():
     niches = Brand.fetch_niches()
     return jsonify({'status': 'ok', "niches": niches}), 200
 
+
+# request for brand access
+@brand.post('/connect-brand')
+@login_required
+async def connect_brand():
+    '''
+        check the brand access of the user from the database, whether there is any or many or none
+    '''
+    pass
 
 
 if __name__ == "__main__":
