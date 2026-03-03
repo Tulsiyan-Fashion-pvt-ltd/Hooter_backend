@@ -1,11 +1,10 @@
 from quart import Quart
-# from asgiref.wsgi import WsgiToAsgi
 from quart_cors import cors
 from pages import page # importing the page blueprint for the page routes
-from handle_user.user_handler import handle_user #importing the request blueprint from requests
-from database import __init_sql__, __init_mongodb__
+from api_routes.user_handler import handle_user #importing the request blueprint from requests
+from database_connection import __init_sql__, __init_mongodb__
 import os
-from handle_brand.brand_handler import brand
+from api_routes.brand_handler import brand
 # from shopify.products import products8800
 from shopify.stores import stores
 from dotenv import load_dotenv
@@ -71,8 +70,6 @@ async def sql_connection_shutdown(response):
     app.pool.close()
     await app.pool.wait_closed()
 
-
-# asgi_app = WsgiToAsgi(app)
 
 if __name__ == "__main__":
     app.run(debug=True, host='0.0.0.0', port=8800)

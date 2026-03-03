@@ -1,4 +1,4 @@
-from database import mysql
+from database_connection import mysql
 from datetime import datetime
 from quart import current_app
 from asyncmy.cursors import DictCursor

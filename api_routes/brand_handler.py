@@ -1,8 +1,7 @@
 from quart import Blueprint, session, request, jsonify
-from handle_user.user_hanlderdb import Userdb
-from helper import User, Helper
-from helper import User, Brand
-from handle_brand.brand_handlerdb import Branddb
+from sql_queries.user_hanlderdb import Userdb
+from utils.helper import User, Helper, Brand
+from sql_queries.brand_handlerdb import Branddb
 
 brand = Blueprint('brand', __name__)
 

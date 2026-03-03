@@ -1,6 +1,6 @@
 import logging
-from encryption import TokenEncryption
-from database import Fetch
+from shopify.encryption import TokenEncryption
+from database_connection import Fetch
 from services.shopify_graphql import ShopifyGraphQLClient
 from services.exceptions import AuthorizationError, ShopifyAPIError
 

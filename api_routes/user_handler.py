@@ -1,6 +1,6 @@
 from quart import Blueprint, request, Response, jsonify, session
-from handle_user.user_hanlderdb import Userdb
-from helper import Validate, User, Helper
+from sql_queries.user_hanlderdb import Userdb
+from utils.helper import Validate, User, Helper
 
 handle_user = Blueprint('handle_user', __name__)
 
