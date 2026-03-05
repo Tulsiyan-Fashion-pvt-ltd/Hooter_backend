@@ -1,7 +1,8 @@
 from quart import Blueprint, request, Response, jsonify, session
-from sql_queries.user_hanlderdb import Userdb
+from sql_queries import userdb
 from utils.helper import Validate, User, Helper
 from utils.login_required import login_required
+from api_routes.brand_routes import connect_brand
 
 handle_user = Blueprint('handle_user', __name__)
 
@@ -28,7 +29,7 @@ async def signup():
             'designation': designation
             }
 
-        response = await Userdb.Write.signup_user(user_creds)
+        response = await userdb.Write.signup_user(user_creds)
 
         if response and response.get('status') != 'ok':
             if response.get('message') == 'user_already_registered':
@@ -54,18 +55,22 @@ async def login():
         return jsonify({'status': 'invalid request', 'message': 'email or password not provided'}), 400
 
     if Validate.email(email):
-        userid = await Userdb.Fetch.userid_by_email(email)
+        userid = await userdb.Fetch.userid_by_email(email)
 
         # if the userid is null then return then do not log in
         if userid == None:
             return jsonify({'status': 'error', 'message': 'user not found with this email'}), 401
         hashed_password = User.hash_password(password)
-        login_check = await Userdb.Fetch.check_password(userid, hashed_password)
+        login_check = await userdb.Fetch.check_password(userid, hashed_password)
 
         if login_check == 'valid':
             session['user'] = userid
             # print(session.get('user'))
-            return jsonify({'status': 'ok', 'message': 'login successfull'}), 200
+            
+            # a brand needs to link to the user
+            # if no brand is linnked to the user then redirect to register
+            brand_access = await connect_brand()
+            return jsonify({"login": {'status': 'ok', 'message': 'login successfull'}, "brand_connection": await Response.get_json(brand_access)}), 200
         else:
             return jsonify({'status': 'unauthorised', 'message': 'incorrect password'}), 401
     else:
@@ -100,7 +105,7 @@ async def fetch_user_creds():
     print(user)
     if user==None:
         return jsonify({'status': 'unauthorised access', 'message': 'no loged in user found'}), 401
-    _ = await Userdb.Fetch.user_details(user)
+    _ = await userdb.Fetch.user_details(user)
 
     print(_)
     user_data = {

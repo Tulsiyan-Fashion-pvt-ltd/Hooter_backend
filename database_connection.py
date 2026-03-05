@@ -18,19 +18,15 @@ def __init_sql__(app):
 
 
 #initializing mongodb
-# import mongo from database in the files and use
-# await mongo.db.collection.operation()\
+# using current_app.mongo to get the mongo object
+# mongo = current_app.mongo
+# await mongo.db.collection.operation()
 
-mongo = None
 
 def __init_mongodb__(app):
-    print(os.environ.get('MONGO_HOST'))
     app.config['MONGO_URI'] = os.environ.get('MONGO_HOST')
-    mongo = Motor(app)
+    app.mongo = Motor(app)
 
-
-# setting up the mongodb
-mongodb = MongoClient("mongodb://localhost:27017/")
 
 #to do
 #******************************************************** need to place them in the files respective to their operations *******************************************

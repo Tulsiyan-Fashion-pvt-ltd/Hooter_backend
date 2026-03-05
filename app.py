@@ -1,10 +1,10 @@
 from quart import Quart
 from quart_cors import cors
 from pages import page # importing the page blueprint for the page routes
-from api_routes.user_handler import handle_user #importing the request blueprint from requests
+from api_routes.user_routes import handle_user #importing the request blueprint from requests
 from database_connection import __init_sql__, __init_mongodb__
 import os
-from api_routes.brand_handler import brand
+from api_routes.brand_routes import brand
 # from shopify.products import products8800
 from shopify.stores import stores
 from dotenv import load_dotenv
@@ -57,7 +57,8 @@ async def sql_connection_startup():
                 password = os.environ.get('HOOTER_DB_PASSWORD'),
                 db = os.environ.get('HOOTER_DB'),
                 minsize = 1,
-                maxsize = 20
+                # maxsize = 20,
+                pool_recycle=3600
             )
             connection = True
         except Exception as e:
@@ -69,6 +70,7 @@ async def sql_connection_startup():
 async def sql_connection_shutdown(response):
     app.pool.close()
     await app.pool.wait_closed()
+
 
 if __name__ == "__main__":
     print('''>>>    \nuse @login_required when the login is required and using\nfrom utils.login_required import login_required''')

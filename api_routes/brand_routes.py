@@ -1,7 +1,7 @@
 from quart import Blueprint, session, request, jsonify
-from sql_queries.user_hanlderdb import Userdb
+from sql_queries import userdb
 from utils.helper import User, Helper, Brand
-from sql_queries.brand_handlerdb import Branddb
+from sql_queries import branddb
 from utils.login_required import login_required
 
 brand = Blueprint('brand', __name__)
@@ -18,7 +18,7 @@ async def register_entity():
 
 
     # only allow the super_admin user to use this route
-    user_access = await Userdb.Fetch.user_access(session.get('user'))
+    user_access = await userdb.Fetch.user_access(session.get('user'))
     if (user_access == None or user_access != 'super_admin'):
         return jsonify({'status': 'access denied', 'message': 'you do not have the access kindly contact Hooter super admins'}), 401
 
@@ -53,12 +53,12 @@ async def register_entity():
             if not user_id:
                 return jsonify({'status': 'error', 'message': 'user not logged in'}), 401
             
-            result = await Branddb.Write.insert_brand(brand_id, user_id, brand_data)
+            result = await branddb.Write.insert_brand(brand_id, user_id, brand_data)
 
             if result == 'failed':
                 return jsonify({'status': 'failed', 'message': 'error occured while registering the brand'}), 500
 
-            # await Branddb.Write.map_user_brand(user_id, brand_id)
+            # await branddb.Write.map_user_brand(user_id, brand_id)
         else:
             #checking if all the requied field is there
             required_field = ['self', 'name', 'number', 'email', 'designation', 'access', 'password']
@@ -89,12 +89,12 @@ async def register_entity():
                 'designation': poc_data['designation'] if poc_data['designation'] and poc_data['designation'] != '' else None,
                 'hashed_password': User.hash_password(poc_data.get('password'))
                 }
-            await Userdb.Write().signup_user(user_creds)
-            result = await Branddb.Write.insert_brand(brand_id, poc_user_id, brand_data)
+            await userdb.Write().signup_user(user_creds)
+            result = await branddb.Write.insert_brand(brand_id, poc_user_id, brand_data)
 
             if result == 'failed':
                 return jsonify({'status': 'failed', 'message': 'error occured while registering the brand'}), 500
-            # await Branddb.Write.map_user_brand(poc_user_id, brand_id)
+            # await branddb.Write.map_user_brand(poc_user_id, brand_id)
 
         return jsonify({
             'status': 'ok',
@@ -114,12 +114,28 @@ async def request_niches():
 
 # request for brand access
 @brand.post('/connect-brand')
+@brand.post('/connect-brand/<brand_id>')
 @login_required
-async def connect_brand():
+async def connect_brand(brand_id=None):
     '''
         check the brand access of the user from the database, whether there is any or many or none
     '''
-    pass
+
+    if brand_id is not None:
+        if await branddb.Fetch.check_brand_id(brand_id) == "available":
+            session['brand'] = brand_id
+            return jsonify({"Status": {"request": "successful", "status": "brand_registered successfully"}})
+
+    user_id = session.get('user')
+    brand_access = await branddb.Fetch.brand_access(user_id)
+
+    if brand_access is None:
+        return jsonify({'Status': {"request": "successful", "brands": None, "status": "not connected", "redirect": "/register-brand"}})
+    elif len(brand_access) == 1:
+        session['brand'] = brand_access[0].get('brand_id')
+        return jsonify({"Status": {"request": "successful", "brands": "single brand", "status": "connected"}})
+    else:
+        return jsonify({"Status": {"request": "successful", "bands": brand_access, "status": "not connected", "issue": "a brand needs to be selected"}})
 
 
 if __name__ == "__main__":
