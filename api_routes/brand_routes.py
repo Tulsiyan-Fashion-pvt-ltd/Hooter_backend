@@ -125,6 +125,8 @@ async def connect_brand(brand_id=None):
         if await branddb.Fetch.check_brand_id(brand_id) == "available":
             session['brand'] = brand_id
             return jsonify({"Status": {"request": "successful", "status": "brand_registered successfully"}})
+        else:
+            return jsonify({"Status": {"request": "unsuccessful", "status": "invalid brand id"}}), 400
 
     user_id = session.get('user')
     brand_access = await branddb.Fetch.brand_access(user_id)
@@ -133,9 +135,9 @@ async def connect_brand(brand_id=None):
         return jsonify({'Status': {"request": "successful", "brands": None, "status": "not connected", "redirect": "/register-brand"}})
     elif len(brand_access) == 1:
         session['brand'] = brand_access[0].get('brand_id')
-        return jsonify({"Status": {"request": "successful", "brands": "single brand", "status": "connected"}})
+        return jsonify({"Status": {"request": "successful", "brands": "single brand", "status": "connected", "redirect": "/"}})
     else:
-        return jsonify({"Status": {"request": "successful", "bands": brand_access, "status": "not connected", "issue": "a brand needs to be selected"}})
+        return jsonify({"Status": {"request": "successful", "bands": brand_access, "status": "not connected", "issue": "a brand needs to be selected", "redirect": '/select-panel'}})
 
 
 if __name__ == "__main__":
