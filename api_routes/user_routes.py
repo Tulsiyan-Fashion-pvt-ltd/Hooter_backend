@@ -1,7 +1,7 @@
 from quart import Blueprint, request, Response, jsonify, session
 from sql_queries import userdb
 from utils.helper import Validate, User, Helper
-from utils.login_required import login_required
+from utils.prerequirements import login_required
 from api_routes.brand_routes import connect_brand
 
 handle_user = Blueprint('handle_user', __name__)

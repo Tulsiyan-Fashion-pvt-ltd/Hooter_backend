@@ -2,7 +2,7 @@ from quart import Blueprint, session, request, jsonify
 from sql_queries import userdb
 from utils.helper import User, Helper, Brand
 from sql_queries import branddb
-from utils.login_required import login_required
+from utils.prerequirements import login_required, brand_required
 
 brand = Blueprint('brand', __name__)
 
@@ -113,8 +113,8 @@ async def request_niches():
 
 
 # request for brand access
-@brand.post('/connect-brand')
-@brand.post('/connect-brand/<brand_id>')
+@brand.get('/connect-brand')
+@brand.get('/connect-brand/<brand_id>')
 @login_required
 async def connect_brand(brand_id=None):
     '''
@@ -139,6 +139,64 @@ async def connect_brand(brand_id=None):
     else:
         return jsonify({"Status": {"request": "successful", "bands": brand_access, "status": "not connected", "issue": "a brand needs to be selected", "redirect": '/select-panel'}})
 
+
+# check if the user has even added a single catalog or not.
+@brand.get('/if-catalog')
+@login_required
+@brand_required
+async def if_catalog_exists():
+    is_catalog = await branddb.Fetch.is_exists_catalog(session.get('brand'))
+    if is_catalog == True:
+        return jsonify({"catalog": "available"})
+    else:
+        return jsonify({"catalog": "unavailable"})
+    
+
+@brand.post('/upload-single-catalog')
+@login_required
+@brand_required
+async def upload_single_catalog():
+
+    data = await request.get_json()
+
+    data_keys = [
+        "title",
+        "type",
+        "stock",
+        "price",
+        "compared-price",
+        "purchasing-cost",
+        "vendor",
+        "ean",
+        "hsn",
+        "net-weight",
+        "dead-weight",
+        "volumetric-weight",
+        "brand-name"
+    ]
+
+    Helper.check_required_payload(data, data_keys)
+
+    product_type = data.get("type")
+    brand_name = branddb.Fetch.brand_name_by_id(session.get('brand'))
+    catalog = {
+        "title": data.get('title'),
+        "type": data.get("type"),
+        "stock": data.get("stock"),
+        "price": data.get("price"),
+        "comp_price": data.get("compared-price"),
+        "purchasing_cost": data.get("purchasing-cost"),
+        "vendor": data.get("vendor") if data.get("vendor") else brand_name, # if the vendor id is not there then enter the brand name
+        "ean": data.get('ean'),
+        "hsn": data.get("hsn"),
+        "net_weight": data.get("net-weight"),
+        "dead_weight": data.get("dead-weight"),
+        "volumentric_weight": data.get("volumetric-weight"),
+        "brand_name": data.get("brand-name") if data.get("brand-name") else brand_name
+    }
+
+    pass
+    
 
 if __name__ == "__main__":
     request_niches()

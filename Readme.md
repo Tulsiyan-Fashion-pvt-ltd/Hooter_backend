@@ -10,3 +10,7 @@
     -   userdb
     -   user_id
     -   session etc
+
+## sessions
+    - session['user'] => stores the user session
+    - session['brand'] => stores the brand id as the connected brand to that user on that particular session

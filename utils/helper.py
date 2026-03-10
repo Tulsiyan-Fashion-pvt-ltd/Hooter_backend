@@ -64,8 +64,8 @@ class Helper:
     # create a list of expected payloads
     # and pass the json response payload of the request here
     @staticmethod
-    def check_required_payload(json, keys):
-        return all(key in json for key in keys)
+    def check_required_payload(payload, keys):
+        return all(key in payload for key in keys)
 
 
 class Brand:

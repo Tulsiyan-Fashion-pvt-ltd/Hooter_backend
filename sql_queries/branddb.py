@@ -95,3 +95,37 @@ class Fetch:
                 except Exception as e:
                     print(f"error during checking the brand availability")
                     return ("error", "unable to fulfill the request")
+
+
+    # this function only tells if the brand has uploaded a single catalog or not            
+    @staticmethod
+    async def is_exists_catalog(brand_id):
+        pool = current_app.pool
+        async with pool.acquire() as connection:
+            async with connection.cursor(cursor=DictCursor) as cursor:
+                try:
+                    query = '''Select 1 from usku_record where brand_id = %s'''
+
+                    await cursor.execute(query, (brand_id, ))
+                    catalog_available = await cursor.fetchone()
+                    return True if catalog_available and catalog_available.get('1') else False
+                except Exception as e:
+                    print(f"error occured while fetching the catalog on is_exists_catalog function\n{e}")
+                    return ("error", "could not fetch the availability from the usku_record")
+
+
+    # check name of brand from the brand_id
+    @staticmethod
+    async def brand_name_by_id(brand_id):
+        pool = current_app.pool
+        async with pool.acquire() as connection:
+            async with connection.cursor(cursor=DictCursor) as cursor:
+                try:
+                    query = '''SELECT brand_name FROM brand WHERE brand_id = %s'''
+                    await cursor.execute(query, (brand_id, ))
+
+                    result = await cursor.fetchone()
+                    brand_name = result.get('brand_name')
+                except Exception as e:
+                    print(f"error during fetching the brand_name from the brand table in brand_name_by_id\n{e}")
+                    return ("error", "unable to fulfill the request")

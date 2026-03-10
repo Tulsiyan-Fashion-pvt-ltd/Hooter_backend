@@ -24,7 +24,7 @@ app.config["SECRET_KEY"] = os.environ.get('HOOTER_SECRET_KEY')
 
 # only for texting nad development
 app.config["SESSION_COOKIE_SAMESITE"] = "None"
-app.config["SESSION_COOKIE_SECURE"] = True  # because you're using http locally
+app.config["SESSION_COOKIE_SECURE"] = os.environ.get('SESSION_COOKIE_SECURE')  # because you're using http locally
 
 app.config['MYSQL_HOST'] = os.environ.get('HOOTER_DB_HOST')
 app.config['MYSQL_PORT'] = int(os.environ.get('HOOTER_DB_PORT'))
