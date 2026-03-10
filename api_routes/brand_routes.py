@@ -3,6 +3,7 @@ from sql_queries import userdb
 from utils.helper import User, Helper, Brand
 from sql_queries import branddb
 from utils.prerequirements import login_required, brand_required
+from utils import products
 
 brand = Blueprint('brand', __name__)
 
@@ -160,9 +161,9 @@ async def upload_single_catalog():
     data = await request.get_json()
 
     data_keys = [
+        "sku-id",
         "title",
         "type",
-        "stock",
         "price",
         "compared-price",
         "purchasing-cost",
@@ -175,14 +176,17 @@ async def upload_single_catalog():
         "brand-name"
     ]
 
-    Helper.check_required_payload(data, data_keys)
+    if not Helper.check_required_payload(data, data_keys):
+        return jsonify({"status": "invalid payload"})
 
     product_type = data.get("type")
     brand_name = branddb.Fetch.brand_name_by_id(session.get('brand'))
+
     catalog = {
+        "usku_id": await products.create_usku(),
+        "sku_id": data.get("sku-id"),
         "title": data.get('title'),
         "type": data.get("type"),
-        "stock": data.get("stock"),
         "price": data.get("price"),
         "comp_price": data.get("compared-price"),
         "purchasing_cost": data.get("purchasing-cost"),
@@ -195,6 +199,7 @@ async def upload_single_catalog():
         "brand_name": data.get("brand-name") if data.get("brand-name") else brand_name
     }
 
+    return jsonify(catalog)
     pass
     
 
