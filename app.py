@@ -7,6 +7,7 @@ import os
 from api_routes.brand_routes import brand
 # from shopify.products import products8800
 from shopify.stores import stores
+from api_routes import catalog_routes
 from dotenv import load_dotenv
 import asyncmy
 from datetime import timedelta
@@ -38,7 +39,7 @@ __init_mongodb__(app)
 app.register_blueprint(page)
 app.register_blueprint(handle_user)
 app.register_blueprint(brand)
-
+app.register_blueprint(catalog_routes.catalog)
 # need to conver the programs and methods as per asgi
 # app.register_blueprint(products)
 # app.register_blueprint(stores)
@@ -48,7 +49,8 @@ app.register_blueprint(brand)
 @app.before_serving
 async def sql_connection_startup():
     connection = False
-    while connection == False:
+    count = 0
+    while connection == False and count <= 5:
         try:
             app.pool= await asyncmy.create_pool(
                 host = os.environ.get('HOOTER_DB_HOST'),
@@ -63,6 +65,7 @@ async def sql_connection_startup():
             connection = True
         except Exception as e:
             connection = False
+            count += 1
             print(e)
 
 

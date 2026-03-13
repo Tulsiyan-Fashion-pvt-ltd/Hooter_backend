@@ -65,6 +65,7 @@ async def login():
 
         if login_check == 'valid':
             session['user'] = userid
+            session.permanent = False
             # print(session.get('user'))
             
             # a brand needs to link to the user
@@ -102,7 +103,7 @@ async def logout():
 @login_required
 async def fetch_user_creds():
     user = session.get('user')
-    print(user)
+    # print(user)
     if user==None:
         return jsonify({'status': 'unauthorised access', 'message': 'no loged in user found'}), 401
     _ = await userdb.Fetch.user_details(user)

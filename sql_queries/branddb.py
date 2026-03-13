@@ -97,22 +97,6 @@ class Fetch:
                     return ("error", "unable to fulfill the request")
 
 
-    # this function only tells if the brand has uploaded a single catalog or not            
-    @staticmethod
-    async def is_exists_catalog(brand_id):
-        pool = current_app.pool
-        async with pool.acquire() as connection:
-            async with connection.cursor(cursor=DictCursor) as cursor:
-                try:
-                    query = '''Select 1 from usku_record where brand_id = %s'''
-
-                    await cursor.execute(query, (brand_id, ))
-                    catalog_available = await cursor.fetchone()
-                    return True if catalog_available and catalog_available.get('1') else False
-                except Exception as e:
-                    print(f"error occured while fetching the catalog on is_exists_catalog function\n{e}")
-                    return ("error", "could not fetch the availability from the usku_record")
-
 
     # check name of brand from the brand_id
     @staticmethod
