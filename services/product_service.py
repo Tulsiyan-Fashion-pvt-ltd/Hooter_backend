@@ -2,7 +2,8 @@ import json
 import uuid
 import time
 import requests
-from database_connection import mysql, Fetch, Write
+from database_connection import mysql
+from sql_queries.storesdb import Fetch, Write
 from services.shopify_graphql import ShopifyRetryableError
 from services.shopify_helpers import get_store_config
 from services.exceptions import AuthorizationError, ShopifyAPIError, ValidationError, IdempotencyConflict

@@ -2,7 +2,7 @@ import json
 from quart import Blueprint, request, jsonify, session
 from services.product_service import ProductService
 from services.exceptions import AuthorizationError, ShopifyAPIError, ValidationError, IdempotencyConflict
-from database_connection import Fetch
+from sql_queries.storesdb import Fetch
 
 products = Blueprint("products", __name__)
 
