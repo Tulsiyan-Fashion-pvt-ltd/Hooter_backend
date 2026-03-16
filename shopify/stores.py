@@ -1,5 +1,5 @@
 from quart import Blueprint, request, jsonify, session
-from database_connection import Write, Fetch
+from sql_queries.storesdb import Write, Fetch
 from services.shopify_helpers import validate_shopify_token, ShopifyAPIError
 
 stores = Blueprint("stores", __name__)
