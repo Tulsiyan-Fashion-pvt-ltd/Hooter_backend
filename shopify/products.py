@@ -15,20 +15,20 @@ def _require_auth(f):
     from functools import wraps
 
     @wraps(f)
-    def decorated_function(*args, **kwargs):
+    async def decorated_function(*args, **kwargs):
         user_id = _get_authenticated_user()
         if not user_id:
             return jsonify({"status": "error", "message": "Authentication required"}), 401
-        return f(user_id, *args, **kwargs)
+        return await f(user_id, *args, **kwargs)
 
     return decorated_function
 
 
 @products.route("/products", methods=["POST"])
 @_require_auth
-def create_product(user_id):
+async def create_product(user_id):
     try:
-        data = request.get_json()
+        data = await request.get_json()
         if not data:
             return jsonify({"status": "error", "message": "Request body must be valid JSON"}), 400
 
@@ -49,7 +49,7 @@ def create_product(user_id):
             return jsonify({"status": "error", "message": "brand_id and store_id are required"}), 400
 
         try:
-            result = ProductService.create_product_complete(
+            result = await ProductService.create_product_complete(
                 title=title,
                 description=description,
                 vendor=vendor,
@@ -81,7 +81,7 @@ def create_product(user_id):
 
 @products.route("/products", methods=["GET"])
 @_require_auth
-def list_products(user_id):
+async def list_products(user_id):
     try:
         brand_id = request.args.get("brand_id", type=int)
         status = request.args.get("status")
@@ -91,7 +91,7 @@ def list_products(user_id):
         if not brand_id:
             return jsonify({"status": "error", "message": "brand_id is required"}), 400
 
-        result = ProductService.list_products(
+        result = await ProductService.list_products(
             brand_id=brand_id,
             user_id=user_id,
             status=status,
@@ -109,13 +109,13 @@ def list_products(user_id):
 
 @products.route("/products/<uid>", methods=["GET"])
 @_require_auth
-def get_product_by_uid(user_id, uid):
+async def get_product_by_uid(user_id, uid):
     try:
         brand_id = request.args.get("brand_id", type=int)
         if not brand_id:
             return jsonify({"status": "error", "message": "brand_id is required"}), 400
         try:
-            product = ProductService.get_product_by_uid(uid, brand_id, user_id)
+            product = await ProductService.get_product_by_uid(uid, brand_id, user_id)
         except AuthorizationError as ae:
             return jsonify({"status": "error", "message": str(ae)}), 403
         if not product:
@@ -127,14 +127,14 @@ def get_product_by_uid(user_id, uid):
 
 @products.route("/products/<uid>", methods=["PATCH"])
 @_require_auth
-def update_product(user_id, uid):
+async def update_product(user_id, uid):
     try:
-        data = request.get_json() or {}
+        data = await request.get_json() or {}
         brand_id = data.get("brand_id")
         if not brand_id:
             return jsonify({"status": "error", "message": "brand_id is required"}), 400
         try:
-            result = ProductService.update_product(uid, brand_id, user_id, data)
+            result = await ProductService.update_product(uid, brand_id, user_id, data)
         except AuthorizationError as ae:
             return jsonify({"status": "error", "message": str(ae)}), 403
         except ShopifyAPIError as se:
@@ -147,14 +147,14 @@ def update_product(user_id, uid):
 
 @products.route("/products/<uid>", methods=["DELETE"])
 @_require_auth
-def delete_product(user_id, uid):
+async def delete_product(user_id, uid):
     try:
         brand_id = request.args.get("brand_id", type=int)
         soft_delete = request.args.get("soft", "true").lower() == "true"
         if not brand_id:
             return jsonify({"status": "error", "message": "brand_id is required"}), 400
         try:
-            result = ProductService.delete_product(uid, brand_id, user_id, soft_delete=soft_delete)
+            result = await ProductService.delete_product(uid, brand_id, user_id, soft_delete=soft_delete)
         except AuthorizationError as ae:
             return jsonify({"status": "error", "message": str(ae)}), 403
         except ShopifyAPIError as se:
