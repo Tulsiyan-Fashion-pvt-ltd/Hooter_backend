@@ -2,7 +2,7 @@ from quart import Quart
 from quart_cors import cors
 from pages import page # importing the page blueprint for the page routes
 from api_routes.user_routes import handle_user #importing the request blueprint from requests
-from database_connection import __init_sql__, __init_mongodb__
+# from database_connection import __init_sql__, __init_mongodb__
 import os
 from api_routes.brand_routes import brand
 # from shopify.products import products8800
@@ -11,6 +11,8 @@ from api_routes import catalog_routes
 from dotenv import load_dotenv
 import asyncmy
 from datetime import timedelta
+from quart_motor import Motor
+
 
 load_dotenv()  # Load environment variables from .env file
 
@@ -34,7 +36,8 @@ app.config['MYSQL_PASSWORD'] = os.environ.get('HOOTER_DB_PASSWORD')
 app.config['MYSQL_DB'] = os.environ.get('HOOTER_DB')
 app.config['MYSQL_PORT'] = int(os.environ.get('HOOTER_DB_PORT', '3306'))
 
-__init_mongodb__(app)
+app.config['MONGO_URI'] = os.environ.get('MONGO_HOST')
+app.mongo = Motor(app)
 
 app.register_blueprint(page)
 app.register_blueprint(handle_user)
