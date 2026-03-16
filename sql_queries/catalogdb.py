@@ -21,19 +21,25 @@ class Write:
                         catalog_query = '''insert into catalog
                                             (usku_id, product_title, product_type, price,
                                             compared_price, purchasing_cost, vendor, ean, hsn, net_weight_kg, dead_weight_kg,
-                                            volumetric_weight_kg, brand_name)
+                                            volumetric_weight_kg, brand_name, updated_at)
                                             values
                                             (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                                         '''
                         
                         catalog_values = (catalog.get("usku_id"), catalog.get("title"), catalog.get("type"), 
-                                          catalog.get("stock"))
+                                          catalog.get("price"), catalog.get("comp_price"), catalog.get("purchasing_cost"),
+                                          catalog.get("vendor"), catalog.get("ean"), catalog.get("hsn"),
+                                          catalog.get("net_weight"), catalog.get("dead_weight"), catalog.get("volumetric_weight"),
+                                          catalog.get("brand_name"), catalog.get('update_timestamp'))
                         
                         await cursor.execute(catalog_query, catalog_values)
+                        await connection.commit()
+                        return "ok"
 
             except Exception as e:
                 await connection.rollback()
                 print(f"error encountered while adding a single product\n{e}")
+                return "error"
 
 
 class Fetch:
