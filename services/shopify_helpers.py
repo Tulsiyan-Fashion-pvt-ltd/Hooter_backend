@@ -8,9 +8,9 @@ from services.exceptions import AuthorizationError, ShopifyAPIError
 logger = logging.getLogger(__name__)
 
 
-def get_store_config(store_id: int, user_id: str) -> dict:
+async def get_store_config(store_id: int, user_id: str) -> dict:
     """Fetch store + decrypt token for Shopify client usage."""
-    store = Fetch.get_store_by_id(store_id, user_id)
+    store = await Fetch.get_store_by_id(store_id, user_id)
     if not store:
         raise AuthorizationError("Store not found or access denied")
     token = TokenEncryption.decrypt_token(store["shopify_access_token_encrypted"])

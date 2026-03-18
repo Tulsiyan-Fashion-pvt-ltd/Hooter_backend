@@ -6,7 +6,7 @@ stores = Blueprint("stores", __name__)
 
 
 @stores.route("/stores", methods=["POST"])
-def add_store():
+async def add_store():
     """
     Add a new Shopify store for the logged-in user.
 
@@ -25,7 +25,7 @@ def add_store():
         if not user:
             return jsonify({'status': 'error', 'message': 'Unauthorized access'}), 401
 
-        data = request.get_json()
+        data = await request.get_json()
         if not data:
             return jsonify({'status': 'error', 'message': 'Request body must be valid JSON'}), 400
 
@@ -50,7 +50,7 @@ def add_store():
             }), 400
 
         # Add store to database
-        result = Write.add_store(
+        result = await Write.add_store(
             user_id=user,
             shopify_shop_name=shopify_shop_name,
             shopify_access_token=shopify_access_token,
@@ -74,7 +74,7 @@ def add_store():
 
 
 @stores.route("/stores", methods=["GET"])
-def list_stores():
+async def list_stores():
     """
     List all Shopify stores for the logged-in user.
 
@@ -86,7 +86,7 @@ def list_stores():
         if not user:
             return jsonify({'status': 'error', 'message': 'Unauthorized access'}), 401
 
-        user_stores = Fetch.get_user_stores(user)
+        user_stores = await Fetch.get_user_stores(user)
 
         return jsonify({
             'status': 'success',
@@ -103,7 +103,7 @@ def list_stores():
 
 
 @stores.route("/stores/<int:store_id>", methods=["GET"])
-def get_store(store_id):
+async def get_store(store_id):
     """
     Get details of a specific store.
 
@@ -118,7 +118,7 @@ def get_store(store_id):
         if not user:
             return jsonify({'status': 'error', 'message': 'Unauthorized access'}), 401
 
-        store = Fetch.get_store_by_id(store_id, user)
+        store = await Fetch.get_store_by_id(store_id, user)
         if not store:
             return jsonify({
                 'status': 'error',
@@ -139,7 +139,7 @@ def get_store(store_id):
 
 
 @stores.route("/stores/<int:store_id>", methods=["PUT"])
-def update_store(store_id):
+async def update_store(store_id):
     """
     Update store details.
 
@@ -162,7 +162,7 @@ def update_store(store_id):
         if not user:
             return jsonify({'status': 'error', 'message': 'Unauthorized access'}), 401
 
-        data = request.get_json()
+        data = await request.get_json()
         if not data:
             return jsonify({'status': 'error', 'message': 'Request body must be valid JSON'}), 400
 
@@ -177,7 +177,7 @@ def update_store(store_id):
         if not update_params:
             return jsonify({'status': 'error', 'message': 'No fields to update'}), 400
 
-        result = Write.update_store(store_id, user, **update_params)
+        result = await Write.update_store(store_id, user, **update_params)
 
         if result['status'] == 'error':
             return jsonify(result), 400
@@ -196,7 +196,7 @@ def update_store(store_id):
 
 
 @stores.route("/stores/<int:store_id>", methods=["DELETE"])
-def delete_store(store_id):
+async def delete_store(store_id):
     """
     Delete a store (soft delete - marks as inactive).
 
@@ -211,7 +211,7 @@ def delete_store(store_id):
         if not user:
             return jsonify({'status': 'error', 'message': 'Unauthorized access'}), 401
 
-        result = Write.delete_store(store_id, user)
+        result = await Write.delete_store(store_id, user)
 
         if result['status'] == 'error':
             return jsonify(result), 400
@@ -227,7 +227,7 @@ def delete_store(store_id):
 
 
 @stores.route("/stores/<int:store_id>/set-primary", methods=["POST"])
-def set_primary_store(store_id):
+async def set_primary_store(store_id):
     """
     Set a store as the primary store for the user.
 
@@ -242,7 +242,7 @@ def set_primary_store(store_id):
         if not user:
             return jsonify({'status': 'error', 'message': 'Unauthorized access'}), 401
 
-        result = Write.update_store(store_id, user, is_primary=True)
+        result = await Write.update_store(store_id, user, is_primary=True)
 
         if result['status'] == 'error':
             return jsonify(result), 400
