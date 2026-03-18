@@ -11,4 +11,4 @@ async def create_usku():
     usku_id = prefix+unique_char+unique_int+str(datetime.now().date())+usku_count
     return usku_id
 
-print(create_usku())
+# print(create_usku())

@@ -36,6 +36,7 @@ app.config['MYSQL_PASSWORD'] = os.environ.get('HOOTER_DB_PASSWORD')
 app.config['MYSQL_DB'] = os.environ.get('HOOTER_DB')
 app.config['MYSQL_PORT'] = int(os.environ.get('HOOTER_DB_PORT', '3306'))
 
+# mongo db connection
 app.config['MONGO_URI'] = os.environ.get('MONGO_HOST')
 app.mongo = Motor(app)
 
