@@ -2,68 +2,74 @@ from quart import Blueprint, session, request, jsonify
 from sql_queries import userdb
 from utils.helper import User, Helper, Brand
 from sql_queries import branddb
-from utils.prerequirements import login_required, brand_required
+from utils.prerequirements import login_required, brand_required, super_admin_required
 from utils import products
 
 brand = Blueprint('brand', __name__)
 
 # route to register the business
-@brand.route('/register', methods=['POST'])
+@brand.route('/register-brand', methods=['POST'])
 @login_required
+@super_admin_required
 async def register_entity():
     response = await request.get_json()
+    
+    '''
+        checking the payload for brand
+    '''
+    required_payload = ['brand', 'poc']
+    accepted_payload = required_payload
+    valid_payload = Helper.check_required_payload(response, accepted_payload, required_payload)
+
+    if valid_payload is not True:
+        return jsonify({'status': 'error', 'message': 'payload does not provide necessary values brand and poc'}), 400
+    
 
     brand_data = response.get('brand')
     poc_data = response.get('poc')
-    # print(brand_data, poc_data)
 
-
-    # only allow the super_admin user to use this route
-    user_access = await userdb.Fetch.user_access(session.get('user'))
-    if (user_access == None or user_access != 'super_admin'):
-        return jsonify({'status': 'access denied', 'message': 'you do not have the access kindly contact Hooter super admins'}), 401
-
-    if not brand_data or not poc_data:
-        return jsonify({'status': 'error', 'message': 'invalid payload'}), 400
+    accepted_brand_payload = ['entity-name', 'brand-name', 'gstin', 'plan', 'address', 'pincode', 'estyear']
+    required_brand_payload = ['entity-name', 'brand-name', 'plan', 'address', 'pincode', 'estyear']
     
-    # except gstin any missing data will return 400 status
-    for _ in brand_data:
-        if _ != 'gstin' and (brand_data.get(_) is None or brand_data.get(_) == ''):
-            return jsonify({'status': 'error', 'message': 'invalid payload'}), 400
-    
+    valid_payload = Helper.check_required_payload(brand_data, accepted_brand_payload, required_brand_payload)
+
+    if valid_payload is not True:
+        return jsonify({'status': 'error', 'message': 'payload does not provide necessary values brand-data and poc-data'}), 400
+
+    '''
+        after checking payload for business trying to register the brand
+    '''
 
     brand_id = Brand.create_id()
     user_id = session.get('user')
+
     #inserting the brand
     brand_data = {
-        'entity_name': brand_data.get('entity-name') if brand_data.get('entity-name') and brand_data.get('entity-name') != '' else None,
-        'brand_name': brand_data.get('brand-name') if brand_data.get('brand-name') and brand_data.get('brand-name') != '' else None,
-        # 'niche': brand_data.get('niche') if brand_data.get('niche') and brand_data.get('niche') != '' else None,
-        'gstin': brand_data.get('gstin') if brand_data.get('gstin') and brand_data.get('gstin') != '' else None,
-        'plan': brand_data.get('plan') if brand_data.get('plan') and brand_data.get('plan') != '' else None,
-        'address': brand_data.get('address') if brand_data.get('address') and brand_data.get('address') != '' else None,
-        'estyear': brand_data.get('estyear') if brand_data.get('estyear') and brand_data.get('estyear') != '' else None
-    }
-
+            'entity_name': brand_data.get('entity-name'),
+            'brand_name': brand_data.get('brand-name'),
+            'gstin': brand_data.get('gstin'),
+            'plan': brand_data.get('plan'),
+            'address': f"({brand_data.get('address')}, {brand_data.get('pincode')})",
+            'estyear': brand_data.get('estyear')
+        }        
 
     try:
         # Check if the user is self POC
         if poc_data.get('self') == 'true':
+
             # User is self POC - don't insert POC, just map user to brand
-            user_id = session.get('user')
-            if not user_id:
-                return jsonify({'status': 'error', 'message': 'user not logged in'}), 401
-            
             result = await branddb.Write.insert_brand(brand_id, user_id, brand_data)
 
             if result == 'failed':
                 return jsonify({'status': 'failed', 'message': 'error occured while registering the brand'}), 500
 
-            # await branddb.Write.map_user_brand(user_id, brand_id)
         else:
             #checking if all the requied field is there
-            required_field = ['self', 'name', 'number', 'email', 'designation', 'access', 'password']
-            valid_payload = Helper.check_required_payload(poc_data, required_field)
+
+            accepted_poc_payload = ['self', 'name', 'number', 'email', 'designation', 'access', 'password']
+            required_poc_payload = accepted_payload
+
+            valid_payload = Helper.check_required_payload(poc_data, accepted_poc_payload, required_poc_payload)
 
             if valid_payload is not True:
                 report = jsonify({'status': 'error', 'message': 'payload does not provide necessary values'}), 400
@@ -71,8 +77,7 @@ async def register_entity():
                 return report
              
             # User is not POC - create new POC with generated user_id
-            poc_user_id = User.create_usencryptionerid()
-            # poc_data['user_id'] = poc_user_id
+            poc_user_id = User.create_userid()
 
             # fetch access allower access_specifiers
             access_specifier = Brand.access_specifiers()
@@ -83,19 +88,19 @@ async def register_entity():
 
             user_creds={
                 'userid': poc_user_id,
-                'name': poc_data['name'] if poc_data['name'] and poc_data['name'] != '' else None,
-                'number': poc_data['number'] if poc_data['number'] and poc_data['number'] != '' else None,
-                'email': poc_data['email'] if poc_data['email'] and poc_data['email'] != '' else None,
-                'access': poc_data['access'] if poc_data['access'] and poc_data['access'] != '' else None,
-                'designation': poc_data['designation'] if poc_data['designation'] and poc_data['designation'] != '' else None,
+                'name': poc_data['name'],
+                'number': poc_data['number'],
+                'email': poc_data['email'],
+                'access': poc_data['access'],
+                'designation': poc_data['designation'],
                 'hashed_password': User.hash_password(poc_data.get('password'))
                 }
+            
             await userdb.Write().signup_user(user_creds)
             result = await branddb.Write.insert_brand(brand_id, poc_user_id, brand_data)
 
             if result == 'failed':
                 return jsonify({'status': 'failed', 'message': 'error occured while registering the brand'}), 500
-            # await branddb.Write.map_user_brand(poc_user_id, brand_id)
 
         return jsonify({
             'status': 'ok',
@@ -137,6 +142,7 @@ async def connect_brand(brand_id=None):
         return jsonify({'Status': {"request": "successful", "brands": None, "status": "not connected", "redirect": "/register-brand"}})
     elif len(brand_access) == 1:
         session['brand'] = brand_access[0].get('brand_id')
+        print(f"{session.get('brand')} accessed by {session.get('user')}")
         return jsonify({"Status": {"request": "successful", "brands": "single brand", "status": "connected", "redirect": "/"}})
     else:
         return jsonify({"Status": {"request": "successful", "bands": brand_access, "status": "not connected", "issue": "a brand needs to be selected", "redirect": '/select-panel'}})

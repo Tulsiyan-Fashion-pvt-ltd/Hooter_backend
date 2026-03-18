@@ -1,4 +1,3 @@
-from database_connection import mysql
 from datetime import datetime
 from quart import current_app
 from asyncmy.cursors import DictCursor
@@ -110,6 +109,8 @@ class Fetch:
 
                     result = await cursor.fetchone()
                     brand_name = result.get('brand_name')
+                    # print(brand_name)
+                    return brand_name
                 except Exception as e:
                     print(f"error during fetching the brand_name from the brand table in brand_name_by_id\n{e}")
                     return ("error", "unable to fulfill the request")
