@@ -132,14 +132,14 @@ class ShopifyGraphQLClient:
             "variants": created_variants
         }
 
-    def create_product_media(self, product_id: str, image_url: str, alt_text: str) -> dict:
+    def create_product_media(self, product_id: str, image_url: str, alt_text: str = None) -> dict:
         """
         Upload image to Shopify product.
         
         Args:
             product_id: Shopify product ID (gid://shopify/Product/xxx)
             image_url: URL to image (Google Drive link or other)
-            alt_text: Alternative text for accessibility
+            alt_text: Optional alternative text for accessibility
         
         Returns:
             Dict with media ID
@@ -165,12 +165,13 @@ class ShopifyGraphQLClient:
                         "mediaContentType": "IMAGE",
                         "originalSource": image_url  # Direct URL string, not {"url": ...}
                     }
-                ],
-                "alt": {
-                    "value": alt_text
-                }
+                ]
             }
         }
+        if alt_text:
+            variables["input"]["alt"] = {
+                "value": alt_text
+            }
         
         response = requests.post(
             self.endpoint,
@@ -515,6 +516,7 @@ class ShopifyGraphQLClient:
         ShopifyGraphQLClient.handle_rate_limit(data)
         edges = data["data"]["product"]["media"]["edges"]
         return [edge["node"]["id"] for edge in edges]
+
 
 
 
