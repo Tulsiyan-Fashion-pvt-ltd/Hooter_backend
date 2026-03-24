@@ -11,7 +11,8 @@ from api_routes import catalog_routes
 from dotenv import load_dotenv
 import asyncmy
 from datetime import timedelta
-from quart_motor import Motor
+from quart_mongo import Mongo
+import asyncio
 
 
 load_dotenv()  # Load environment variables from .env file
@@ -38,7 +39,7 @@ app.config['MYSQL_PORT'] = int(os.environ.get('HOOTER_DB_PORT', '3306'))
 
 # mongo db connection
 app.config['MONGO_URI'] = os.environ.get('MONGO_HOST')
-app.mongo = Motor(app)
+app.mongo = Mongo(app)
 
 app.register_blueprint(page)
 app.register_blueprint(handle_user)
@@ -71,6 +72,7 @@ async def sql_connection_startup():
             connection = False
             count += 1
             print(e)
+            asyncio.sleep(5)
 
 
 @app.after_serving
@@ -80,5 +82,5 @@ async def sql_connection_shutdown(response):
 
 
 if __name__ == "__main__":
-    print('''>>>\nuse @login_required when the login is required and using\nfrom utils.login_required import login_required''')
+    print('''>>>\nuse @login_required when the login is required and use\nfrom utils.prerequirements import login_required''')
     app.run(debug=True, host='0.0.0.0', port=8800)

@@ -9,24 +9,24 @@ class Write:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
                         usku_query = '''insert into usku_record
-                                    (usku_id, brand_id, sku_id, niche_id)
+                                    (usku_id, brand_id, sku_id, product_type_id)
                                     values
                                     (%s, %s, %s, %s)
                                 '''
-                        usku_values = (catalog.get('usku_id'), catalog.get('brand_id'), catalog.get('sku_id'),
-                                       catalog.get('niche_id'))
+                        usku_values = (catalog.get('usku_id'), catalog.get('brand_id'), catalog.get('sku_id')
+                                       , catalog.get("type_id"))
                         
                         await cursor.execute(usku_query, usku_values)
 
                         catalog_query = '''insert into catalog
-                                            (usku_id, product_title, product_type, price,
+                                            (usku_id, product_title, price,
                                             compared_price, purchasing_cost, vendor, ean, hsn, net_weight_kg, dead_weight_kg,
                                             volumetric_weight_kg, brand_name, updated_at)
                                             values
-                                            (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                            (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                                         '''
                         
-                        catalog_values = (catalog.get("usku_id"), catalog.get("title"), catalog.get("type"), 
+                        catalog_values = (catalog.get("usku_id"), catalog.get("title"), 
                                           catalog.get("price"), catalog.get("comp_price"), catalog.get("purchasing_cost"),
                                           catalog.get("vendor"), catalog.get("ean"), catalog.get("hsn"),
                                           catalog.get("net_weight"), catalog.get("dead_weight"), catalog.get("volumetric_weight"),
@@ -39,7 +39,7 @@ class Write:
             except Exception as e:
                 await connection.rollback()
                 print(f"error encountered while adding a single product\n{e}")
-                return "error"
+                return {"error": e.args[0]}
 
 
 class Fetch:
