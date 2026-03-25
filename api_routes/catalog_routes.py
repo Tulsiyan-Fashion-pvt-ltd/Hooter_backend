@@ -37,12 +37,14 @@ async def upload_single_catalog():
 
     # check the product type related fields
     fields = await mongo_catalogdb.Fetch.catalog_attributes(niche_type)
-    if fields.get('error') is not None:
+    if fields.get('error') is not None or fields == None:
         return jsonify({"status": "invalid value", "msg": "incorrect id"}), 400
     
     fields.pop("niche_id") # taking out the niche_id field from the attributes
 
+    # LIST OF ALL THE KEYS FOR NICHE SPECIFIC ATTRIBUTES FOR MONGODB
     niche_specific_keys = fields.keys()
+
     accepted_data_keys = [
         "sku-id",
         "title",
@@ -80,8 +82,8 @@ async def upload_single_catalog():
     if not helper.Helper.check_required_payload(data, accepted_data_keys, necessary_data_keys):
         return jsonify({"status": "invalid payload"}), 400
 
-    product_type = data.get("type")
-    # print(session.get('brand'))
+    
+    ## ADDING THE THE DATA IN THE SQL
     brand_name = await branddb.Fetch.brand_name_by_id(session.get('brand'))
 
     catalog = {
@@ -90,7 +92,6 @@ async def upload_single_catalog():
         "sku_id": data.get("sku-id"),
         "type_id": niche_type,
         "title": data.get('title'),
-        "type": product_type,
         "price": data.get("price"),
         "comp_price": data.get("compared-price"),
         "purchasing_cost": data.get("purchasing-cost"),
@@ -105,13 +106,19 @@ async def upload_single_catalog():
     }
 
     response = await catalogdb.Write.add_single_catalog(catalog)
-    # add the details in the mongo db
 
     if response != "ok":
         if response.get('error') == 1062:
             return jsonify({"status": "failed", "error": "duplicate sku id"}), 409
         else:
             return jsonify({"error encountered while adding the catalog"}), 500
+        
+    # add the details in the mongo db
+    mongo_catalog_data = {"niche_id": niche_type}
+    for key in niche_specific_keys:
+        mongo_catalog_data[key] = data.get(key)
+
+    await mongo_catalogdb.Write.single_catalog(mongo_catalog_data)
     
     return jsonify({"Status": "successful", "message": "added the single catalog"})
 

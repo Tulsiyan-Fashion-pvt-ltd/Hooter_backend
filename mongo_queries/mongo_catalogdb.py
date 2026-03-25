@@ -1,7 +1,17 @@
 from quart import current_app, jsonify
 
 class Write:
-    pass
+    # function to add the catalog into the mongodb server
+    async def single_catalog(catalog):
+        mongo = current_app.mongo
+        async with await mongo.cx.start_session() as connection:
+          async with connection.start_transaction():
+            try:
+                await mongo.db.product_attributes.insert_one(catalog)
+            except Exception as e:
+                connection.abort_transaction()
+                print(e)
+                return {"error": str(e)}
 
 class Fetch:
     # fetch catalog attributes
@@ -28,23 +38,4 @@ class Fetch:
           return {"error": str(e)}
     
 
-    async def product_niche_id(niche_name):
-        mongo = current_app.mongo
-        fields = mongo.db.niche.aggregate([
-                   { "$unwind": "$sub_niches" },
-                   { "$unwind": "$sub_niches.categories" },
-                   { "$unwind": "$sub_niches.categories.products" },
-                   {
-                     "$match": {
-                       "sub_niches.categories.products.name": "saree"
-                     }
-                   },
-                   {
-                     "$project": {
-                       "_id": 0,
-                       "product_id": "$sub_niches.categories.products.product_id"
-                     }
-                   }
-                 ])
-        
-        return jsonify(fields)
+    

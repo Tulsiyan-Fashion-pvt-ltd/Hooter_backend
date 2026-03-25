@@ -55,7 +55,7 @@ app.register_blueprint(catalog_routes.catalog)
 async def sql_connection_startup():
     connection = False
     count = 0
-    while connection == False and count <= 5:
+    while connection == False and count <= 20:
         try:
             app.pool= await asyncmy.create_pool(
                 host = os.environ.get('HOOTER_DB_HOST'),
@@ -72,7 +72,7 @@ async def sql_connection_startup():
             connection = False
             count += 1
             print(e)
-            asyncio.sleep(5)
+            await asyncio.sleep(2)
 
 
 @app.after_serving
