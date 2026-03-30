@@ -1,5 +1,6 @@
 from quart import current_app
 from asyncmy.cursors import DictCursor
+from datetime import datetime
 
 class Write:
     @staticmethod
@@ -27,10 +28,10 @@ class Write:
                                         '''
                         
                         catalog_values = (catalog.get("usku_id"), catalog.get("title"), 
-                                          catalog.get("price"), catalog.get("comp_price"), catalog.get("purchasing_cost"),
+                                          catalog.get("price"), catalog.get("compared_price"), catalog.get("purchasing_cost"),
                                           catalog.get("vendor"), catalog.get("ean"), catalog.get("hsn"),
                                           catalog.get("net_weight"), catalog.get("dead_weight"), catalog.get("volumetric_weight"),
-                                          catalog.get("brand_name"), catalog.get('update_timestamp'))
+                                          catalog.get("brand_name"), datetime.now())
                         
                         await cursor.execute(catalog_query, catalog_values)
                         await connection.commit()

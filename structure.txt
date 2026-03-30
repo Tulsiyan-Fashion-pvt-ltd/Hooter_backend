@@ -1,36 +1,82 @@
-[01;34m.[0m
+.
 ├── access_specifiers.json
+├── api_routes
+│   ├── brand_routes.py
+│   ├── catalog_routes.py
+│   ├── __pycache__
+│   │   ├── brand_routes.cpython-314.pyc
+│   │   ├── catalog_routes.cpython-314.pyc
+│   │   └── user_routes.cpython-314.pyc
+│   └── user_routes.py
 ├── app.py
-├── brand_handlerdb.py
-├── brand_handler.py
-├── database.py
-├── helper.py
-├── inr.py
+├── handle_brand
+│   └── __pycache__
+│       ├── brand_handler.cpython-314.pyc
+│       └── brand_handlerdb.cpython-314.pyc
+├── handle_user
+│   └── __pycache__
+│       ├── user_handler.cpython-314.pyc
+│       └── user_hanlderdb.cpython-314.pyc
+├── mongo_queries
+│   ├── mongo_catalogdb.py
+│   └── __pycache__
+│       └── mongo_catalogdb.cpython-314.pyc
 ├── niche_attributes.json
 ├── niche.json
 ├── pages.py
-├── [01;34m__pycache__[0m
+├── __pycache__
+│   ├── app.cpython-314.pyc
 │   ├── brand_handler.cpython-314.pyc
 │   ├── brand_handlerdb.cpython-314.pyc
-│   ├── brand_handling.cpython-314.pyc
+│   ├── database_connection.cpython-314.pyc
 │   ├── database.cpython-314.pyc
+│   ├── encryption.cpython-314.pyc
 │   ├── helper.cpython-314.pyc
 │   ├── pages.cpython-314.pyc
-│   ├── requests.cpython-314.pyc
+│   ├── products.cpython-314.pyc
+│   ├── stores.cpython-314.pyc
 │   ├── user_handler.cpython-314.pyc
 │   └── user_hanlderdb.cpython-314.pyc
+├── Readme.md
 ├── requirements.txt
-├── [01;34mstatic[0m
-│   ├── [01;34mfavicon[0m
-│   │   ├── [01;35mandroid-chrome-192x192.png[0m
-│   │   ├── [01;35mandroid-chrome-512x512.png[0m
-│   │   ├── [01;35mapple-touch-icon.png[0m
-│   │   ├── [01;35mfavicon-16x16.png[0m
-│   │   ├── [01;35mfavicon-32x32.png[0m
+├── services
+│   ├── exceptions.py
+│   ├── product_service.py
+│   ├── __pycache__
+│   │   ├── exceptions.cpython-314.pyc
+│   │   ├── product_service.cpython-314.pyc
+│   │   ├── shopify_graphql.cpython-314.pyc
+│   │   └── shopify_helpers.cpython-314.pyc
+│   ├── shopify_graphql.py
+│   └── shopify_helpers.py
+├── shopify
+│   ├── products.py
+│   ├── __pycache__
+│   │   ├── products.cpython-314.pyc
+│   │   └── stores.cpython-314.pyc
+│   └── stores.py
+├── sql_queries
+│   ├── branddb.py
+│   ├── catalogdb.py
+│   ├── __pycache__
+│   │   ├── branddb.cpython-314.pyc
+│   │   ├── catalogdb.cpython-314.pyc
+│   │   ├── storesdb.cpython-314.pyc
+│   │   └── userdb.cpython-314.pyc
+│   ├── storesdb.py
+│   └── userdb.py
+├── static
+│   ├── assets
+│   ├── favicon
+│   │   ├── android-chrome-192x192.png
+│   │   ├── android-chrome-512x512.png
+│   │   ├── apple-touch-icon.png
+│   │   ├── favicon-16x16.png
+│   │   ├── favicon-32x32.png
 │   │   ├── favicon.ico
 │   │   └── site.webmanifest
-│   ├── [01;34mfonts[0m
-│   │   ├── [01;34mBarlow[0m
+│   ├── fonts
+│   │   ├── Barlow
 │   │   │   ├── Barlow-BlackItalic.ttf
 │   │   │   ├── Barlow-Black.ttf
 │   │   │   ├── Barlow-BoldItalic.ttf
@@ -50,12 +96,12 @@
 │   │   │   ├── Barlow-ThinItalic.ttf
 │   │   │   ├── Barlow-Thin.ttf
 │   │   │   └── OFL.txt
-│   │   ├── [01;34mDM_Sans[0m
+│   │   ├── DM_Sans
 │   │   │   ├── DMSans-Italic-VariableFont_opsz,wght.ttf
 │   │   │   ├── DMSans-VariableFont_opsz,wght.ttf
 │   │   │   ├── OFL.txt
 │   │   │   ├── README.txt
-│   │   │   └── [01;34mstatic[0m
+│   │   │   └── static
 │   │   │       ├── DMSans_18pt-BlackItalic.ttf
 │   │   │       ├── DMSans_18pt-Black.ttf
 │   │   │       ├── DMSans_18pt-BoldItalic.ttf
@@ -128,7 +174,7 @@
 │   │   │       ├── DMSans-SemiBold.ttf
 │   │   │       ├── DMSans-ThinItalic.ttf
 │   │   │       └── DMSans-Thin.ttf
-│   │   ├── [01;34mPoppins[0m
+│   │   ├── Poppins
 │   │   │   ├── OFL.txt
 │   │   │   ├── Poppins-BlackItalic.ttf
 │   │   │   ├── Poppins-Black.ttf
@@ -148,12 +194,12 @@
 │   │   │   ├── Poppins-SemiBold.ttf
 │   │   │   ├── Poppins-ThinItalic.ttf
 │   │   │   └── Poppins-Thin.ttf
-│   │   └── [01;34mRoboto[0m
+│   │   └── Roboto
 │   │       ├── OFL.txt
 │   │       ├── README.txt
 │   │       ├── Roboto-Italic-VariableFont_wdth,wght.ttf
 │   │       ├── Roboto-VariableFont_wdth,wght.ttf
-│   │       └── [01;34mstatic[0m
+│   │       └── static
 │   │           ├── Roboto-BlackItalic.ttf
 │   │           ├── Roboto-Black.ttf
 │   │           ├── Roboto-BoldItalic.ttf
@@ -208,55 +254,72 @@
 │   │           ├── Roboto_SemiCondensed-Thin.ttf
 │   │           ├── Roboto-ThinItalic.ttf
 │   │           └── Roboto-Thin.ttf
-│   ├── [01;34micons[0m
-│   │   ├── [01;35mfacebook.png[0m
-│   │   ├── [01;35minsta.png[0m
-│   │   ├── [01;35mlinkedin.png[0m
-│   │   ├── [01;35mlogo.png[0m
-│   │   ├── [01;35mlogo.svg[0m
-│   │   ├── [01;35mtwitter.png[0m
-│   │   └── [01;35myoutube.png[0m
-│   ├── [01;34mimages[0m
-│   │   ├── [01;35m58bc9277572fd907f6b25162a84565ecf4c4170b.png[0m
-│   │   ├── [01;35ma4ad5556ed1446252d87e82457d415cb6b3e4a89.jpg[0m
-│   │   ├── [01;35mcheck.png[0m
-│   │   ├── [01;35mcircle01.svg[0m
-│   │   ├── [01;35mcircle02.svg[0m
-│   │   ├── [01;35md14275c6add53ce0a5579ed5e1a164debc3a2bf6.png[0m
-│   │   ├── [01;35mdashboard.png[0m
-│   │   ├── [01;35mfocus.png[0m
-│   │   ├── [01;35mhero-dashboard.png[0m
-│   │   ├── [01;35mhomepage_art01.svg[0m
-│   │   ├── [01;35mhomepage_mesh_art02.png[0m
-│   │   ├── [01;35mhomepage_mesh_art03.png[0m
-│   │   ├── [01;35mhomepage_mesh_art04.png[0m
-│   │   ├── [01;35mhomepage_mesh_art05.png[0m
-│   │   ├── [01;35mhomepage_mesh_art06.png[0m
-│   │   ├── [01;35mhomepage_mesh_art07.png[0m
-│   │   ├── [01;35mhomepage_mesh_art08.png[0m
-│   │   ├── [01;35mhomepage_mesh_art09.png[0m
-│   │   ├── [01;35mhomepage_mesh_art10.png[0m
-│   │   ├── [01;35mhomepage_mesh_art.png[0m
-│   │   ├── [01;35mman_at_desk.png[0m
-│   │   ├── [01;35mmountain.png[0m
-│   │   ├── [01;35msolution-icon.png[0m
-│   │   ├── [01;35mstats.png[0m
-│   │   └── [01;35myear-scale.png[0m
-│   └── [01;34mstylesheet[0m
-│       ├── [01;34mlayout[0m
+│   ├── icons
+│   │   ├── facebook.png
+│   │   ├── insta.png
+│   │   ├── linkedin.png
+│   │   ├── logo.png
+│   │   ├── logo.svg
+│   │   ├── twitter.png
+│   │   └── youtube.png
+│   ├── images
+│   │   ├── 58bc9277572fd907f6b25162a84565ecf4c4170b.png
+│   │   ├── a4ad5556ed1446252d87e82457d415cb6b3e4a89.jpg
+│   │   ├── check.png
+│   │   ├── circle01.svg
+│   │   ├── circle02.svg
+│   │   ├── d14275c6add53ce0a5579ed5e1a164debc3a2bf6.png
+│   │   ├── dashboard.png
+│   │   ├── focus.png
+│   │   ├── hero-dashboard.png
+│   │   ├── homepage_art01.svg
+│   │   ├── homepage_mesh_art02.png
+│   │   ├── homepage_mesh_art03.png
+│   │   ├── homepage_mesh_art04.png
+│   │   ├── homepage_mesh_art05.png
+│   │   ├── homepage_mesh_art06.png
+│   │   ├── homepage_mesh_art07.png
+│   │   ├── homepage_mesh_art08.png
+│   │   ├── homepage_mesh_art09.png
+│   │   ├── homepage_mesh_art10.png
+│   │   ├── homepage_mesh_art.png
+│   │   ├── man_at_desk.png
+│   │   ├── mountain.png
+│   │   ├── solution-icon.png
+│   │   ├── stats.png
+│   │   └── year-scale.png
+│   └── stylesheet
+│       ├── layout
 │       │   ├── animations.css
 │       │   ├── footer.css
 │       │   ├── header.css
 │       │   └── universal_layout.css
-│       └── [01;34mpages[0m
+│       └── pages
 │           └── homepage.css
 ├── structure.txt
-├── [01;34mtemplates[0m
-│   ├── [01;34mcomponents[0m
+├── templates
+│   ├── components
 │   │   ├── footer.html
 │   │   └── header.html
 │   └── index.html
-├── user_handler.py
-└── user_hanlderdb.py
+├── tests
+│   ├── smoke_shopify_catalogue.py
+│   ├── smoke_test_shopify.py
+│   └── test_shopify_graphql_failures.py
+├── update_description.md
+└── utils
+    ├── encryption.py
+    ├── helper.py
+    ├── inr.py
+    ├── prerequirements.py
+    ├── products.py
+    ├── __pycache__
+    │   ├── encryption.cpython-314.pyc
+    │   ├── helper.cpython-314.pyc
+    │   ├── login_required.cpython-314.pyc
+    │   ├── prerequirements.cpython-314.pyc
+    │   ├── products.cpython-314.pyc
+    │   └── sheets.cpython-314.pyc
+    └── sheets.py
 
-18 directories, 242 files
+36 directories, 287 files
