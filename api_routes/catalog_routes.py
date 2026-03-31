@@ -183,7 +183,7 @@ async def upload_bulk_catalog():
 
     '''return the sheet containing the data which could not be uploaded due to mandatory data not being available'''
     if error_encountered == True and new_sheet != None:
-        return Response(new_sheet)
+        return Response(new_sheet), 422
     elif error_encountered == True and new_sheet == None: # which means it didn't even upload any
         return jsonify({"status": "failed", "msg": "check the whether you have filled the mandatory fields"}), 422
     return jsonify({"status": "ok"}), 200
@@ -229,9 +229,28 @@ async def get_attribute_fields():
             return jsonify({"staus": "invalid value", "msg": "the id should be int type"})
 
     
-    niche_attributes = await mongo_catalogdb.Fetch.catalog_attributes(niche_id)
+    niche_attributes = await mongo_catalogdb.Fetch.catalog_schema(niche_id)
+    image_attributes = await mongo_catalogdb.Fetch.image_schema(niche_id)
 
     if niche_attributes.get('error') is not None:
         return jsonify({"status": "interrupted", "msg": "interal error"}), 500
     
-    return jsonify(niche_attributes)
+    return jsonify({
+        "field_attributes": niche_attributes,
+        "image_attributes": image_attributes
+    })
+
+
+'''
+    HANDLING THE IMAGE
+'''
+
+@catalog.post("/catalog/image")
+@login_required
+@brand_required
+async def upload_image():
+    args = request.args
+    order = args.get("order")
+
+
+    pass
