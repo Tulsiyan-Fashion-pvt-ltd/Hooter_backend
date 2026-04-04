@@ -283,4 +283,7 @@ async def upload_image():
     async with aiofiles.open(f"./.product_images/.original_images/{usku_id}_{image_type}.{image_extension}", "wb") as file:
         await file.write((image_object))
 
+    '''add the url in the database as well'''
+    
+
     return jsonify("ok")
