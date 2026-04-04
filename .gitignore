@@ -4,3 +4,5 @@ __pycache__
 .product_images/.low_resol_images/*
 .product_images/.high_resol_images/*
 !.product_images/.original_images/.gitkeep
+!.product_images/.high_resol_images/.gitkeep
+!.product_images/.low_resol_images/.gitkeep
