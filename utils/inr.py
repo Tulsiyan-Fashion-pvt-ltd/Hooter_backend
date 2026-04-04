@@ -1,6 +1,6 @@
 #converting value into inr form
 class inr:
-    def __init__(self, price=0) -> str:
+    def __init__(self, price: int =0) -> str:
         self.price = str(price)
         self.rev_val = ''
         self.val = ''

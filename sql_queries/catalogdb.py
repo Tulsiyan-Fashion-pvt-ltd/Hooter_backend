@@ -75,3 +75,19 @@ class Fetch:
                 except Exception as e:
                     print(f"error occured while fetching the catalog on is_exists_catalog function\n{e}")
                     return ("error", "could not fetch the availability from the usku_record")
+                
+    @staticmethod
+    async def is_usku_id_exists(usku_id):
+        pool = current_app.pool
+        async with pool.acquire() as connection:
+            async with connection.cursor(cursor=DictCursor) as cursor:
+                try:
+                    query = '''Select 1 from usku_record where usku_id = %s'''
+
+                    await cursor.execute(query, (usku_id, ))
+                    usku = await cursor.fetchone()
+                    print(usku_id)
+                    return True if usku and usku.get('1') else False
+                except Exception as e:
+                    print(f"error occured while fetching the usku_record on is_usku_id_exists function\n{e}")
+                    return ("error", "could not fetch the availability from the usku_record")

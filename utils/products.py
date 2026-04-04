@@ -3,7 +3,7 @@ from datetime import datetime
 from sql_queries import catalogdb
 
 async def create_usku():
-    prefix = "universalsku"
+    prefix = "Usku"
     unique_char = str(uuid4())[:9]
     unique_int = str(int(uuid4()))[:8]
     usku_count = await catalogdb.Fetch.count_catalogs()

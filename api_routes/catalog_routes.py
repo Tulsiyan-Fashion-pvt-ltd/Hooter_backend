@@ -6,6 +6,7 @@ from utils import sheets
 from datetime import datetime
 from mongo_queries import mongo_catalogdb
 import asyncio
+import aiofiles
 from collections import Counter
 
 catalog = Blueprint('catalog', __name__)
@@ -250,7 +251,36 @@ async def get_attribute_fields():
 @brand_required
 async def upload_image():
     args = request.args
+    usku_id = args.get("usku-id")
     order = args.get("order")
 
+    '''checking if the usku_id is correct'''
+    is_usku_exists = await catalogdb.Fetch.is_usku_id_exists(usku_id)
 
-    pass
+    if is_usku_exists != True:
+        return jsonify({"status": "invalid usku_id", "msg": 'usku id does not exists'})
+
+
+    file = await request.files
+    form = await request.form
+
+    image_file = file.get("image")
+    image_type = form.get("type")
+
+
+    '''checking the file type'''
+    check_image = image_file.filename.endswith((".png", ".webp", ".jpeg", ".jpg"))
+
+    if check_image is False:
+        return jsonify({"status": "failed", "msg": "file type should be an image"}), 415
+    
+    '''store the original image to .product_images/.original_images'''
+    image_object = image_file.read()
+
+    image_extended_filename = image_file.filename.split(".")
+    image_extension = image_extended_filename[len(image_extended_filename)-1]
+    
+    async with aiofiles.open(f"./.product_images/.original_images/{usku_id}.{image_extension}", "wb") as file:
+        await file.write((image_object))
+
+    return jsonify("ok")
