@@ -3,31 +3,16 @@ from quart import Blueprint, request, jsonify, session
 from services.product_service import ProductService
 from services.exceptions import AuthorizationError, ShopifyAPIError, ValidationError, IdempotencyConflict
 from sql_queries.storesdb import Fetch
+from utils.prerequirements import login_required
 
 products = Blueprint("products", __name__)
 
 
-def _get_authenticated_user():
-    return session.get('user')
-
-
-def _require_auth(f):
-    from functools import wraps
-
-    @wraps(f)
-    async def decorated_function(*args, **kwargs):
-        user_id = _get_authenticated_user()
-        if not user_id:
-            return jsonify({"status": "error", "message": "Authentication required"}), 401
-        return await f(user_id, *args, **kwargs)
-
-    return decorated_function
-
-
 @products.route("/products", methods=["POST"])
-@_require_auth
-async def create_product(user_id):
+@login_required
+async def create_product():
     try:
+        user_id = session.get('user')
         data = await request.get_json()
         if not data:
             return jsonify({"status": "error", "message": "Request body must be valid JSON"}), 400
@@ -80,9 +65,10 @@ async def create_product(user_id):
 
 
 @products.route("/products", methods=["GET"])
-@_require_auth
-async def list_products(user_id):
+@login_required
+async def list_products():
     try:
+        user_id = session.get('user')
         brand_id = request.args.get("brand_id", type=int)
         status = request.args.get("status")
         search = request.args.get("search")
@@ -108,9 +94,10 @@ async def list_products(user_id):
 
 
 @products.route("/products/<uid>", methods=["GET"])
-@_require_auth
-async def get_product_by_uid(user_id, uid):
+@login_required
+async def get_product_by_uid(uid):
     try:
+        user_id = session.get('user')
         brand_id = request.args.get("brand_id", type=int)
         if not brand_id:
             return jsonify({"status": "error", "message": "brand_id is required"}), 400
@@ -126,9 +113,10 @@ async def get_product_by_uid(user_id, uid):
 
 
 @products.route("/products/<uid>", methods=["PATCH"])
-@_require_auth
-async def update_product(user_id, uid):
+@login_required
+async def update_product(uid):
     try:
+        user_id = session.get('user')
         data = await request.get_json() or {}
         brand_id = data.get("brand_id")
         if not brand_id:
@@ -146,9 +134,10 @@ async def update_product(user_id, uid):
 
 
 @products.route("/products/<uid>", methods=["DELETE"])
-@_require_auth
-async def delete_product(user_id, uid):
+@login_required
+async def delete_product(uid):
     try:
+        user_id = session.get('user')
         brand_id = request.args.get("brand_id", type=int)
         soft_delete = request.args.get("soft", "true").lower() == "true"
         if not brand_id:

@@ -85,14 +85,12 @@ class ProductService:
                 media = ProductService._retry_shopify_call(
                     lambda: shopify_client.create_product_media(
                         product_id=shopify_product["id"],
-                        image_url=img.get("image_url"),
-                        alt_text=img.get("alt_text", "Product image")
+                        image_url=img.get("image_url")
                     ))
                 shopify_images.append({
                     "shopify_media_id": media["id"],
                     "position": img.get("position", len(shopify_images)),
-                    "image_url": img.get("image_url"),
-                    "alt_text": img.get("alt_text")
+                    "image_url": img.get("image_url")
                 })
         if shopify_images:
             media_ids = [img["shopify_media_id"] for img in sorted(shopify_images, key=lambda x: x["position"])]
@@ -125,8 +123,8 @@ class ProductService:
                 try:
                     for img_data in shopify_images:
                         await cursor.execute(
-                            '''INSERT INTO low_resol_images (uid, image_url, position, alt_text) VALUES (%s, %s, %s, %s)''',
-                            (uid, img_data["image_url"], img_data["position"], img_data["alt_text"])
+                            '''INSERT INTO low_resol_images (uid, image_url, position) VALUES (%s, %s, %s)''',
+                            (uid, img_data["image_url"], img_data["position"])
                         )
 
                     # Insert Shopify mapping including brand_id and synced_at
