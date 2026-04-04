@@ -279,8 +279,8 @@ async def upload_image():
 
     image_extended_filename = image_file.filename.split(".")
     image_extension = image_extended_filename[len(image_extended_filename)-1]
-    
-    async with aiofiles.open(f"./.product_images/.original_images/{usku_id}.{image_extension}", "wb") as file:
+
+    async with aiofiles.open(f"./.product_images/.original_images/{usku_id}_{image_type}.{image_extension}", "wb") as file:
         await file.write((image_object))
 
     return jsonify("ok")
