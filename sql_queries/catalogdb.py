@@ -1,10 +1,10 @@
-from quart import current_app
+from quart import current_app, json
 from asyncmy.cursors import DictCursor
 from datetime import datetime
 
 class Write:
     @staticmethod
-    async def add_single_catalog(catalog):
+    async def catalog(catalog):
         pool = current_app.pool
         async with pool.acquire() as connection:
             try:
@@ -43,17 +43,17 @@ class Write:
             
 
     @staticmethod
-    async def add_original_image(img_obj: dict):
+    async def image(img_obj: dict):
         pool = current_app.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
-                    query = '''insert into original_images(usku_id, image_url, image_type, image_order)
+                    query = '''insert into images(usku_id, image_url, image_type, image_order)
                                 values(%s, %s, %s, %s)
                             '''
 
                     usku_id = img_obj.get("usku_id")
-                    image_url = img_obj.get("url")
+                    image_url = json.dumps(img_obj.get("url"))
                     image_type = img_obj.get("type")
                     image_order = img_obj.get("order")
                     
@@ -64,58 +64,7 @@ class Write:
             except Exception as e:
                 await connection.rollback()
                 print(f"error encountered while adding a single product\n{e}")
-                return {"error": e.args[0]}        
-
-    @staticmethod
-    async def add_high_resol_webp(img_obj: dict):
-        pool = current_app.pool
-        async with pool.acquire() as connection:
-            try:
-                async with connection.cursor(cursor=DictCursor) as cursor:
-                    query = '''insert into high_resol_images(usku_id, image_url, image_type, image_order)
-                                values(%s, %s, %s, %s)
-                            '''
-
-                    usku_id = img_obj.get("usku_id")
-                    image_url = img_obj.get("url")
-                    image_type = img_obj.get("type")
-                    image_order = img_obj.get("order")
-                    
-                    await cursor.execute(query, (usku_id, image_url, image_type, image_order))
-                    await connection.commit()
-                    return "ok"
-
-            except Exception as e:
-                await connection.rollback()
-                print(f"error encountered while adding a single product\n{e}")
-                return {"error": e.args[0]}   
-            
-    @staticmethod
-    async def add_low_resol_webp(img_obj: dict):
-        pool = current_app.pool
-        async with pool.acquire() as connection:
-            try:
-                async with connection.cursor(cursor=DictCursor) as cursor:
-                    query = '''insert into low_resol_images(usku_id, image_url, image_type, image_order)
-                                values(%s, %s, %s, %s)
-                            '''
-
-                    usku_id = img_obj.get("usku_id")
-                    image_url = img_obj.get("url")
-                    image_type = img_obj.get("type")
-                    image_order = img_obj.get("order")
-                    
-                    await cursor.execute(query, (usku_id, image_url, image_type, image_order))
-                    await connection.commit()
-                    return "ok"
-
-            except Exception as e:
-                await connection.rollback()
-                print(f"error encountered while adding a single product\n{e}")
-                return {"error": e.args[0]}   
-
-
-
+                return {"error": e.args[0]}                          
 
 
 
@@ -239,10 +188,22 @@ class Fetch:
                 return ("error", "could not fetch the niche_products")
 
 
-    # @staticmethod
-    # async def single_image(usku_id: str, type: str) -> bytes:
-    #     pool = current_app.pool
-    #     async with pool.acquire() as connection:
-    #         try:
-    #             async with connection.cursor(cursor = DictCursor) as cursor:
-    #                 query = '''select image'''
+    @staticmethod
+    async def image(usku_id: str, type: str):
+        print(usku_id, type)
+        pool = current_app.pool
+        async with pool.acquire() as connection:
+            try:
+                async with connection.cursor(cursor = DictCursor) as cursor:
+                    query = '''select image_url from images where usku_id=%s and image_type=%s'''
+                    values = (usku_id, type)
+
+                    await cursor.execute(query, values)
+                    urls = await cursor.fetchone()
+                    if not urls:
+                        return None
+                    else:
+                        return json.loads(urls.get("image_url"))
+            except Exception as e:
+                print(f"error occured while fetching the image urls\n{e}")
+                return "error"

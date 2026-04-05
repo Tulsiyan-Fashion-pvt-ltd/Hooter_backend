@@ -27,6 +27,7 @@ motor==3.7.1
 mysqlclient==2.2.7
 odmantic==1.1.0
 openpyxl==3.1.5
+pillow==12.2.0
 priority==2.0.0
 pycparser==3.0
 pydantic==2.12.5

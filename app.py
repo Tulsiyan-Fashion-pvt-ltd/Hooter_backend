@@ -41,7 +41,8 @@ app.config['MYSQL_PORT'] = int(os.environ.get('HOOTER_DB_PORT', '3306'))
 app.config['MONGO_URI'] = os.environ.get('MONGO_HOST')
 app.mongo = Mongo(app)
 
-app.config["IMAGE_READ_BUFFER"] = (64 * 1024) # 64 KB 
+app.config["IMAGE_READ_BUFFER"] = 64 * 1024 # 64 KB 
+app.config["IMAGE_WRITE_BUFFER"] = 64 * 1024
 
 app.register_blueprint(page)
 app.register_blueprint(handle_user)

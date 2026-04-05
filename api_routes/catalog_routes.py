@@ -1,4 +1,4 @@
-from quart import Blueprint, session, request, jsonify, Response
+from quart import Blueprint, session, request, jsonify, Response, current_app, abort
 from utils.prerequirements import login_required, brand_required
 from sql_queries import branddb, catalogdb
 from utils import helper, products
@@ -114,7 +114,7 @@ async def upload_single_catalog():
         # "update_timestamp": datetime.now()
     }
 
-    response = await catalogdb.Write.add_single_catalog(catalog)
+    response = await catalogdb.Write.catalog(catalog)
 
     if response != "ok":
         if response.get('error') == 1062:
@@ -131,7 +131,7 @@ async def upload_single_catalog():
 
     await mongo_catalogdb.Write.single_catalog(mongo_catalog_data)
     
-    return jsonify({"Status": "successful", "message": "added the single catalog"})
+    return jsonify({"Status": "successful", "message": "added the single catalog"}), 200
 
 
 
@@ -206,7 +206,7 @@ async def upload_bulk_catalog():
             mongo_catalog_data = {key: document.get(key) for key in document if key in niche_specific_fields}
             mongo_catalog_data["type_id"] = type_id
 
-            response = await catalogdb.Write.add_single_catalog(sql_catalog_data)
+            response = await catalogdb.Write.catalog(sql_catalog_data)
             
             if response == "ok":
                 if new_sheet == None:
@@ -273,7 +273,7 @@ async def get_attribute_fields():
     image_attributes = await mongo_catalogdb.Fetch.image_schema(niche_id)
 
     if niche_attributes.get('error') is not None:
-        return jsonify({"status": "interrupted", "msg": "interal error"}), 500
+        return jsonify({"status": "interrupted", "msg": "attributes are not available for this product"}), 500
     
     return jsonify({
         "field_attributes": niche_attributes,
@@ -292,14 +292,16 @@ async def get_attribute_fields():
 async def upload_image():
     args = request.args
     usku_id = args.get("usku-id")
-    order = args.get("order")
+    order = args.get("order", default=-1, type=int)
 
     '''checking if the usku_id is correct'''
     is_usku_exists = await catalogdb.Fetch.is_usku_id_exists(usku_id)
 
     if is_usku_exists != True:
         return jsonify({"status": "invalid usku_id", "msg": 'usku id does not exists'})
-
+    
+    if order < 0:
+        return jsonify({"status": "request failed", "error": "invalid value for order in argument"}), 409
 
     file = await request.files
     form = await request.form
@@ -319,22 +321,74 @@ async def upload_image():
     image_extended_filename = image_file.filename.split(".")
     image_extension = image_extended_filename[len(image_extended_filename)-1]
     
-    image_name = f"{usku_id}_-_{image_type}.{image_extension}"
-    image = image_file.read()
-    await imageio.write(image, image_name)
-    
-    '''add the url in the database as well'''
-    
+    original_image_name = f"{usku_id}_-_{image_type}.{image_extension}"
+    webp_image_name = f"{usku_id}_-_{image_type}.webp"
 
+    image = image_file.read()
+    
+    '''adding image entry into the databases'''
+    img_object = {
+        "usku_id": usku_id,
+        "url": {"original" :f"/catalog/original_image/{original_image_name}",
+                "high_resol_webp": f"/catalog/high_resol_webp/{webp_image_name}",
+                "low_resol_webp": f"/catalog/low_resol_webp/{webp_image_name}",
+                "webp_card": f"/catalog/webp_card/{webp_image_name}",
+                },
+        "type": image_type,
+        "order": order 
+    }
+
+    write_buffer_size = current_app.config["IMAGE_WRITE_BUFFER"]
+    result = await asyncio.gather(imageio.write(image, original_image_name, write_buffer_size), 
+                                  catalogdb.Write.image(img_object))
+
+    if result[0] == "error" or result[1] != "ok":
+        return jsonify({"status": "failed", "msg": "issue occured while uploading the image"}), 500
+    
     return jsonify("ok")
 
 
-@catalog.get("/catalog/image/<user_id>")
-async def get_product_image(user_id: str):
+@catalog.get("/catalog/image")
+@login_required
+@brand_required
+async def get_product_image():
     arguments = request.args
 
-    image_type = arguments.get("type")
+    usku_id = arguments.get("usku-id")
+    type = arguments.get("image-type")
 
-    file_name = f"{image_type}"
-    imageio.read_image_card()
-    '''read images'''
+    '''checking the usku_id'''
+    if not await catalogdb.Fetch.is_usku_id_exists(usku_id):
+        return jsonify({"status": "failed", "msg": "invalid usku-id"}), 409
+
+    image_urls = await catalogdb.Fetch.image(usku_id, type)
+
+    if image_url == "error":
+        return jsonify({"status": "failed", "msg": "could not finish the request"}), 500
+    elif image_url == None:
+        return jsonify({"status": "failed", "msg": "invalid image type"}), 409
+
+    return jsonify(image_urls)
+
+
+@catalog.get("/catalog/<image_variant>/<filename>")
+async def image_url(image_variant: str, filename: str):
+    buffer_size = current_app.config["IMAGE_READ_BUFFER"]
+
+    if image_variant == "webp_card":
+        filename = f"./.product_images/.image_cards/{filename}"
+    elif image_variant == "original_image":
+        filename = f"./.product_images/.original_images/{filename}"
+    elif image_variant == "high_resol_webp":
+        filename = f"./.product_images/.high_resol_images/{filename}"
+    elif image_variant == "low_resol_webp":
+        filename = f"./.product_images/.low_resol_images/{filename}"
+    else:
+        abort(404)
+
+    image = imageio.read_image_card(filename, buffer_size)
+    
+    if image is None:
+        return jsonify({"status": "request failed", "msg": "invalid userid or image type"}), 400
+    
+    return Response(image, None), 200
