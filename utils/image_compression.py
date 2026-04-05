@@ -22,6 +22,14 @@ def compress_main_to_high_resol_webp(file: ImageFile) -> bytes:
     img.save(return_file, format='WEBP', quality=100, optimize=True)
     return return_file.getvalue()
 
+def compress_main_to_image_card_webp(file: ImageFile) -> bytes:
+    print('running compressiong')
+    img = Image.open(io.BytesIO(file)).convert('RGB')    # making the file binary object treating as file in the memory
+    return_file = io.BytesIO()
+    img.thumbnail((200, 200))
+    img.save(return_file, format='WEBP', quality=100, optimize=True)
+    return return_file.getvalue()
+
 
 def convert_into_jpeg(file: ImageFile) -> bytes:
     print('running conversion')

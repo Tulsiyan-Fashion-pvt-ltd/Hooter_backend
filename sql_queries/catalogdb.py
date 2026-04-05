@@ -162,8 +162,87 @@ class Fetch:
 
                     await cursor.execute(query, (usku_id, ))
                     usku = await cursor.fetchone()
-                    print(usku_id)
                     return True if usku and usku.get('1') else False
                 except Exception as e:
                     print(f"error occured while fetching the usku_record on is_usku_id_exists function\n{e}")
                     return ("error", "could not fetch the availability from the usku_record")
+                
+    
+    @staticmethod
+    async def niches():
+        pool = current_app.pool
+        async with pool.acquire() as connection:
+            try:
+                async with connection.cursor(cursor = DictCursor) as cursor:
+                    query = '''select niche_id, niche from niches'''
+
+                    await cursor.execute(query)
+                    result = await cursor.fetchall()
+
+                    return "failed" if not result else result
+            except Exception as e:
+                print(f"error encountered while fetching the niches in niche_id function\n{e}")
+                return ("error", "could not fetch the niches")
+            
+    
+    @staticmethod
+    async def sub_niches(niche_id:int):
+        pool = current_app.pool
+        async with pool.acquire() as connection:
+            try:
+                async with connection.cursor(cursor = DictCursor) as cursor:
+                    query = '''select subniche_id, subniche_name from sub_niches where subniche_id like %s'''
+                    value = (f"{niche_id}%", )
+
+                    await cursor.execute(query, value)
+                    result = await cursor.fetchall()
+
+                    return "failed" if not result else result
+            except Exception as e:
+                print(f"error encountered while fetching the subniches in sub_niches function\n{e}")
+                return ("error", "could not fetch the sub_niches")
+            
+    
+    @staticmethod
+    async def niche_categories(subniche_id:int):
+        pool = current_app.pool
+        async with pool.acquire() as connection:
+            try:
+                async with connection.cursor(cursor = DictCursor) as cursor:
+                    query = '''select category_id, category_name from niche_categories where category_id like %s'''
+                    value = (f"{subniche_id}%", )
+
+                    await cursor.execute(query, value)
+                    result = await cursor.fetchall()
+
+                    return "failed" if not result else result
+            except Exception as e:
+                print(f"error encountered while fetching the niche_categories\n{e}")
+                return ("error", "could not fetch the niche-categories")
+            
+    
+    @staticmethod
+    async def niche_products(category_id:int):
+        pool = current_app.pool
+        async with pool.acquire() as connection:
+            try:
+                async with connection.cursor(cursor = DictCursor) as cursor:
+                    query = '''select type_id, product_name from niche_products where type_id like %s'''
+                    value = (f"{category_id}%", )
+
+                    await cursor.execute(query, value)
+                    result = await cursor.fetchall()
+
+                    return "failed" if not result else result
+            except Exception as e:
+                print(f"error encountered while fetching the niche_products in niche_products function\n{e}")
+                return ("error", "could not fetch the niche_products")
+
+
+    # @staticmethod
+    # async def single_image(usku_id: str, type: str) -> bytes:
+    #     pool = current_app.pool
+    #     async with pool.acquire() as connection:
+    #         try:
+    #             async with connection.cursor(cursor = DictCursor) as cursor:
+    #                 query = '''select image'''

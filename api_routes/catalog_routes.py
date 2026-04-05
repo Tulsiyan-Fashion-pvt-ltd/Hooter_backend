@@ -3,10 +3,10 @@ from utils.prerequirements import login_required, brand_required
 from sql_queries import branddb, catalogdb
 from utils import helper, products
 from utils import sheets
+from utils import imageio
 from datetime import datetime
 from mongo_queries import mongo_catalogdb
 import asyncio
-import aiofiles
 from collections import Counter
 
 catalog = Blueprint('catalog', __name__)
@@ -23,6 +23,45 @@ async def if_catalog_exists():
     else:
         return jsonify({"catalog": "unavailable"})
     
+
+'''get the niche, subniche and categories'''
+@catalog.get("/catalog/niche-data")
+@login_required
+@brand_required
+async def get_niche_data():
+    niches = await catalogdb.Fetch.niches()
+    print(niches)
+
+    try:
+        niche_data ={
+                        niche.get("niche_id"): {
+                            "niche": niche.get("niche"),
+                            "subniches": {
+                                sub_niche.get("subniche_id"):{
+                                    "subniche": sub_niche.get("subniche_name"),
+                                    "categories": {
+                                        category.get("category_id"): {
+                                            "category": category.get("category_name"),
+                                            "products": {
+                                                product.get("type_id"): {
+                                                    "product": product.get("product_name")
+                                                }
+                                                for product in await catalogdb.Fetch.niche_products(category.get("category_id"))
+                                            }
+                                        }
+                                        for category in await catalogdb.Fetch.niche_categories(sub_niche.get("subniche_id"))
+                                    }
+                                }
+                                for sub_niche in await catalogdb.Fetch.sub_niches(niche.get("niche_id"))
+                            }
+
+                        }
+                        for niche in niches
+                    }
+    except Exception as e:
+        return jsonify({"error": "failed", "msg": "could not complete the request"}), 500
+
+    return jsonify({"niche_data": niche_data}), 200
 
 
 # upload single catalog to the hooter backend
@@ -242,6 +281,7 @@ async def get_attribute_fields():
     })
 
 
+
 '''
     HANDLING THE IMAGE
 '''
@@ -275,15 +315,26 @@ async def upload_image():
         return jsonify({"status": "failed", "msg": "file type should be an image"}), 415
     
     '''store the original image to .product_images/.original_images'''
-    image_object = image_file.read()
 
     image_extended_filename = image_file.filename.split(".")
     image_extension = image_extended_filename[len(image_extended_filename)-1]
-
-    async with aiofiles.open(f"./.product_images/.original_images/{usku_id}_{image_type}.{image_extension}", "wb") as file:
-        await file.write((image_object))
-
+    
+    image_name = f"{usku_id}_-_{image_type}.{image_extension}"
+    image = image_file.read()
+    await imageio.write(image, image_name)
+    
     '''add the url in the database as well'''
     
 
     return jsonify("ok")
+
+
+@catalog.get("/catalog/image/<user_id>")
+async def get_product_image(user_id: str):
+    arguments = request.args
+
+    image_type = arguments.get("type")
+
+    file_name = f"{image_type}"
+    imageio.read_image_card()
+    '''read images'''
