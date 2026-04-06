@@ -275,16 +275,13 @@ async def get_attribute_fields():
     niche_attributes = product_attributes[0] 
     image_attributes = product_attributes[1] 
 
-    # print(image_attributes)
-
-    # if niche_attributes.get('error') is not None:
-    #     return jsonify({"status": "interrupted", "msg": "attributes are not available for this product"}), 500
+    if niche_attributes.get('error') is not None:
+        return jsonify({"status": "interrupted", "msg": "attributes are not available for this product"}), 500
     
     return jsonify({
         "field_attributes": niche_attributes,
         "image_attributes": image_attributes
     })
-
 
 
 '''
