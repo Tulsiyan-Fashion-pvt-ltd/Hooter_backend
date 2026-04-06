@@ -96,23 +96,22 @@ async def upload_single_catalog():
     brand_name = await branddb.Fetch.brand_name_by_id(session.get('brand'))
 
     catalog = {
-        "brand_id": session.get('brand'),
-        "usku_id": await products.create_usku(),
-        "sku_id": data.get("sku-id"),
-        "type_id": niche_type,
-        "title": data.get('title'),
-        "price": data.get("price"),
-        "compared-price": data.get("compared-price"),
-        "purchasing_cost": data.get("purchasing-cost"),
-        "vendor": data.get("vendor") if data.get("vendor") else brand_name, # if the vendor id is not there then enter the brand name
-        "ean": data.get('ean'),
-        "hsn": data.get("hsn"),
-        "net_weight": data.get("net-weight"),
-        "dead_weight": data.get("dead-weight"),
-        "volumentric_weight": data.get("volumetric-weight"),
-        "brand_name": data.get("brand-name") if data.get("brand-name") else brand_name
-        # "update_timestamp": datetime.now()
-    }
+    "brand_id": session.get('brand'),
+    "usku_id": await products.create_usku(),
+    "sku_id": data.get("sku_id"),                          # TEMP FIX: was "sku-id"
+    "type_id": niche_type,
+    "title": data.get('title'),
+    "price": data.get("price"),
+    "compared_price": data.get("compared_price"),          # TEMP FIX: was "compared-price" (key + get)
+    "purchasing_cost": data.get("purchasing_cost"),        # TEMP FIX: was "purchasing-cost"
+    "vendor": data.get("vendor") if data.get("vendor") else brand_name,
+    "ean": data.get('ean'),
+    "hsn": data.get("hsn"),
+    "net_weight": data.get("net_weight"),                  # TEMP FIX: was "net-weight"
+    "dead_weight": data.get("dead_weight"),                # TEMP FIX: was "dead-weight"
+    "volumetric_weight": data.get("volumetric_weight"),    # TEMP FIX: was "volumentric_weight" + "volumetric-weight" (typo + hyphen)
+    "brand_name": data.get("brand_name") if data.get("brand_name") else brand_name  # TEMP FIX: was "brand-name"
+}
 
     response = await catalogdb.Write.catalog(catalog)
 
