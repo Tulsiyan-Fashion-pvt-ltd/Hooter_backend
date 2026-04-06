@@ -30,15 +30,10 @@ class Fetch:
       try:
             # Ensure correct type (adjust if needed)
             type_id = int(type_id)  
-            doc = await mongo.db.product_info_schema.find_one({
-                        "type_id": type_id
-                    })  
+            doc = await mongo.db.product_info_schema.find_one({"type_id": type_id}, {"_id": 0, "type_id": 0})  
             if not doc:
                 return {"error": "Not found"}
 
-            # removing _id
-            doc.pop("_id")
-            doc.pop("type_id")  
             return doc
       except Exception as e:
             print(e)
@@ -49,13 +44,10 @@ class Fetch:
     async def image_schema(type_id: int):
         mongo = current_app.mongo
         try:
-            doc = await mongo.db.image_schema.aggregate(
-                        {"$match":{"type_id": type_id}}, 
-                        {"$project":{"_id":0, "type_id": 0}}
-                    ) 
+            doc = await mongo.db.image_schema.find_one({"type_id": type_id}, {"_id": 0, "type_id": 0})
             if not doc:
                 return {"error": "Not found"}
-
+            
             return doc
         except Exception as e:
             print(e)

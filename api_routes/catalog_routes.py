@@ -30,7 +30,6 @@ async def if_catalog_exists():
 @brand_required
 async def get_niche_data():
     niches = await catalogdb.Fetch.niches()
-    print(niches)
 
     try:
         niche_data ={
@@ -269,11 +268,17 @@ async def get_attribute_fields():
             return jsonify({"staus": "invalid value", "msg": "the id should be int type"})
 
     
-    niche_attributes = await mongo_catalogdb.Fetch.catalog_schema(niche_id)
-    image_attributes = await mongo_catalogdb.Fetch.image_schema(niche_id)
+    product_attributes = await asyncio.gather(mongo_catalogdb.Fetch.catalog_schema(niche_id), 
+                   mongo_catalogdb.Fetch.image_schema(niche_id))
+    
+    # print(product_attributes)
+    niche_attributes = product_attributes[0] 
+    image_attributes = product_attributes[1] 
 
-    if niche_attributes.get('error') is not None:
-        return jsonify({"status": "interrupted", "msg": "attributes are not available for this product"}), 500
+    # print(image_attributes)
+
+    # if niche_attributes.get('error') is not None:
+    #     return jsonify({"status": "interrupted", "msg": "attributes are not available for this product"}), 500
     
     return jsonify({
         "field_attributes": niche_attributes,
