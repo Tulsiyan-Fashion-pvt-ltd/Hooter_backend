@@ -291,8 +291,9 @@ async def get_attribute_fields():
 @brand_required
 async def upload_image():
     args = request.args
-    usku_id = args.get("usku-id")
+    usku_id = args.get("usku-id", type=str)
     order = args.get("order", default=-1, type=int)
+    image_type = args.get("image-type", default="front", type=str)
 
     '''checking if the usku_id is correct'''
     is_usku_exists = await catalogdb.Fetch.is_usku_id_exists(usku_id)
@@ -304,11 +305,7 @@ async def upload_image():
         return jsonify({"status": "request failed", "error": "invalid value for order in argument"}), 409
 
     file = await request.files
-    form = await request.form
-
     image_file = file.get("image")
-    image_type = form.get("type")
-
 
     '''checking the file type'''
     check_image = image_file.filename.endswith((".png", ".webp", ".jpeg", ".jpg"))
@@ -357,6 +354,11 @@ async def get_product_image():
     usku_id = arguments.get("usku-id")
     type = arguments.get("image-type")
 
+    if usku_id == None:
+        return jsonify({"status": "failed", "msg": "usku id is not provided"}), 409
+    elif type == None:
+        return jsonify({"status": "failed", "msg": "image type is is not provided"}), 409
+
     '''checking the usku_id'''
     if not await catalogdb.Fetch.is_usku_id_exists(usku_id):
         return jsonify({"status": "failed", "msg": "invalid usku-id"}), 409
@@ -375,10 +377,15 @@ async def get_product_image():
 async def image_url(image_variant: str, filename: str):
     buffer_size = current_app.config["IMAGE_READ_BUFFER"]
 
+    mimetype = "image/webp"
     if image_variant == "webp_card":
         filename = f"./.product_images/.image_cards/{filename}"
     elif image_variant == "original_image":
+        split_name = filename.split(".")
+        extension = split_name[len(split_name)-1]
+        mimetype = f"image/{extension}"
         filename = f"./.product_images/.original_images/{filename}"
+        
     elif image_variant == "high_resol_webp":
         filename = f"./.product_images/.high_resol_images/{filename}"
     elif image_variant == "low_resol_webp":
@@ -391,4 +398,4 @@ async def image_url(image_variant: str, filename: str):
     if image is None:
         return jsonify({"status": "request failed", "msg": "invalid userid or image type"}), 400
     
-    return Response(image, None), 200
+    return Response(image, mimetype=mimetype), 200
