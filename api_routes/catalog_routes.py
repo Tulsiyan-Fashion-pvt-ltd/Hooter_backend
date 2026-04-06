@@ -396,6 +396,6 @@ async def image_url(image_variant: str, filename: str):
     image = imageio.read_image_card(filename, buffer_size)
     
     if image is None:
-        return jsonify({"status": "request failed", "msg": "invalid userid or image type"}), 400
+        abort(404)
     
     return Response(image, mimetype=mimetype), 200
