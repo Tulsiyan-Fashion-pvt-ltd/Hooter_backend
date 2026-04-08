@@ -58,6 +58,7 @@ async def get_niche_data():
                         for niche in niches
                     }
     except Exception as e:
+        print(e)
         return jsonify({"error": "failed", "msg": "could not complete the request"}), 500
 
     return jsonify({"niche_data": niche_data}), 200

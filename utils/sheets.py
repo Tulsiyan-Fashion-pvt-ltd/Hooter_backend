@@ -11,25 +11,31 @@ def create_xlsx(header: list, mandatory_fields: list):
     wb = Workbook()
     ws = wb.active
 
-    formated_mandatory_fields = [
-        snake_to_text(key) for key in mandatory_fields
-    ]
+    # formated_mandatory_fields = [
+    #     snake_to_text(key) for key in mandatory_fields
+    # ]
 
-    ws.append([snake_to_text(key) for key in header])
+    formated_header = []
+    ''' adding (*) to the imported keys'''
+    for index, key in enumerate(header):
+        if key in mandatory_fields:
+            print(key+"*")
+            formated_header.append(snake_to_text(key+'*'))
+        else:
+            formated_header.append(snake_to_text(key))
+
+    print(formated_header)
+    ws.append(formated_header)
 
     font = Font(size=14, bold=True, color='FFFFFFFF')
     fill = PatternFill(start_color="FF13D133", end_color="FF13D133", fill_type='solid')
-    red_fill = PatternFill(start_color="FFFF0000", end_color="FFFF0000", fill_type='solid')
+    # red_fill = PatternFill(start_color="FFFF0000", end_color="FFFF0000", fill_type='solid')
     align = Alignment(horizontal='center', vertical='center')
 
     for cell in ws[1]:
         cell.font = font
         cell.alignment = align
-
-        if cell.value in formated_mandatory_fields:
-            cell.fill = red_fill
-        else:
-            cell.fill = fill
+        cell.fill = fill
 
     stream = BytesIO()
     wb.save(stream)
@@ -44,7 +50,7 @@ def read_xlsx(file):
     headers = next(rows)
 
     '''formating the header'''
-    header = [header.replace(" ","_").lower() for header in headers]
+    header = [header.replace(" ","_").lower().rstrip("*") for header in headers]
     for row in rows:
         yield dict(zip(header, row))
 
