@@ -401,3 +401,19 @@ async def image_url(image_variant: str, filename: str):
         abort(404)
     
     return Response(image, mimetype=mimetype), 200
+
+
+# get the uploaded catalog products and status
+@catalog.get("/catalog/list")
+@login_required
+@brand_required
+async def list_catalog():
+    brand_id = session.get("brand")
+
+    catalog_data = await asyncio.gather(catalogdb.Fetch.catalog_upload_count(brand_id), 
+                          catalogdb.Fetch.catalog_list(brand_id))
+    
+    if catalog_data[0] == "error" or catalog_data[1] == "error":
+        return jsonify({"status": "request failed", "msg": "could not fetch the catalog data"}), 500
+    
+    return jsonify({"count": catalog_data[0], "catalog-list": catalog_data[1]})

@@ -190,7 +190,6 @@ class Fetch:
 
     @staticmethod
     async def image(usku_id: str, type: str):
-        print(usku_id, type)
         pool = current_app.pool
         async with pool.acquire() as connection:
             try:
@@ -206,4 +205,51 @@ class Fetch:
                         return json.loads(urls.get("image_url"))
             except Exception as e:
                 print(f"error occured while fetching the image urls\n{e}")
+                return "error"
+            
+    
+    @staticmethod
+    async def catalog_list(brand_id: str):
+        pool = current_app.pool
+        async with pool.acquire() as connection:
+            try:
+                async with connection.cursor(cursor = DictCursor) as cursor:
+                    query = '''select JSON_VALUE(img.image_url, "$.webp_card") as image_url, s.sku_id, niche.product_name as product_type, 
+                    c.product_title, c.compared_price, c.price, c.purchasing_cost, s.status
+                    from usku_record as s
+                    inner join catalog as c on s.usku_id = c.usku_id
+                    left join images img on img.usku_id = s.usku_id
+                    inner join niche_products as niche on s.product_type_id = niche.type_id
+                    where
+                    s.brand_id = %s
+                    '''
+                    
+                    await cursor.execute(query, (brand_id))
+                    catalog_data = await cursor.fetchall()
+                    
+                    return catalog_data
+            except Exception as e:
+                print(f"error occured while fetching the catalog lists\n{e}")
+                return "error"
+            
+
+    @staticmethod
+    async def catalog_upload_count(brand_id: str):
+        pool = current_app.pool
+        async with pool.acquire() as connection:
+            try:
+                async with connection.cursor(cursor = DictCursor) as cursor:
+                    query = '''
+                    select sum(case when status="pending" then 1 else 0 end) as pending,
+                    sum(case when status="completed" then 1 else 0 end) as completed,
+                    count(usku_id) as total
+                    from usku_record
+                    where brand_id = %s
+                    '''
+                    
+                    await cursor.execute(query, (brand_id))
+                    catalog_data = await cursor.fetchone()
+                    return catalog_data
+            except Exception as e:
+                print(f"error occured while fetching the catalog upload counts\n{e}")
                 return "error"
