@@ -23,7 +23,10 @@ class Write:
                                         compared_price, purchasing_cost, vendor, ean, hsn, net_weight_kg, dead_weight_kg,
                                         volumetric_weight_kg, brand_name, updated_at)
                                         values
-                                        (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                        (NULLIF(%s, ''), NULLIF(%s, ''), NULLIF(%s, ''), NULLIF(%s, ''), 
+                                        NULLIF(%s, ''), NULLIF(%s, ''), NULLIF(%s, ''), NULLIF(%s, ''), 
+                                        NULLIF(%s, ''), NULLIF(%s, ''), NULLIF(%s, ''), NULLIF(%s, ''), 
+                                        NULLIF(%s, ''))
                                     '''
                     
                     catalog_values = (catalog.get("usku_id"), catalog.get("title"), 
@@ -116,7 +119,26 @@ class Fetch:
                     print(f"error occured while fetching the usku_record on is_usku_id_exists function\n{e}")
                     return ("error", "could not fetch the availability from the usku_record")
                 
-    
+    @staticmethod
+    async def is_sku_id_exists(sku_id, brand_id):
+        pool = current_app.pool
+        async with pool.acquire() as connection:
+            async with connection.cursor(cursor=DictCursor) as cursor:
+                try:
+                    query = '''select 1 as found, usku_id from usku_record where sku_id=%s and brand_id=%s'''
+                    values = (sku_id, brand_id)
+
+                    await cursor.execute(query, values) 
+                    sku = await cursor.fetchone()
+                    
+                    if sku:
+                        return sku
+                    else:
+                        return {}
+                except Exception as e:
+                    print(f"error occured while fetching the sku_id from the brand {brand_id}\n{e}")
+                    return None
+
     @staticmethod
     async def niches():
         pool = current_app.pool
@@ -127,8 +149,11 @@ class Fetch:
 
                     await cursor.execute(query)
                     result = await cursor.fetchall()
-
-                    return "failed" if not result else result
+                    
+                    if result:
+                        return result
+                    else:
+                        raise Exception("Could not fetch the niches")
             except Exception as e:
                 print(f"error encountered while fetching the niches in niche_id function\n{e}")
                 return ("error", "could not fetch the niches")
@@ -146,7 +171,10 @@ class Fetch:
                     await cursor.execute(query, value)
                     result = await cursor.fetchall()
 
-                    return "failed" if not result else result
+                    if result:
+                        return result
+                    else:
+                        raise Exception("Could not fetch the sub niches")
             except Exception as e:
                 print(f"error encountered while fetching the subniches in sub_niches function\n{e}")
                 return ("error", "could not fetch the sub_niches")
@@ -164,7 +192,10 @@ class Fetch:
                     await cursor.execute(query, value)
                     result = await cursor.fetchall()
 
-                    return "failed" if not result else result
+                    if result:
+                        return result
+                    else:
+                        raise Exception("Could not fetch the niche categories")
             except Exception as e:
                 print(f"error encountered while fetching the niche_categories\n{e}")
                 return ("error", "could not fetch the niche-categories")
@@ -182,7 +213,10 @@ class Fetch:
                     await cursor.execute(query, value)
                     result = await cursor.fetchall()
 
-                    return "failed" if not result else result
+                    if result:
+                        return result
+                    else:
+                        raise Exception("Could not fetch the niche products")
             except Exception as e:
                 print(f"error encountered while fetching the niche_products in niche_products function\n{e}")
                 return ("error", "could not fetch the niche_products")
@@ -221,7 +255,8 @@ class Fetch:
                     left join images img on img.usku_id = s.usku_id
                     inner join niche_products as niche on s.product_type_id = niche.type_id
                     where
-                    s.brand_id = %s
+                    s.brand_id = %s and
+                    img.image_type="front"
                     '''
                     
                     await cursor.execute(query, (brand_id))

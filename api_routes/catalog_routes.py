@@ -30,7 +30,7 @@ async def if_catalog_exists():
 @brand_required
 async def get_niche_data():
     niches = await catalogdb.Fetch.niches()
-
+    print(niches)
     try:
         niche_data ={
                         niche.get("niche_id"): {
@@ -74,7 +74,7 @@ async def upload_single_catalog():
 
     accepted_main_keys = ["type", "data"]
     if not helper.Helper.check_required_payload(payload, accepted_main_keys, accepted_main_keys):
-        return jsonify({"status": "invalid payload", "missing keys": necessary_data_keys})
+        return jsonify({"status": "invalid payload", "missing keys": accepted_main_keys}), 422
 
     data = payload.get('data')
     niche_type = payload.get('type')
@@ -130,7 +130,7 @@ async def upload_single_catalog():
 
     await mongo_catalogdb.Write.single_catalog(mongo_catalog_data)
     
-    return jsonify({"Status": "successful", "message": "added the single catalog"}), 200
+    return jsonify({"Status": "successful", "message": "added the single catalog", "usku_id": catalog.get("usku_id")}), 200
 
 
 
@@ -297,18 +297,28 @@ async def upload_image():
     order = args.get("order", default=-1, type=int)
     image_type = args.get("image-type", default="front", type=str)
 
-    '''checking if the usku_id is correct'''
-    is_usku_exists = await catalogdb.Fetch.is_usku_id_exists(usku_id)
+    if usku_id is None:
+        sku_id = args.get("sku-id")
+        print(sku_id)
+        is_sku = await catalogdb.Fetch.is_sku_id_exists(sku_id, session.get("brand"))
+        print(is_sku)
+        if is_sku and is_sku.get("found"):
+            usku_id=is_sku.get("usku_id")
+        else:
+            return jsonify({"status": "failed", "msg": "invalid sku id"}), 422
+    else:
+        '''checking if the usku_id is correct'''
+        is_usku_exists = await catalogdb.Fetch.is_usku_id_exists(usku_id)
 
-    if is_usku_exists != True:
-        return jsonify({"status": "invalid usku_id", "msg": 'usku id does not exists'})
+        if is_usku_exists != True:
+            return jsonify({"status": "invalid usku_id", "msg": 'usku id does not exists'}), 422
     
     if order < 0:
         return jsonify({"status": "request failed", "error": "invalid value for order in argument"}), 409
 
     file = await request.files
     image_file = file.get("image")
-
+    print(image_file)
     '''checking the file type'''
     check_image = image_file.filename.endswith((".png", ".webp", ".jpeg", ".jpg"))
 
