@@ -129,7 +129,6 @@ async def upload_single_catalog():
         mongo_catalog_data[key] = data.get(key)
 
     await mongo_catalogdb.Write.single_catalog(mongo_catalog_data)
-    
     return jsonify({"Status": "successful", "message": "added the single catalog", "usku_id": catalog.get("usku_id")}), 200
 
 
@@ -299,9 +298,9 @@ async def upload_image():
 
     if usku_id is None:
         sku_id = args.get("sku-id")
-        print(sku_id)
+        # print(sku_id)
         is_sku = await catalogdb.Fetch.is_sku_id_exists(sku_id, session.get("brand"))
-        print(is_sku)
+        # print(is_sku)
         if is_sku and is_sku.get("found"):
             usku_id=is_sku.get("usku_id")
         else:
@@ -318,7 +317,7 @@ async def upload_image():
 
     file = await request.files
     image_file = file.get("image")
-    print(image_file)
+    # print(image_file)
     '''checking the file type'''
     check_image = image_file.filename.endswith((".png", ".webp", ".jpeg", ".jpg"))
 
@@ -427,3 +426,43 @@ async def list_catalog():
         return jsonify({"status": "request failed", "msg": "could not fetch the catalog data"}), 500
     
     return jsonify({"count": catalog_data[0], "catalog-list": catalog_data[1]})
+
+
+# mark the catalog upload as completed
+'''this function is meant to call after the images and catalog upload is successfull'''
+@catalog.put("/catalog/mark-complete")
+@login_required
+@brand_required
+async def mark_complete():
+    args = request.args
+    usku_id = args.get("usku-id")
+
+    if usku_id and await catalogdb.Fetch.is_usku_id_exists(usku_id):
+        db_query = await catalogdb.Write.status_complete(usku_id)
+        if db_query == "ok":
+            return jsonify({"status": "successful", "msg": "updated the catalog upload as completed"}), 200
+        else:
+            jsonify({"status": "failed", "msg": "error encountered while updating the status as completed"}), 500
+    else:
+        return jsonify({"status": "failed request", "msg": "usku_id does not exists"}), 400               
+    return jsonify({"status": "request completed", "msg": "reqeust completed without updating the status"}), 202
+
+
+'''
+    this route serves the resource to delete a product from the catalog
+'''
+@catalog.delete("/catalog")
+@login_required
+@brand_required
+async def delete_product():
+    args = request.args
+    usku_id = args.get("usku-id")
+
+    if not usku_id:
+        return jsonify({"status": "invalid request", "msg": "usku-id not provided"}), 400
+    
+    db_query = await catalogdb.Write.delete_catalog(usku_id)
+    if db_query != "ok": 
+        return jsonify({"status": "request failed", "msg": "error occured while deleting from the catalog"}), 500
+    else:
+        return jsonify({"status": "successful", "msg": "item deleted from the catalog"}), 200

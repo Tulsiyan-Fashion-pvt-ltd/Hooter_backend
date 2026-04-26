@@ -67,8 +67,9 @@ async def sql_connection_startup():
                 password = os.environ.get('HOOTER_DB_PASSWORD'),
                 db = os.environ.get('HOOTER_DB'),
                 minsize = 1,
-                # maxsize = 20,
-                pool_recycle=3600
+                maxsize = 20,
+                autocommit=True
+                # pool_recycle=3600
             )
             connection = True
         except Exception as e:

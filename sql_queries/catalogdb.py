@@ -69,7 +69,44 @@ class Write:
                 print(f"error encountered while adding a single product\n{e}")
                 return {"error": e.args[0]}                          
 
+    @staticmethod
+    async def status_complete(usku_id):
+        pool = current_app.pool
+        async with pool.acquire() as connection:
+            try:
+                async with connection.cursor(cursor=DictCursor) as cursor:
+                    query = '''update usku_record set status="completed"
+                            where  usku_id=%s
+                            '''
+                    values = (usku_id,)
 
+                    await cursor.execute(query, values)
+                    await connection.commit()
+                    return "ok"
+            except Exception as e:
+                await connection.rollback()
+                print(f"error encountered while updating the catalog status as completed\n{e}")
+                return {"error": e.args[0]}
+
+
+    @staticmethod
+    async def delete_catalog(usku_id):
+        pool = current_app.pool
+        async with pool.acquire() as connection:
+            try:
+                async with connection.cursor(cursor=DictCursor) as cursor:
+                    query = '''delete from usku_record
+                                where usku_id=%s
+                            '''
+                    values = (usku_id, )
+
+                    await cursor.execute(query, values)
+                    await connection.commit()
+                    return "ok"
+            except  Exception as e:
+                await connection.rollback()
+                print(f"error encountered while deleting the product {usku_id} from the catalog\n{e}")
+                return {"error": e.args[0]}
 
 class Fetch:
     @staticmethod
@@ -248,18 +285,18 @@ class Fetch:
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor = DictCursor) as cursor:
-                    query = '''select JSON_VALUE(img.image_url, "$.webp_card") as image_url, s.sku_id, niche.product_name as product_type, 
+                    query = '''select COALESCE(JSON_VALUE(img.image_url, "$.webp_card"), '') as image_url, s.sku_id, niche.product_name as product_type, 
                     c.product_title, c.compared_price, c.price, c.purchasing_cost, s.status
                     from usku_record as s
                     inner join catalog as c on s.usku_id = c.usku_id
-                    left join images img on img.usku_id = s.usku_id
+                    left join images img on img.usku_id = s.usku_id and
+                    img.image_type="front"
                     inner join niche_products as niche on s.product_type_id = niche.type_id
                     where
-                    s.brand_id = %s and
-                    img.image_type="front"
+                    s.brand_id = %s
                     '''
                     
-                    await cursor.execute(query, (brand_id))
+                    await cursor.execute(query, (brand_id, ))
                     catalog_data = await cursor.fetchall()
                     
                     return catalog_data
@@ -282,7 +319,7 @@ class Fetch:
                     where brand_id = %s
                     '''
                     
-                    await cursor.execute(query, (brand_id))
+                    await cursor.execute(query, (brand_id, ))
                     catalog_data = await cursor.fetchone()
                     return catalog_data
             except Exception as e:
