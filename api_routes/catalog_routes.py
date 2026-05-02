@@ -1,4 +1,4 @@
-from quart import Blueprint, session, request, jsonify, Response, current_app, abort
+from quart import Blueprint, session, request, jsonify, Response, current_app, abort, json
 from utils.prerequirements import login_required, brand_required
 from sql_queries import branddb, catalogdb
 from utils import helper, products
@@ -123,7 +123,7 @@ async def upload_single_catalog():
     
 
     # add the details in the mongo db
-    mongo_catalog_data = {"niche_id": niche_type}
+    mongo_catalog_data = {"niche_id": niche_type, "usku_id": catalog.get("usku_id")}
     niche_specific_keys = await mongo_catalogdb.Fetch.attributes(niche_type).niche_specific()
     for key in niche_specific_keys:
         mongo_catalog_data[key] = data.get(key)
@@ -203,6 +203,7 @@ async def upload_bulk_catalog():
 
             mongo_catalog_data = {key: document.get(key) for key in document if key in niche_specific_fields}
             mongo_catalog_data["type_id"] = type_id
+            mongo_catalog_data["usku_id"] = usku_id
 
             response = await catalogdb.Write.catalog(sql_catalog_data)
             
@@ -264,7 +265,7 @@ async def get_attribute_fields():
         try:
             niche_id = int(niche_id)
         except Exception as e:
-            return jsonify({"staus": "invalid value", "msg": "the id should be int type"})
+            return jsonify({"staus": "invalid value", "msg": "the id should be int type"}), 422
 
     
     product_attributes = await asyncio.gather(mongo_catalogdb.Fetch.catalog_schema(niche_id), 
@@ -367,8 +368,8 @@ async def get_product_image():
 
     if usku_id == None:
         return jsonify({"status": "failed", "msg": "usku id is not provided"}), 409
-    elif type == None:
-        return jsonify({"status": "failed", "msg": "image type is is not provided"}), 409
+    # elif type == None:
+    #     return jsonify({"status": "failed", "msg": "image type is is not provided"}), 409
 
     '''checking the usku_id'''
     if not await catalogdb.Fetch.is_usku_id_exists(usku_id):
@@ -381,6 +382,10 @@ async def get_product_image():
     elif image_url == None:
         return jsonify({"status": "failed", "msg": "invalid image type"}), 409
 
+    if type is None:
+        print(image_urls)
+        image_urls = {value.get("image_type"): json.loads(value.get("image_url")) for index, value in enumerate(image_urls)}
+        return jsonify(image_urls)
     return jsonify(image_urls)
 
 
@@ -413,10 +418,24 @@ async def image_url(image_variant: str, filename: str):
 
 
 # get the uploaded catalog products and status
-@catalog.get("/catalog/list")
+@catalog.get("/catalog")
 @login_required
 @brand_required
 async def list_catalog():
+    args = request.args
+    usku_id = args.get('usku-id')
+
+    if usku_id:
+        product_data = await asyncio.gather(catalogdb.Fetch.catalog_product(usku_id),
+                                            mongo_catalogdb.Fetch.catalog_product(usku_id))
+        
+        if product_data[0].get("error") or product_data[1].get("error"):
+            return jsonify({"status": "failed", "msg": "request failed"}), 500
+        else:
+            product_data = product_data[0] | product_data[1]
+            return jsonify(product_data), 200
+    
+
     brand_id = session.get("brand")
 
     catalog_data = await asyncio.gather(catalogdb.Fetch.catalog_upload_count(brand_id), 
@@ -425,7 +444,28 @@ async def list_catalog():
     if catalog_data[0] == "error" or catalog_data[1] == "error":
         return jsonify({"status": "request failed", "msg": "could not fetch the catalog data"}), 500
     
-    return jsonify({"count": catalog_data[0], "catalog-list": catalog_data[1]})
+    return jsonify({"count": catalog_data[0], "catalog-list": catalog_data[1]}), 200
+
+
+
+'''
+    this route serves the resource to delete a product from the catalog
+'''
+@catalog.delete("/catalog")
+@login_required
+@brand_required
+async def delete_product():
+    args = request.args
+    usku_id = args.get("usku-id")
+    print(usku_id)
+    if not usku_id:
+        return jsonify({"status": "invalid request", "msg": "usku-id not provided"}), 400
+    
+    db_query = await catalogdb.Write.delete_catalog(usku_id)
+    if db_query != "ok": 
+        return jsonify({"status": "request failed", "msg": "error occured while deleting from the catalog"}), 500
+    else:
+        return jsonify({"status": "successful", "msg": "item deleted from the catalog"}), 200    
 
 
 # mark the catalog upload as completed
@@ -446,23 +486,3 @@ async def mark_complete():
     else:
         return jsonify({"status": "failed request", "msg": "usku_id does not exists"}), 400               
     return jsonify({"status": "request completed", "msg": "reqeust completed without updating the status"}), 202
-
-
-'''
-    this route serves the resource to delete a product from the catalog
-'''
-@catalog.delete("/catalog")
-@login_required
-@brand_required
-async def delete_product():
-    args = request.args
-    usku_id = args.get("usku-id")
-
-    if not usku_id:
-        return jsonify({"status": "invalid request", "msg": "usku-id not provided"}), 400
-    
-    db_query = await catalogdb.Write.delete_catalog(usku_id)
-    if db_query != "ok": 
-        return jsonify({"status": "request failed", "msg": "error occured while deleting from the catalog"}), 500
-    else:
-        return jsonify({"status": "successful", "msg": "item deleted from the catalog"}), 200

@@ -52,6 +52,20 @@ class Fetch:
         except Exception as e:
             print(e)
             return {"error": str(e)}
+        
+    # fetch catalog product data
+    async def catalog_product(usku_id: str):
+        mongo = current_app.mongo
+        try:
+            doc = await mongo.db.product_attributes.find_one({"usku_id": usku_id}, {"_id": 0, "type_id": 0, "usku_id": 0})
+
+            if not doc:
+                return {"error": "not found"}
+
+            return doc
+        except Exception as e:
+            print(e)
+            return {"error": str(e)}
           
     
 

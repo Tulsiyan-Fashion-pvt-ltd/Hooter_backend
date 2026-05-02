@@ -265,19 +265,58 @@ class Fetch:
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor = DictCursor) as cursor:
-                    query = '''select image_url from images where usku_id=%s and image_type=%s'''
-                    values = (usku_id, type)
+                    query = ''''''
+                    values = ()
 
-                    await cursor.execute(query, values)
-                    urls = await cursor.fetchone()
-                    if not urls:
-                        return None
+                    if type:
+                        query = '''select image_url from images where usku_id=%s and image_type=%s'''
+                        values = (usku_id, type)
+                        await cursor.execute(query, values)
+                        urls = await cursor.fetchone()
+
+                        if not urls:
+                            return None
+                        else:
+                            return json.loads(urls.get("image_url"))
+                        
                     else:
-                        return json.loads(urls.get("image_url"))
+                        query = '''select image_type, image_url from images where usku_id=%s'''
+                        values = (usku_id, )
+                        await cursor.execute(query, values)
+                        urls = await cursor.fetchall()
+                    
+                        if not urls:
+                            return None
+                        else:
+                            return urls
             except Exception as e:
                 print(f"error occured while fetching the image urls\n{e}")
                 return "error"
-            
+    
+
+    @staticmethod
+    async def catalog_product(usku_id: str):
+        pool = current_app.pool
+        async with pool.acquire() as connection:
+            try:
+                async with connection.cursor(cursor=DictCursor) as cursor:
+                    query = '''select u.sku_id, c.product_title, c.price, c.compared_price,
+                    c.purchasing_cost, c.vendor, c.ean, c.hsn, c.net_weight_kg, c.dead_weight_kg, c.volumetric_weight_kg,
+                    c.brand_name
+                    from usku_record as u
+                    inner join catalog as c on u.usku_id=c.usku_id
+                    where u.usku_id = %s'''
+
+                    values = (usku_id, )
+
+                    await cursor.execute(query, values)
+                    catalog = await cursor.fetchone()
+                    return catalog if catalog else {}
+            except Exception as e:
+                print(f"error occured while fetching the catalog data for {usku_id}\n{e}")
+                return {"error": e.args[0]}
+
+
     
     @staticmethod
     async def catalog_list(brand_id: str):
@@ -285,7 +324,8 @@ class Fetch:
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor = DictCursor) as cursor:
-                    query = '''select COALESCE(JSON_VALUE(img.image_url, "$.webp_card"), '') as image_url, s.sku_id, niche.product_name as product_type, 
+                    query = '''select COALESCE(JSON_VALUE(img.image_url, "$.webp_card"), '') as image_url, s.usku_id, s.sku_id, 
+                    niche.product_name as product_type, niche.type_id,
                     c.product_title, c.compared_price, c.price, c.purchasing_cost, s.status
                     from usku_record as s
                     inner join catalog as c on s.usku_id = c.usku_id
