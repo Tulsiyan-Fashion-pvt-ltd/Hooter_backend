@@ -29,10 +29,10 @@ class Write:
                                         NULLIF(%s, ''))
                                     '''
                     
-                    catalog_values = (catalog.get("usku_id"), catalog.get("title"), 
+                    catalog_values = (catalog.get("usku_id"), catalog.get("product_title"), 
                                       catalog.get("price"), catalog.get("compared_price"), catalog.get("purchasing_cost"),
                                       catalog.get("vendor"), catalog.get("ean"), catalog.get("hsn"),
-                                      catalog.get("net_weight"), catalog.get("dead_weight"), catalog.get("volumetric_weight"),
+                                      catalog.get("net_weight_kg"), catalog.get("dead_weight_kg"), catalog.get("volumetric_weight_kg"),
                                       catalog.get("brand_name"), datetime.now())
                     
                     await cursor.execute(catalog_query, catalog_values)
@@ -106,6 +106,57 @@ class Write:
             except  Exception as e:
                 await connection.rollback()
                 print(f"error encountered while deleting the product {usku_id} from the catalog\n{e}")
+                return {"error": e.args[0]}
+            
+    @staticmethod
+    async def update_catalog(catalog: dict):
+        pool = current_app.pool
+        async with pool.acquire() as connection:
+            try:
+                async with connection.cursor(cursor=DictCursor) as cursor:
+                    query = '''UPDATE usku_record AS u
+                            INNER JOIN catalog AS c 
+                                ON u.usku_id = c.usku_id
+                            SET 
+                                u.sku_id = %s,
+                                u.status = %s,
+                                c.product_title = %s,
+                                c.price = %s,
+                                c.compared_price = %s,
+                                c.purchasing_cost = %s,
+                                c.vendor = %s,
+                                c.ean = %s,
+                                c.hsn = %s,
+                                c.net_weight_kg = %s,
+                                c.dead_weight_kg = %s,
+                                c.volumetric_weight_kg = %s,
+                                c.brand_name = %s,
+                                c.updated_at = %s
+                                where u.usku_id = %s'''
+
+                    values = (
+                        catalog.get("sku_id"),
+                        "pending",
+                        catalog.get("title"),
+                        catalog.get("price"),
+                        catalog.get("compared_price"),
+                        catalog.get("purchasing_cost"),
+                        catalog.get("vendor"),
+                        catalog.get("ean"),
+                        catalog.get("hsn"),
+                        catalog.get("net_weight"),
+                        catalog.get("dead_weight"),
+                        catalog.get("volumetric_weight"),
+                        catalog.get("brand_name"),
+                        datetime.now(),
+                        catalog.get("usku_id")
+                    )
+
+                    await cursor.execute(query, values)
+                    await connection.commit()
+                    return "ok"
+            except Exception as e:
+                print(f"error occured while updating the catalog details of {catalog.get("usku_id")}\n{e}")
                 return {"error": e.args[0]}
 
 class Fetch:

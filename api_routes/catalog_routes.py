@@ -85,8 +85,10 @@ async def upload_single_catalog():
         return jsonify({"status": "invalid argument"}), 400
 
     #checking the payload 
-    accepted_data_keys = await mongo_catalogdb.Fetch.attributes(niche_type).all()
-    necessary_data_keys = await mongo_catalogdb.Fetch.attributes(niche_type).mandatory()
+    system_keys = await asyncio.gather(mongo_catalogdb.Fetch.attributes(niche_type).all(),
+                                       mongo_catalogdb.Fetch.attributes(niche_type).mandatory())
+    accepted_data_keys = system_keys[0]
+    necessary_data_keys = system_keys[1]
 
     if not helper.Helper.check_required_payload(data, accepted_data_keys, necessary_data_keys):
         return jsonify({"status": "invalid payload", "accepted_keys": accepted_data_keys, "mandatory": necessary_data_keys}), 400
@@ -100,16 +102,16 @@ async def upload_single_catalog():
     "usku_id": await products.create_usku(),
     "sku_id": data.get("sku_id"),                          # TEMP FIX: was "sku-id"
     "type_id": niche_type,
-    "title": data.get('title'),
+    "title": data.get('product_title'),
     "price": data.get("price"),
     "compared_price": data.get("compared_price"),          # TEMP FIX: was "compared-price" (key + get)
     "purchasing_cost": data.get("purchasing_cost"),        # TEMP FIX: was "purchasing-cost"
     "vendor": data.get("vendor") if data.get("vendor") else brand_name,
     "ean": data.get('ean'),
     "hsn": data.get("hsn"),
-    "net_weight": data.get("net_weight"),                  # TEMP FIX: was "net-weight"
-    "dead_weight": data.get("dead_weight"),                # TEMP FIX: was "dead-weight"
-    "volumetric_weight": data.get("volumetric_weight"),    # TEMP FIX: was "volumentric_weight" + "volumetric-weight" (typo + hyphen)
+    "net_weight": data.get("net_weight_kg"),                  # TEMP FIX: was "net-weight"
+    "dead_weight": data.get("dead_weight_kg"),                # TEMP FIX: was "dead-weight"
+    "volumetric_weight": data.get("volumetric_weight_kg"),    # TEMP FIX: was "volumentric_weight" + "volumetric-weight" (typo + hyphen)
     "brand_name": data.get("brand_name") if data.get("brand_name") else brand_name  # TEMP FIX: was "brand-name"
 }
 
@@ -123,7 +125,7 @@ async def upload_single_catalog():
     
 
     # add the details in the mongo db
-    mongo_catalog_data = {"niche_id": niche_type, "usku_id": catalog.get("usku_id")}
+    mongo_catalog_data = {"type_id": niche_type, "usku_id": catalog.get("usku_id")}
     niche_specific_keys = await mongo_catalogdb.Fetch.attributes(niche_type).niche_specific()
     for key in niche_specific_keys:
         mongo_catalog_data[key] = data.get(key)
@@ -383,7 +385,7 @@ async def get_product_image():
         return jsonify({"status": "failed", "msg": "invalid image type"}), 409
 
     if type is None:
-        print(image_urls)
+        # print(image_urls)
         image_urls = {value.get("image_type"): json.loads(value.get("image_url")) for index, value in enumerate(image_urls)}
         return jsonify(image_urls)
     return jsonify(image_urls)
@@ -432,6 +434,7 @@ async def list_catalog():
         if product_data[0].get("error") or product_data[1].get("error"):
             return jsonify({"status": "failed", "msg": "request failed"}), 500
         else:
+            print(product_data[1])
             product_data = product_data[0] | product_data[1]
             return jsonify(product_data), 200
     
@@ -466,6 +469,73 @@ async def delete_product():
         return jsonify({"status": "request failed", "msg": "error occured while deleting from the catalog"}), 500
     else:
         return jsonify({"status": "successful", "msg": "item deleted from the catalog"}), 200    
+
+
+'''route to update the catalog'''
+@catalog.put("/catalog")
+@login_required
+@brand_required
+async def update_catalog_data():
+    payload = await request.get_json()
+    print(payload)
+
+    type_id = payload.get("type")
+    data = payload.get("data")
+
+    if type_id == None or data == None:
+        return jsonify({"status": "failed", "msg": "invalid payload"}), 400
+
+    '''checking the payload'''
+    payload_list = await asyncio.gather(mongo_catalogdb.Fetch.attributes(type_id).all(),
+                                  mongo_catalogdb.Fetch.attributes(type_id).mandatory())
+    
+    accepted_payload = payload_list[0]
+    mandatory_payload = payload_list[1]
+    
+    mandatory_payload.append("usku_id")
+    accepted_payload.append("usku_id")
+    accepted_payload.append("discount")
+
+    print(mandatory_payload)
+    print("\n")
+    print(accepted_payload)
+
+    if not helper.Helper.check_required_payload(data, accepted_payload, mandatory_payload):
+        return jsonify({"status": "failed", "msg": "invalid payload"}), 400
+    
+    brand_name = await branddb.Fetch.brand_name_by_id(session.get('brand'))
+
+    # data for sql
+    catalog = {
+        "brand_id": session.get('brand'),
+        "usku_id": data.get("usku_id"),
+        "sku_id": data.get("sku_id"),                          # TEMP FIX: was "sku-id"
+        "type_id": type_id,
+        "title": data.get('product_title'),
+        "price": data.get("price"),
+        "compared_price": data.get("compared_price"),          # TEMP FIX: was "compared-price" (key + get)
+        "purchasing_cost": data.get("purchasing_cost"),        # TEMP FIX: was "purchasing-cost"
+        "vendor": data.get("vendor") if data.get("vendor") else brand_name,
+        "ean": data.get('ean'),
+        "hsn": data.get("hsn"),
+        "net_weight": data.get("net_weight_kg"),                  # TEMP FIX: was "net-weight"
+        "dead_weight": data.get("dead_weight_kg"),                # TEMP FIX: was "dead-weight"
+        "volumetric_weight": data.get("volumetric_weight_kg"),    # TEMP FIX: was "volumentric_weight" + "volumetric-weight" (typo + hyphen)
+        "brand_name": data.get("brand_name") if data.get("brand_name") else brand_name  # TEMP FIX: was "brand-name"
+    }
+
+    #data for mongodb
+    mongo_catalog = {key: value for key, value in data.items() 
+                    if (key not in catalog) or (key in ("usku_id", "type_id"))}
+
+
+    response = await asyncio.gather(catalogdb.Write.update_catalog(catalog), 
+                                    mongo_catalogdb.Write.update_catalog(mongo_catalog))
+    
+    if response[0] != "ok" or response[1] != "ok": 
+        return jsonify({"status": "failed", "msg": "error occured while updating the catalog"}), 500
+    
+    return jsonify({"status": "successful", "msg": "updated successfully"}), 200
 
 
 # mark the catalog upload as completed
