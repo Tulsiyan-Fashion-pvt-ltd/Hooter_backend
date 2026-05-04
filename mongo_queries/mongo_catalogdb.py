@@ -34,6 +34,20 @@ class Write:
                     connection.abort_transaction()
                     print(e)
                     return {"error": str(e)}
+                
+    async def delete_catalog(usku_id: str):
+        mongo = current_app.mongo
+        async with await mongo.cx.start_session() as connection:
+            async with connection.start_transaction():
+                try:
+                    await mongo.db.product_attributes.delete_one({"usku_id": usku_id})
+                    return "ok"
+                except Exception as e:
+                    connection.abort_transaction()
+                    print(e)
+                    return {"error": str(e)}
+
+
 
 class Fetch:
     # fetch catalog attributes

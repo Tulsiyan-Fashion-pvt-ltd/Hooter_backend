@@ -1,6 +1,7 @@
 from utils import image_compression
 import asyncio
 import aiofiles
+import os
 
 async def write(image: bytes, file_name, bufer_size):
     try:
@@ -78,3 +79,18 @@ async def read_image_card(file_name: str, buffer_size:int):
     except Exception as e:
         print(f"could not read the image\n{e}")
         return
+    
+
+'''delete images'''
+async def delete_image(file_path: str):
+    try:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            print(f"File {file_path} deleted successfully.")
+            "ok"
+        else:
+            print(f"The file {file_path} does not exist.")
+            "finished"
+    except Exception as e:
+        print(f"could not read the image\n{e}")
+        return "error"

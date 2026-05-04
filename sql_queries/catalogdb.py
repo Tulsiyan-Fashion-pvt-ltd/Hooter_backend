@@ -108,6 +108,24 @@ class Write:
                 print(f"error encountered while deleting the product {usku_id} from the catalog\n{e}")
                 return {"error": e.args[0]}
             
+
+    @staticmethod
+    async def delete_image_all(usku_id: str):
+        pool = current_app.pool
+        async with pool.acquire() as connection:
+            try:
+                async with connection.cursor(cursor=DictCursor) as cursor:
+                    query = '''delete from images where usku_id=%s'''
+                    values = (usku_id, )
+
+                    await cursor.execute(query, values)
+                    await connection.commit()
+                    return "ok"
+            except Exception as e:
+                print(f"error occured while deleting the images of {usku_id}\n{e}")
+                return {"error": e.args[0]}
+
+            
     @staticmethod
     async def update_catalog(catalog: dict):
         pool = current_app.pool
@@ -311,7 +329,7 @@ class Fetch:
 
 
     @staticmethod
-    async def image(usku_id: str, type: str):
+    async def image(usku_id: str, type: str = None):
         pool = current_app.pool
         async with pool.acquire() as connection:
             try:
@@ -331,7 +349,7 @@ class Fetch:
                             return json.loads(urls.get("image_url"))
                         
                     else:
-                        query = '''select image_type, image_url from images where usku_id=%s'''
+                        query = '''select image_type, image_url, image_order from images where usku_id=%s'''
                         values = (usku_id, )
                         await cursor.execute(query, values)
                         urls = await cursor.fetchall()

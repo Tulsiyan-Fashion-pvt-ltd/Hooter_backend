@@ -30,7 +30,7 @@ async def if_catalog_exists():
 @brand_required
 async def get_niche_data():
     niches = await catalogdb.Fetch.niches()
-    print(niches)
+    # print(niches)
     try:
         niche_data ={
                         niche.get("niche_id"): {
@@ -102,16 +102,16 @@ async def upload_single_catalog():
     "usku_id": await products.create_usku(),
     "sku_id": data.get("sku_id"),                          # TEMP FIX: was "sku-id"
     "type_id": niche_type,
-    "title": data.get('product_title'),
+    "product_title": data.get('product_title'),
     "price": data.get("price"),
     "compared_price": data.get("compared_price"),          # TEMP FIX: was "compared-price" (key + get)
     "purchasing_cost": data.get("purchasing_cost"),        # TEMP FIX: was "purchasing-cost"
     "vendor": data.get("vendor") if data.get("vendor") else brand_name,
     "ean": data.get('ean'),
     "hsn": data.get("hsn"),
-    "net_weight": data.get("net_weight_kg"),                  # TEMP FIX: was "net-weight"
-    "dead_weight": data.get("dead_weight_kg"),                # TEMP FIX: was "dead-weight"
-    "volumetric_weight": data.get("volumetric_weight_kg"),    # TEMP FIX: was "volumentric_weight" + "volumetric-weight" (typo + hyphen)
+    "net_weight_kg": data.get("net_weight_kg"),                  # TEMP FIX: was "net-weight"
+    "dead_weight_kg": data.get("dead_weight_kg"),                # TEMP FIX: was "dead-weight"
+    "volumetric_weight_kg": data.get("volumetric_weight_kg"),    # TEMP FIX: was "volumentric_weight" + "volumetric-weight" (typo + hyphen)
     "brand_name": data.get("brand_name") if data.get("brand_name") else brand_name  # TEMP FIX: was "brand-name"
 }
 
@@ -320,7 +320,7 @@ async def upload_image():
 
     file = await request.files
     image_file = file.get("image")
-    # print(image_file)
+    # print(image_file.filename)
     '''checking the file type'''
     check_image = image_file.filename.endswith((".png", ".webp", ".jpeg", ".jpg"))
 
@@ -386,7 +386,7 @@ async def get_product_image():
 
     if type is None:
         # print(image_urls)
-        image_urls = {value.get("image_type"): json.loads(value.get("image_url")) for index, value in enumerate(image_urls)}
+        image_urls = {value.get("image_type"): {"url": json.loads(value.get("image_url")), "order": value.get("image_order")} for index, value in enumerate(image_urls)}
         return jsonify(image_urls)
     return jsonify(image_urls)
 
@@ -398,7 +398,7 @@ async def image_url(image_variant: str, filename: str):
     mimetype = "image/webp"
     if image_variant == "webp_card":
         filename = f"./.product_images/.image_cards/{filename}"
-    elif image_variant == "original_image":
+    elif image_variant == "original":
         split_name = filename.split(".")
         extension = split_name[len(split_name)-1]
         mimetype = f"image/{extension}"
@@ -434,7 +434,7 @@ async def list_catalog():
         if product_data[0].get("error") or product_data[1].get("error"):
             return jsonify({"status": "failed", "msg": "request failed"}), 500
         else:
-            print(product_data[1])
+            # print(product_data[1])
             product_data = product_data[0] | product_data[1]
             return jsonify(product_data), 200
     
@@ -460,15 +460,49 @@ async def list_catalog():
 async def delete_product():
     args = request.args
     usku_id = args.get("usku-id")
-    print(usku_id)
+    # print(usku_id)
     if not usku_id:
         return jsonify({"status": "invalid request", "msg": "usku-id not provided"}), 400
     
-    db_query = await catalogdb.Write.delete_catalog(usku_id)
-    if db_query != "ok": 
+    images = await catalogdb.Fetch.image(usku_id)
+    
+    db_query = await asyncio.gather(catalogdb.Write.delete_catalog(usku_id), 
+                                    mongo_catalogdb.Write.delete_catalog(usku_id)
+                                    )
+    
+    if db_query[0] != "ok" or db_query[1] != "ok" or images == "error": 
         return jsonify({"status": "request failed", "msg": "error occured while deleting from the catalog"}), 500
     else:
-        return jsonify({"status": "successful", "msg": "item deleted from the catalog"}), 200    
+        # print(images)
+        # todo
+        '''iterate over each image names and sepeate with their file paths acc to the image type
+            and send to the image delete function from imageio
+        '''
+
+        tasks = []
+        for image_details in images:
+            for image_type, url in json.loads(image_details.get("image_url")).items():
+                url_split = url.split("/")
+                filename = url_split[len(url_split) -1]
+                file_path = ''
+
+                if image_type == "webp_card":
+                    file_path = f"./.product_images/.image_cards/{filename}"
+                elif image_type == "original":
+                    file_path = f"./.product_images/.original_images/{filename}"    
+                elif image_type == "high_resol_webp":
+                    file_path = f"./.product_images/.high_resol_images/{filename}"
+                elif image_type == "low_resol_webp":
+                    file_path = f"./.product_images/.low_resol_images/{filename}"
+
+                tasks.append(imageio.delete_image(file_path))                  
+                
+        try:
+            await asyncio.gather(*tasks)
+        except Exception as e:
+            return jsonify({"status": "successful", "msg": "image deletion scheduled"}), 202       
+        
+        return jsonify({"status": "successful", "msg": "item deleted from the catalog"}), 200   
 
 
 '''route to update the catalog'''
@@ -477,7 +511,6 @@ async def delete_product():
 @brand_required
 async def update_catalog_data():
     payload = await request.get_json()
-    print(payload)
 
     type_id = payload.get("type")
     data = payload.get("data")
@@ -496,9 +529,9 @@ async def update_catalog_data():
     accepted_payload.append("usku_id")
     accepted_payload.append("discount")
 
-    print(mandatory_payload)
-    print("\n")
-    print(accepted_payload)
+    # print(mandatory_payload)
+    # print("\n")
+    # print(accepted_payload)
 
     if not helper.Helper.check_required_payload(data, accepted_payload, mandatory_payload):
         return jsonify({"status": "failed", "msg": "invalid payload"}), 400
