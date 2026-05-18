@@ -10,6 +10,7 @@ import asyncio
 from collections import Counter
 
 catalog = Blueprint('catalog', __name__)
+niche_data = None
 
 
 # check if the user has even added a single catalog or not.
@@ -30,33 +31,35 @@ async def if_catalog_exists():
 @brand_required
 async def get_niche_data():
     niches = await catalogdb.Fetch.niches()
+    global niche_data
     # print(niches)
     try:
-        niche_data ={
-                        niche.get("niche_id"): {
-                            "niche": niche.get("niche"),
-                            "subniches": {
-                                sub_niche.get("subniche_id"):{
-                                    "subniche": sub_niche.get("subniche_name"),
-                                    "categories": {
-                                        category.get("category_id"): {
-                                            "category": category.get("category_name"),
-                                            "products": {
-                                                product.get("type_id"): {
-                                                    "product": product.get("product_name")
+        if not niche_data:
+            niche_data ={
+                            niche.get("niche_id"): {
+                                "niche": niche.get("niche"),
+                                "subniches": {
+                                    sub_niche.get("subniche_id"):{
+                                        "subniche": sub_niche.get("subniche_name"),
+                                        "categories": {
+                                            category.get("category_id"): {
+                                                "category": category.get("category_name"),
+                                                "products": {
+                                                    product.get("type_id"): {
+                                                        "product": product.get("product_name")
+                                                    }
+                                                    for product in await catalogdb.Fetch.niche_products(category.get("category_id"))
                                                 }
-                                                for product in await catalogdb.Fetch.niche_products(category.get("category_id"))
                                             }
+                                            for category in await catalogdb.Fetch.niche_categories(sub_niche.get("subniche_id"))
                                         }
-                                        for category in await catalogdb.Fetch.niche_categories(sub_niche.get("subniche_id"))
                                     }
+                                    for sub_niche in await catalogdb.Fetch.sub_niches(niche.get("niche_id"))
                                 }
-                                for sub_niche in await catalogdb.Fetch.sub_niches(niche.get("niche_id"))
-                            }
 
+                            }
+                            for niche in niches
                         }
-                        for niche in niches
-                    }
     except Exception as e:
         print(e)
         return jsonify({"error": "failed", "msg": "could not complete the request"}), 500

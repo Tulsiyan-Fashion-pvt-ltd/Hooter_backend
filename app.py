@@ -7,7 +7,7 @@ import os
 from api_routes.brand_routes import brand
 # from shopify.products import products8800
 from shopify.stores import stores
-from api_routes import catalog_routes
+from api_routes import catalog_routes, inventory_routes
 from dotenv import load_dotenv
 import asyncmy
 from datetime import timedelta
@@ -48,6 +48,7 @@ app.register_blueprint(page)
 app.register_blueprint(handle_user)
 app.register_blueprint(brand)
 app.register_blueprint(catalog_routes.catalog)
+app.register_blueprint(inventory_routes.inventory)
 # need to conver the programs and methods as per asgi
 # app.register_blueprint(products)
 # app.register_blueprint(stores)
