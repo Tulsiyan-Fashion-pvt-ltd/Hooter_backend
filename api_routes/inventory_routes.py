@@ -67,7 +67,7 @@ async def create_inward():
     db_respose = await inventorydb.Write.inward(data, brand_id)
     if db_respose == "error":
         return jsonify({"status": "failed", "msg": "unable to create the inward"}), 500
-
+    
     return jsonify({"status": "successful", "inward-id": db_respose}), 200
 
 
@@ -107,7 +107,7 @@ async def upload_inward():
     db_query = await inventorydb.Write.inward(inward, session.get("brand"))
     if db_query != "ok": 
         return jsonify({"status": "failed", "msg": "could not process the request"}), 500
-    return jsonify({"status": "successful", "msg": f"inward uploaded as {payload.get("status")}"})
+    return jsonify({"status": "successful", "msg": f"inward uploaded as {payload.get("status")}", "grn_id": db_query}), 200
 
 
 @inventory.post("/inventory/supplier")

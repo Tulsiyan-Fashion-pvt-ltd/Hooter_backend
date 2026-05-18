@@ -50,6 +50,7 @@ class Write:
                                 
                     else:
                         status = inward_data.get("status")
+                        inward_id = inward_data.get("inward_id")
                         if not status:
                             raise Exception("inward status is missing") 
 
@@ -76,8 +77,30 @@ class Write:
                                       unit.get("rejected", 0), inward_data.get("inward_id"), unit.get("usku_id"))
                             
                             await cursor.execute(query, values)
-                            await connection.commit()
-                            return "ok"
+
+                        '''create the grn record'''
+                        prefix = "GRN"
+                        year = datetime.now().date().year
+                        count = 0 
+
+                        query = '''
+                                select count(grn_id) as count from grn where inward_id = %s
+                                '''
+                        values = (inward_id, )
+                        count = await cursor.execute(query, values)
+
+                        count = count.get("count")
+                        grn_id = f"{prefix}-{year}-{inward_id}{count}"
+
+                        '''create grn record'''
+                        query = '''insert into grn(grn_id, inward_id, created_at)
+                                values(%s, %s, %s)
+                                '''
+                        values = (grn_id, inward_id, datetime.now())
+
+                        await cursor.execute(query, values)
+                        await connection.commit()
+                        return grn_id
             except Exception as e:
                 print(f"error occured while creating inward\n{e}")
                 await connection.rollback()
@@ -221,3 +244,23 @@ class Fetch:
             except Exception as e:
                 print(f"error occured while fetching the suppliers of the brand for the brandid=>{brand_id}\n{e}")
                 return {"error": e.args[0]}
+
+    @staticmethod
+    async def grn_count(inward_id):
+        """
+        FETCHES THE NUMBER OF GRNS FOR THE PROVIDED INWARD ID
+        """
+        pool = current_app.pool
+        async with pool.acquire() as connection:
+            try:
+                async with connection.cursor(cursor=DictCursor) as cursor:
+                    query = '''
+                            select count(grn_id) as count from grn where inward_id = %s
+                            '''
+                    values = (inward_id, )
+                    count = await cursor.execute(query, values)
+                    await connection.commit()
+                    return count.get("count") if count else "error"
+            except Exception as e:
+                print(f"error occured while fetching the grn count for the inward {inward_id}\n{e}")
+                return {"error", e.args[0]}
