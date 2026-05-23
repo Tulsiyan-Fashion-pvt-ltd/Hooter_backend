@@ -14,15 +14,29 @@ inventory = Blueprint("inventory", __name__)
 @login_required
 @brand_required
 async def get_inventory():
-    usku_id = request.args.get("usku-id")
+    brand_id = session.get("brand")
 
-    if not usku_id: 
-        return jsonify({"status": "request denied", "msg": "usku-id is not provided"}), 400
+    filter = request.args.get("filter")
+    accepted_filters = ("sellable", "oos", "low-stock", None)
 
-    inventory = await inventorydb.Fetch.inventory(usku_id)
+    if filter not in accepted_filters:
+        return jsonify({"status": "invalid request", "msg": "not a valid filter"}), 400
+     
+    inventory = await inventorydb.Fetch.inventory(brand_id, filter)
     if inventory == "error":
         return jsonify({"status": "failed", "msg": "internal server error"}), 500
     return jsonify(inventory), 200
+
+
+@inventory.get("/inventory/stocks")
+@login_required
+@brand_required
+async def get_inventory_counts():
+    brand_id = session.get("brand")
+
+    stock = await inventorydb.Fetch.stock_count(brand_id)
+    return jsonify(stock), 200
+
 
 
 @inventory.get("/inventory/inward")

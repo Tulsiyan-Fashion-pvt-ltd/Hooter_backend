@@ -152,24 +152,63 @@ class Write:
 
 class Fetch:
     @staticmethod
-    async def inventory(usku_id: str):
+    async def inventory(brand_id: str, filter: str = ""):
         pool = current_app.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
-                    query = '''select u.usku_id, u.sku_id, n.product_name as product_type, c.product_stock
+                    sql_condition = ""
+                    if filter == "sellable":
+                        sql_condition = "and c.product_stock != 0"
+                    elif filter == "oos":
+                        sql_condition = "and c.product_stock = 0"
+                    elif filter == "low-stock":
+                        sql_condition = "and c.product_stock <= 10 and c.product_stock > 0"   
+
+                    query = f'''select img.image_url, u.usku_id, u.sku_id, n.product_name as product_type, c.product_stock
                                 from usku_record as u
                                 inner join catalog as c on u.usku_id = c.usku_id
                                 inner join niche_products as n on u.product_type_id = n.type_id
-                                where u.usku_id=%s and status="completed"
+                                inner join images as img on u.usku_id = img.usku_id
+                                where u.brand_id = %s and u.status="completed" and img.image_type = "front"
+                                {sql_condition}
                             '''
-                    values = (usku_id, )
+                    print(query)
+                    values = (brand_id, )
 
                     await cursor.execute(query, values)
                     inventory = await cursor.fetchall()
                     return inventory
             except Exception as e:
-                print(f"error encountered whie fetching the inventory for {usku_id}\n{e}")
+                print(f"error encountered whie fetching the inventory for {brand_id}\n{e}")
+                return "error"
+
+
+    @staticmethod
+    async def stock_count(brand_id: str):
+        """
+        FETCHES THE STOCK COUNT OF SELLABLE, OOS AND LOW STOCK PRODUCTS
+        """
+        pool = current_app.pool
+        async with pool.acquire() as connection:
+            try:
+                async with connection.cursor(cursor=DictCursor) as cursor:
+                    query = '''
+                            select
+                            count(c.product_stock) as total, 
+                            count(case when c.product_stock = 0 then 1 end) as oos,
+                            count(case when c.product_stock!=0 then 1 end) as sellable,
+                            count(case when c.product_stock <= 10 and c.product_stock >0 then 1 end) as low
+                            from catalog as c
+                            inner join usku_record as u on c.usku_id = u.usku_id
+                            where u.brand_id = %s and u.status="completed"
+                            '''
+                    values = (brand_id, )
+                    await cursor.execute(query, values)
+                    stock = await cursor.fetchone()
+                    return stock if stock else {}
+            except Exception as e:
+                print(f"error encountered whie fetching the stock count from inventory for {brand_id}\n{e}")
                 return "error"
 
     @staticmethod
