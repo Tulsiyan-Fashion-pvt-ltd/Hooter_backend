@@ -165,7 +165,7 @@ class Fetch:
                     elif filter == "low-stock":
                         sql_condition = "and c.product_stock <= 10 and c.product_stock > 0"   
 
-                    query = f'''select img.image_url, u.usku_id, u.sku_id, n.product_name as product_type, c.product_stock
+                    query = f'''select img.image_url, u.usku_id, u.sku_id, c.product_title, n.product_name as product_type, c.product_stock
                                 from usku_record as u
                                 inner join catalog as c on u.usku_id = c.usku_id
                                 inner join niche_products as n on u.product_type_id = n.type_id
@@ -173,7 +173,7 @@ class Fetch:
                                 where u.brand_id = %s and u.status="completed" and img.image_type = "front"
                                 {sql_condition}
                             '''
-                    print(query)
+                    # print(query)
                     values = (brand_id, )
 
                     await cursor.execute(query, values)
@@ -211,39 +211,72 @@ class Fetch:
                 print(f"error encountered whie fetching the stock count from inventory for {brand_id}\n{e}")
                 return "error"
 
+    
+    @staticmethod
+    async def inward_count(brand_id: str):
+        pool = current_app.pool
+        async with pool.acquire() as connection:
+            try:
+                async with connection.cursor(cursor=DictCursor) as cursor:
+                    query = '''select 
+                                count(inward_id) as total,
+                                count(case when inward_status = "completed" then 1 end) as completed,
+                                count(case when inward_status="partial" then 1 end) as partial,
+                                count(case when inward_status="pending" then 1 end) as pending
+                                from inward
+                                where brand_id=%s
+                    '''
+                    values = (brand_id, )
+                    await cursor.execute(query, values)
+                    count = await cursor.fetchone()
+                    return count if count else {}
+            except Exception as e:
+                print(f"error encountered whie fetching the inward count for {brand_id}\n{e}")
+                return "error"
+    
     @staticmethod
     async def inward(condition: str, brand_id: str):
         pool = current_app.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
-                    query = '''
-                                select inward_id, created_at, updated_at
+                    if condition == "completed":
+                        condition = '''inward.inward_status = "completed"'''
+                    elif condition == "partial":
+                        condition = '''inward.inward_status = "partial"'''
+                    elif condition == "pending":
+                        condition = '''inward.inward_status = "pending"'''
+                    elif condition == None:
+                        condition = "1=1"
+
+                    query = f'''
+                                select inward.inward_id, inward.created_at, inward.updated_at, s.name as supplier
                                 from inward
-                                where inward_status = %s and brand_id=%s
+                                inner join supplier as s on inward.supplier_id=s.supplier_id
+                                where inward.brand_id=%s and {condition}
                             '''
-                    values = (condition, brand_id)
+                    values = (brand_id)
 
                     await cursor.execute(query, values)
                     inwards = await cursor.fetchall()
 
-                    '''add the items in the inward details as well'''
+                    # '''add the items in the inward details as well'''
                 
-                    for index, inward in enumerate(inwards):
-                        inward_id = inward.get("inward_id", None)
-                        query = '''
-                                    select i.usku_id, u.sku_id, i.expected_qtt, i.received_qtt, i.shortage, i.overage, i.rejected
-                                    from inward_items as i
-                                    join usku_record as u on i.usku_id = u.usku_id
-                                    where
-                                    inward_id= %s
-                                '''
-                        values = (inward_id, )
-                        await cursor.execute(query, values)
+                    # for index, inward in enumerate(inwards):
+                    #     inward_id = inward.get("inward_id", None)
+                    #     query = '''
+                    #                 select i.usku_id, u.sku_id, i.expected_qtt, i.received_qtt, i.shortage, i.overage, i.rejected
+                    #                 from inward_items as i
+                    #                 join usku_record as u on i.usku_id = u.usku_id
+                    #                 where
+                    #                 inward_id= %s
+                    #             '''
+                    #     values = (inward_id, )
+                    #     await cursor.execute(query, values)
 
-                        items = await cursor.fetchall()
+                    #     items = await cursor.fetchall()
 
-                        inwards[index]["items"] = items if items else {}
+                    #     inwards[index]["items"] = items if items else {}
 
                     return inwards
             except Exception as e:

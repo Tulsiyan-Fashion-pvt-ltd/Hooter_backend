@@ -38,16 +38,28 @@ async def get_inventory_counts():
     return jsonify(stock), 200
 
 
-
-@inventory.get("/inventory/inward")
+@inventory.get("/inventory/inward-count")
 @login_required
 @brand_required
 async def get_inward():
     brand_id = session.get("brand")
 
+    inward = await inventorydb.Fetch.inward_count(brand_id)
+
+    if inward == "error":
+        return jsonify({"status": "failed", "msg": "internal server error"}), 500
+    return jsonify(inward), 200
+
+
+@inventory.get("/inventory/inward")
+@login_required
+@brand_required
+async def inward_count():
+    brand_id = session.get("brand")
+
     condition = request.args.get("type")
-    if not condition:
-        condition = "completed"
+    # if not condition:
+    #     condition = "completed"
 
     inward = await inventorydb.Fetch.inward(condition, brand_id)
 
