@@ -76,21 +76,21 @@ async def create_inward():
     
     '''payload check'''
     payload = await request.get_json()
-    accepted_payload = ["supplier_id", "usku_ids"]
+    accepted_payload = ["supplier_id", "usku_ids", "shipment", "warehouse"]
     mandatory_payload = accepted_payload
 
-    Helper.check_required_payload(payload, accepted_payload, mandatory_payload)
+    if not Helper.check_required_payload(payload, accepted_payload, mandatory_payload):
+        return jsonify({"status": "denied", "msg": "invalid payload"}), 400
+    
+    shipment_payload = payload.get("shipment")
+    accepted_shipment_payload = ["shipment-ref", "vehicle-no", "transporter", "challan"]
+    mandatory_payload_shipment = ["transporter"]
+
+    if not Helper.check_required_payload(shipment_payload, accepted_shipment_payload, mandatory_payload_shipment):
+        return jsonify({"status": "denied", "msg": "invalid payload"}), 400
 
 
-    data = {
-        "supplier_id": payload.get("supplier_id"),
-        "usku_ids": [{
-            "usku_id": key,
-            "expected": value
-        }for key, value in payload.get("usku_ids").items()]
-    }
-
-    db_respose = await inventorydb.Write.inward(data, brand_id)
+    db_respose = await inventorydb.Write.inward(payload, brand_id)
     if db_respose == "error":
         return jsonify({"status": "failed", "msg": "unable to create the inward"}), 500
     
@@ -158,6 +158,7 @@ async def add_supplier():
         return jsonify({"status": "invalid request", "msg": "pincode should be 6 digit integer value"}), 406
 
     data = {
+        "brand_id": session.get("brand"),
         "name": payload.get("name"),
         "number": payload.get("number"),
         "email": payload.get("email"),
@@ -184,4 +185,56 @@ async def get_suppliers():
     brand_id = session.get("brand")
 
     suppliers = await inventorydb.Fetch.suppliers(brand_id)
+    return jsonify(suppliers)
+
+
+
+@inventory.post("/inventory/warehouse")
+@login_required
+@brand_required
+async def add_warehouse():
+    brand_id = session.get("brand")
+
+    payload = await request.get_json()
+
+    accepted_payload = ["name", "number", "email", "house", "street", "locality", "city", "state", "pincode"]
+    mandatory_payload = ["name", "number", "email", "locality", "city", "state", "pincode"]
+
+    if not Helper.check_required_payload(payload, accepted_payload, mandatory_payload):
+        return jsonify({"status": "denied", "msg": "invalid payload"}), 400
+    
+    pincode = str(payload.get("pincode"))
+    pincode_regex = r'^\d{6}$'
+
+    if not re.match(pincode_regex, pincode):
+        return jsonify({"status": "invalid request", "msg": "pincode should be 6 digit integer value"}), 406
+    
+    data = {
+        "brand_id": brand_id,
+        "name": payload.get("name"),
+        "number": payload.get("number"),
+        "email": payload.get("email"),
+        "address": json.dumps({
+            "house": payload.get("house"),
+            "street": payload.get("street"),
+            "locality": payload.get("locality"),
+            "city": payload.get("city"),
+            "state": payload.get("state"),
+            "pincode": payload.get("pincode")
+        })
+    }
+
+    db_response = await inventorydb.Write.warehouse(data)
+    if db_response != "ok": 
+        return jsonify({"status": "failed", "msg": "failed to add the warehouse"}), 500
+    return jsonify({"status": "successful", "msg": "added the warehouse"}), 200
+
+
+@inventory.get("/inventory/warehouses")
+@login_required
+@brand_required
+async def get_warehouses():
+    brand_id = session.get("brand")
+
+    suppliers = await inventorydb.Fetch.warehouses(brand_id)
     return jsonify(suppliers)

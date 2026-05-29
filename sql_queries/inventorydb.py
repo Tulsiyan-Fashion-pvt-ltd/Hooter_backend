@@ -27,24 +27,36 @@ class Write:
 
                     if not inward_data.get("inward_id"):
                         query = '''
-                                    insert into inward(brand_id, supplier_id, po_num, created_at)
+                                    insert into inward(brand_id, supplier_id, warehouse_id, created_at)
                                     values(%s, %s, %s)
                                 '''
-                        values = (brand_id, inward_data.get("supplier_id"), inward_data.get("po"), datetime.now())
+                        values = (brand_id, inward_data.get("supplier_id"), inward_data.get("wharehouse_id"),  datetime.now())
 
                         await cursor.execute(query, values)
                         inward_id = cursor.lastrowid
 
-                        for unit in inward_data.get("usku_ids", []):
+                        for usku_id, obj in inward_data.get("usku_ids", {}).items():
                             query = '''
-                                        insert into inward_items(inward_id, usku_id, expected_qtt, received_qtt, 
-                                        shortage, overage, rejected)
-                                        values(%s, %s, %s, %s, %s, %s, %s)
+                                        insert into inward_items(inward_id, usku_id, po_num, expected_qtt, received_qtt, 
+                                        shortage, overage, rejected, uom)
+                                        values(%s, %s, %s, %s, %s, %s, %s, %s, %s)
                                     '''
 
-                            values = (inward_id, unit.get("usku_id"), unit.get("expected"), unit.get("recieved", 0), 
-                                      unit.get("shortage", 0), unit.get("overage", 0), unit.get("rejected", 0))
+                            values = (inward_id, usku_id, obj.get("po"), obj.get("exp_stock"), obj.get("recieved", 0), 
+                                      obj.get("shortage", 0), obj.get("overage", 0), obj.get("rejected", 0), obj.get("uom"))
                             await cursor.execute(query, values)
+
+
+                        shipment = shipment.get("shipment")
+                        query = '''
+                                insert into shipment(inward_id, shipment_ref_no, vehicle_no, transporter, 
+                                delhivery_challan, arrival_date)
+                                values(%s, %s, %s, %s, %s, %s)
+                                '''
+                        values = (inward_id, shipment.get("shipment-ref"), shipment.get("vehicle-no"), 
+                                  shipment.get("transporter"), shipment.get("challan"), shipment.get("arrival-date"))
+                        
+                        await cursor.execute(query, values)
                         await connection.commit()
                         return inward_id        
                                 
@@ -114,10 +126,10 @@ class Write:
             try:
                 async with connection.cursor() as cursor:
                     query = '''
-                                insert into supplier(name, contact_number, address, email)
-                                values(%s, %s, %s, %s)
+                                insert into supplier(name, brand_id, contact_number, address, email)
+                                values(%s, %s, %s, %s, %s)
                             '''
-                    values = (data.get("name"), data.get("number"), data.get("address"), data.get("email"))
+                    values = (data.get("name"), data.get("brand_id"), data.get("number"), data.get("address"), data.get("email"))
                     
                     await cursor.execute(query, values)
                     await connection.commit()
@@ -126,6 +138,28 @@ class Write:
                 print(f"error encountered while adding supplier\n{e}")
                 await connection.rollback()
                 return "error"
+            
+
+    @staticmethod
+    async def warehouse(data: dict): 
+        pool = current_app.pool
+        async with pool.acquire() as connection:
+            try:
+                async with connection.cursor() as cursor:
+                    query = '''
+                                insert into warehouse(name, brand_id, phone, address, email)
+                                values(%s, %s, %s, %s, %s)
+                            '''
+                    values = (data.get("name"), data.get("brand_id"), data.get("number"), data.get("address"), data.get("email"))
+                    
+                    await cursor.execute(query, values)
+                    await connection.commit()
+                    return "ok"
+            except Exception as e:
+                print(f"error encountered while adding warehouse\n{e}")
+                await connection.rollback()
+                return "error"
+            
             
     @staticmethod
     async def grn(data: dict):
@@ -146,7 +180,6 @@ class Write:
                 print(f"error enountered while adding grn record\n{e}")
                 await connection.rollback()
                 return "error"
-
 
 
 
@@ -315,6 +348,40 @@ class Fetch:
                     return suppliers
             except Exception as e:
                 print(f"error occured while fetching the suppliers of the brand for the brandid=>{brand_id}\n{e}")
+                return {"error": e.args[0]}
+            
+
+    @staticmethod
+    async def warehouses(brand_id: str):
+        """
+        RETURNS THE WAREHOUSE OF THE BRAND
+        """
+
+        pool = current_app.pool
+        async with pool.acquire() as connection:
+            try:
+                async with connection.cursor(cursor=DictCursor) as cursor:
+                    query = '''
+                            select warehouse_id, name, phone, address, email
+                            from warehouse where
+                            brand_id = %s
+                            '''
+                    values = (brand_id, )
+                    await cursor.execute(query, values)
+
+                    warehouse = await cursor.fetchall()
+
+                    warehouse = [{
+                        "warehouse_id": supplier.get("warehouse_id"),
+                        "name": supplier.get("name"),
+                        "number": supplier.get("phone"),
+                        "email": supplier.get("email"),
+                        "address": json.loads(supplier.get("address"))
+                    } for supplier in warehouse if warehouse]
+
+                    return warehouse
+            except Exception as e:
+                print(f"error occured while fetching the warehouse of the brand for the brandid=>{brand_id}\n{e}")
                 return {"error": e.args[0]}
 
     @staticmethod
