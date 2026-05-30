@@ -126,14 +126,17 @@ class Write:
             try:
                 async with connection.cursor() as cursor:
                     query = '''
-                                insert into supplier(name, brand_id, contact_number, address, email)
-                                values(%s, %s, %s, %s, %s)
+                                insert into supplier(name, brand_id, contact_number, address, email, created_at)
+                                values(%s, %s, %s, %s, %s, %s)
                             '''
-                    values = (data.get("name"), data.get("brand_id"), data.get("number"), data.get("address"), data.get("email"))
+                    values = (data.get("name"), data.get("brand_id"), data.get("number"), data.get("address"), 
+                              data.get("email"), datetime.now())
                     
                     await cursor.execute(query, values)
+                    supplier_id = cursor.lastrowid
+
                     await connection.commit()
-                    return "ok"
+                    return supplier_id
             except Exception as e:
                 print(f"error encountered while adding supplier\n{e}")
                 await connection.rollback()
@@ -153,8 +156,9 @@ class Write:
                     values = (data.get("name"), data.get("brand_id"), data.get("number"), data.get("address"), data.get("email"))
                     
                     await cursor.execute(query, values)
+                    warehouse_id = cursor.lastrowid
                     await connection.commit()
-                    return "ok"
+                    return warehouse_id
             except Exception as e:
                 print(f"error encountered while adding warehouse\n{e}")
                 await connection.rollback()

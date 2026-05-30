@@ -172,10 +172,10 @@ async def add_supplier():
         })
     }
 
-    db_respose = await inventorydb.Write.supplier(data)
-    if db_respose == "error": 
+    supplier_id = await inventorydb.Write.supplier(data)
+    if supplier_id == "error": 
         return jsonify({"status": "failed", "msg": "failed to add the supplier"}), 500
-    return jsonify({"status": "successful", "msg": "added the supplier"}), 200
+    return jsonify({"status": "successful", "msg": "added the supplier", "supplier_id": supplier_id}), 200
 
 
 @inventory.get("/inventory/suppliers")
@@ -224,10 +224,10 @@ async def add_warehouse():
         })
     }
 
-    db_response = await inventorydb.Write.warehouse(data)
-    if db_response != "ok": 
+    warehouse_id = await inventorydb.Write.warehouse(data)
+    if warehouse_id == "error": 
         return jsonify({"status": "failed", "msg": "failed to add the warehouse"}), 500
-    return jsonify({"status": "successful", "msg": "added the warehouse"}), 200
+    return jsonify({"status": "successful", "msg": "added the warehouse", "warehouse_id": warehouse_id}), 200
 
 
 @inventory.get("/inventory/warehouses")
