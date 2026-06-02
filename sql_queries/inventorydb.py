@@ -28,9 +28,9 @@ class Write:
                     if not inward_data.get("inward_id"):
                         query = '''
                                     insert into inward(brand_id, supplier_id, warehouse_id, created_at)
-                                    values(%s, %s, %s)
+                                    values(%s, %s, %s, %s)
                                 '''
-                        values = (brand_id, inward_data.get("supplier_id"), inward_data.get("wharehouse_id"),  datetime.now())
+                        values = (brand_id, inward_data.get("supplier_id"), inward_data.get("warehouse_id"),  datetime.now())
 
                         await cursor.execute(query, values)
                         inward_id = cursor.lastrowid
@@ -47,10 +47,10 @@ class Write:
                             await cursor.execute(query, values)
 
 
-                        shipment = shipment.get("shipment")
+                        shipment = inward_data.get("shipment")
                         query = '''
                                 insert into shipment(inward_id, shipment_ref_no, vehicle_no, transporter, 
-                                delhivery_challan, arrival_date)
+                                delivery_challan, arrival_date)
                                 values(%s, %s, %s, %s, %s, %s)
                                 '''
                         values = (inward_id, shipment.get("shipment-ref"), shipment.get("vehicle-no"), 

@@ -77,18 +77,19 @@ async def create_inward():
     
     '''payload check'''
     payload = await request.get_json()
-    accepted_payload = ["supplier_id", "usku_ids", "shipment", "warehouse"]
+    print(payload)
+    accepted_payload = ["supplier_id", "usku_ids", "shipment", "warehouse_id"]
     mandatory_payload = accepted_payload
 
     if not Helper.check_required_payload(payload, accepted_payload, mandatory_payload):
         return jsonify({"status": "denied", "msg": "invalid payload"}), 400
     
     shipment_payload = payload.get("shipment")
-    accepted_shipment_payload = ["shipment-ref", "vehicle-no", "transporter", "challan"]
+    accepted_shipment_payload = ["shipment-ref", "vehicle-no", "transporter", "challan", "arrival-date"]
     mandatory_payload_shipment = ["transporter"]
 
     if not Helper.check_required_payload(shipment_payload, accepted_shipment_payload, mandatory_payload_shipment):
-        return jsonify({"status": "denied", "msg": "invalid payload"}), 400
+        return jsonify({"status": "denied", "msg": "invalid shipment payload"}), 400
 
 
     db_respose = await inventorydb.Write.inward(payload, brand_id)
