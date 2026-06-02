@@ -189,7 +189,7 @@ class Write:
 
 class Fetch:
     @staticmethod
-    async def inventory(brand_id: str, filter: str = ""):
+    async def inventory(brand_id: str, filter: str = "", usku_id: str = None):
         pool = current_app.pool
         async with pool.acquire() as connection:
             try:
@@ -208,10 +208,11 @@ class Fetch:
                                 inner join niche_products as n on u.product_type_id = n.type_id
                                 inner join images as img on u.usku_id = img.usku_id
                                 where u.brand_id = %s and u.status="completed" and img.image_type = "front"
+                                and {"u.usku_id = %s" if usku_id else "1=1"}
                                 {sql_condition}
                             '''
                     # print(query)
-                    values = (brand_id, )
+                    values = (brand_id, usku_id) if usku_id else (brand_id, )
 
                     await cursor.execute(query, values)
                     inventory = await cursor.fetchall()
@@ -354,6 +355,39 @@ class Fetch:
                 print(f"error occured while fetching the suppliers of the brand for the brandid=>{brand_id}\n{e}")
                 return {"error": e.args[0]}
             
+    
+    @staticmethod
+    async def supplier(brand_id: str, supplier_id: str):
+        """
+        RETURNS THE SUPPLIERS OF THE BRAND
+        """
+
+        pool = current_app.pool
+        async with pool.acquire() as connection:
+            try:
+                async with connection.cursor(cursor=DictCursor) as cursor:
+                    query = '''
+                            select name, contact_number, address, email
+                            from supplier where
+                            brand_id = %s and supplier_id = %s
+                            '''
+                    values = (brand_id, supplier_id)
+                    await cursor.execute(query, values)
+
+                    supplier = await cursor.fetchone()
+
+                    supplier = {
+                        "name": supplier.get("name"),
+                        "number": supplier.get("contact_number"),
+                        "email": supplier.get("email"),
+                        "address": json.loads(supplier.get("address"))
+                    }
+
+                    return supplier
+            except Exception as e:
+                print(f"error occured while fetching the supplier of the brand for the brandid=>{brand_id}\n{e}")
+                return {"error": e.args[0]}
+            
 
     @staticmethod
     async def warehouses(brand_id: str):
@@ -373,15 +407,48 @@ class Fetch:
                     values = (brand_id, )
                     await cursor.execute(query, values)
 
-                    warehouse = await cursor.fetchall()
+                    warehouses= await cursor.fetchall()
 
-                    warehouse = [{
-                        "warehouse_id": supplier.get("warehouse_id"),
-                        "name": supplier.get("name"),
-                        "number": supplier.get("phone"),
-                        "email": supplier.get("email"),
-                        "address": json.loads(supplier.get("address"))
-                    } for supplier in warehouse if warehouse]
+                    warehouses = [{
+                        "warehouse_id": warehouse.get("warehouse_id"),
+                        "name": warehouse.get("name"),
+                        "number": warehouse.get("phone"),
+                        "email": warehouse.get("email"),
+                        "address": json.loads(warehouse.get("address"))
+                    } for warehouse in warehouses if warehouse]
+
+                    return warehouses
+            except Exception as e:
+                print(f"error occured while fetching the warehouse of the brand for the brandid=>{brand_id}\n{e}")
+                return {"error": e.args[0]}
+            
+    @staticmethod
+    async def warehouse(brand_id: str, warehouse_id: str):
+        """
+        RETURNS THE WAREHOUSE OF THE BRAND
+        """
+
+        pool = current_app.pool
+        async with pool.acquire() as connection:
+            try:
+                async with connection.cursor(cursor=DictCursor) as cursor:
+                    query = '''
+                            select name, phone, address, email
+                            from warehouse where
+                            brand_id = %s and warehouse_id = %s
+                            '''
+                    values = (brand_id, warehouse_id)
+                    await cursor.execute(query, values)
+
+                    warehouse = await cursor.fetchone()
+
+                    warehouse = {
+                        "warehouse_id": warehouse.get("warehouse_id"),
+                        "name": warehouse.get("name"),
+                        "number": warehouse.get("phone"),
+                        "email": warehouse.get("email"),
+                        "address": json.loads(warehouse.get("address"))
+                    }
 
                     return warehouse
             except Exception as e:

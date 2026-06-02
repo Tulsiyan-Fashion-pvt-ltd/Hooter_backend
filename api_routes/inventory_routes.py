@@ -15,6 +15,7 @@ inventory = Blueprint("inventory", __name__)
 @brand_required
 async def get_inventory():
     brand_id = session.get("brand")
+    id = request.args.get("usku-id")
 
     filter = request.args.get("filter")
     accepted_filters = ("sellable", "oos", "low-stock", None)
@@ -22,7 +23,7 @@ async def get_inventory():
     if filter not in accepted_filters:
         return jsonify({"status": "invalid request", "msg": "not a valid filter"}), 400
      
-    inventory = await inventorydb.Fetch.inventory(brand_id, filter)
+    inventory = await inventorydb.Fetch.inventory(brand_id, filter, id)
     if inventory == "error":
         return jsonify({"status": "failed", "msg": "internal server error"}), 500
     return jsonify(inventory), 200
@@ -183,8 +184,13 @@ async def add_supplier():
 @brand_required
 async def get_suppliers():
     brand_id = session.get("brand")
+    supplier_id = request.args.get("supplier-id")
 
-    suppliers = await inventorydb.Fetch.suppliers(brand_id)
+    suppliers = None
+    if supplier_id is None:
+        suppliers = await inventorydb.Fetch.suppliers(brand_id)
+    else:
+        suppliers = await inventorydb.Fetch.supplier(brand_id, supplier_id)
     return jsonify(suppliers)
 
 
@@ -235,6 +241,10 @@ async def add_warehouse():
 @brand_required
 async def get_warehouses():
     brand_id = session.get("brand")
+    warehouse_id = request.args.get("warehouse-id")
 
-    suppliers = await inventorydb.Fetch.warehouses(brand_id)
+    if warehouse_id is None:
+        suppliers = await inventorydb.Fetch.warehouses(brand_id)
+    else:
+        suppliers = await inventorydb.Fetch.warehouse(brand_id, warehouse_id)
     return jsonify(suppliers)
