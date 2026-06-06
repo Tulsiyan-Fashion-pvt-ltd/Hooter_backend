@@ -58,11 +58,13 @@ async def get_inward():
 async def inward_count():
     brand_id = session.get("brand")
 
-    condition = request.args.get("type")
-    # if not condition:
-    #     condition = "completed"
+    inward_id = request.args.get("id")
 
-    inward = await inventorydb.Fetch.inward(condition, brand_id)
+    if inward_id:
+        inward = await inventorydb.Fetch.inward(None, brand_id, inward_id)
+    else:
+        condition = request.args.get("type")
+        inward = await inventorydb.Fetch.inward(condition, brand_id)
 
     if inward == "error":
         return jsonify({"status": "failed", "msg": "internal server error"}), 500

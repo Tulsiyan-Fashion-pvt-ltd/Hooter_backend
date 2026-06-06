@@ -273,11 +273,41 @@ class Fetch:
                 return "error"
     
     @staticmethod
-    async def inward(condition: str, brand_id: str):
+    async def inward(condition: str, brand_id: str, inward_id: str = None):
         pool = current_app.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
+                    if inward_id:
+                        # fetch the specified inward for the logged in brand
+                        query = '''select created_at from inward where inward_id = %s and brand_id = %s'''
+                        values = (inward_id, brand_id)
+
+                        await cursor.execute(query, values)
+                        date = await cursor.fetchone()
+
+                        query = '''select img.image_type, img.image_url, u.sku_id, c.product_title, niche.product_name as product_type, 
+                                inward_items.uom, inward_items.expected_qtt
+                                from
+                                inward
+                                inner join inward_items on inward.inward_id = inward_items.inward_id
+                                inner join usku_record as u on inward_items.usku_id = u.usku_id
+                                inner join catalog as c on u.usku_id = c.usku_id
+                                inner join images as img on u.usku_id = img.usku_id
+                                inner join niche_products as niche on u.product_type_id = niche.type_id
+                                where inward.inward_id = %s and inward.brand_id = %s and 
+                                (inward.inward_status != "cancelled" or inward.inward_status != "completed")
+                                and img.image_type="front"
+                        '''
+                        values = await cursor.execute(query, values)
+                        inward_items = await cursor.fetchall() 
+
+                        if not date or not inward_items:
+                            return "error"
+                        else:
+                            return {"created_at": date, "uskus": inward_items}
+
+                    ''' if the inward_id is not provided rather brand_id and condition is provided'''
                     if condition == "completed":
                         condition = '''inward.inward_status = "completed"'''
                     elif condition == "partial":
