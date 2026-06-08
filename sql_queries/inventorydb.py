@@ -24,95 +24,38 @@ class Write:
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor() as cursor:
-
-                    if not inward_data.get("inward_id"):
+                    query = '''
+                                insert into inward(brand_id, supplier_id, warehouse_id, created_at)
+                                values(%s, %s, %s, %s)
+                            '''
+                    values = (brand_id, inward_data.get("supplier_id"), inward_data.get("warehouse_id"),  datetime.now())
+                    
+                    await cursor.execute(query, values)
+                    inward_id = cursor.lastrowid
+                    
+                    for usku_id, obj in inward_data.get("usku_ids", {}).items():
                         query = '''
-                                    insert into inward(brand_id, supplier_id, warehouse_id, created_at)
-                                    values(%s, %s, %s, %s)
+                                    insert into inward_items(inward_id, usku_id, po_num, expected_qtt, received_qtt, 
+                                    rejected, uom)
+                                    values(%s, %s, %s, %s, %s, %s, %s)
                                 '''
-                        values = (brand_id, inward_data.get("supplier_id"), inward_data.get("warehouse_id"),  datetime.now())
-
+                        values = (inward_id, usku_id, obj.get("po"), obj.get("exp_stock"), obj.get("recieved", 0), 
+                                  obj.get("rejected", 0), obj.get("uom"))
                         await cursor.execute(query, values)
-                        inward_id = cursor.lastrowid
-
-                        for usku_id, obj in inward_data.get("usku_ids", {}).items():
-                            query = '''
-                                        insert into inward_items(inward_id, usku_id, po_num, expected_qtt, received_qtt, 
-                                        shortage, overage, rejected, uom)
-                                        values(%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                                    '''
-
-                            values = (inward_id, usku_id, obj.get("po"), obj.get("exp_stock"), obj.get("recieved", 0), 
-                                      obj.get("shortage", 0), obj.get("overage", 0), obj.get("rejected", 0), obj.get("uom"))
-                            await cursor.execute(query, values)
-
-
-                        shipment = inward_data.get("shipment")
-                        query = '''
-                                insert into shipment(inward_id, shipment_ref_no, vehicle_no, transporter, 
-                                delivery_challan, arrival_date)
-                                values(%s, %s, %s, %s, %s, %s)
-                                '''
-                        values = (inward_id, shipment.get("shipment-ref"), shipment.get("vehicle-no"), 
-                                  shipment.get("transporter"), shipment.get("challan"), shipment.get("arrival-date"))
-                        
-                        await cursor.execute(query, values)
-                        await connection.commit()
-                        return inward_id        
-                                
-                    else:
-                        status = inward_data.get("status")
-                        inward_id = inward_data.get("inward_id")
-                        if not status:
-                            raise Exception("inward status is missing") 
-
-                        query = '''
-                                update inward set
-                                inward_status = %s,
-                                updated_at = %s
-                                where inward_id = %s
-                                '''
-                        values = (status, datetime.now(), inward_data.get("inward_id"))
-
-                        await cursor.execute(query, values)
-
-                        for unit in inward_data.get("usku_ids", []):
-                            query = '''
-                                    update inward_items set
-                                    received_qtt = %s,
-                                    shortage= %s,
-                                    overage=%s,
-                                    rejected=%s where
-                                    inward_id = %s and usku_id = %s 
-                                    '''
-                            values = (unit.get("recieved", 0), unit.get("shortage", 0), 
-                                      unit.get("rejected", 0), inward_data.get("inward_id"), unit.get("usku_id"))
-                            
-                            await cursor.execute(query, values)
-
-                        '''create the grn record'''
-                        prefix = "GRN"
-                        year = datetime.now().date().year
-                        count = 0 
-
-                        query = '''
-                                select count(grn_id) as count from grn where inward_id = %s
-                                '''
-                        values = (inward_id, )
-                        count = await cursor.execute(query, values)
-
-                        count = count.get("count")
-                        grn_id = f"{prefix}-{year}-{inward_id}{count}"
-
-                        '''create grn record'''
-                        query = '''insert into grn(grn_id, inward_id, created_at)
-                                values(%s, %s, %s)
-                                '''
-                        values = (grn_id, inward_id, datetime.now())
-
-                        await cursor.execute(query, values)
-                        await connection.commit()
-                        return grn_id
+                    
+                    shipment = inward_data.get("shipment")
+                    query = '''
+                            insert into shipment(inward_id, shipment_ref_no, vehicle_no, transporter, 
+                            delivery_challan, arrival_date)
+                            values(%s, %s, %s, %s, %s, %s)
+                            '''
+                    values = (inward_id, shipment.get("shipment-ref"), shipment.get("vehicle-no"), 
+                              shipment.get("transporter"), shipment.get("challan"), shipment.get("arrival-date"))
+                    
+                    
+                    await cursor.execute(query, values)
+                    await connection.commit()
+                    return inward_id        
             except Exception as e:
                 print(f"error occured while creating inward\n{e}")
                 await connection.rollback()
@@ -185,6 +128,85 @@ class Write:
                 await connection.rollback()
                 return "error"
 
+
+
+class Update:
+    async def inward(inward_data: dict, brand_id: str) -> str:
+        pool = current_app.pool
+        async with pool.acquire() as connection:
+            try:
+                async with connection.cursor(cursor = DictCursor) as cursor:
+                    status = inward_data.get("status")
+                    inward_id = inward_data.get("inward_id")
+                    if not status:
+                        raise Exception("inward status is missing") 
+                    
+                    ''' if inward is completed do not update it '''
+                    query = '''select inward_status from inward where inward_id = %s'''
+                    values = (inward_id, )
+
+                    await cursor.execute(query, values)
+                    prev_status = await cursor.fetchone()
+
+                    if prev_status.get("inward_status") in ["completed", "cancelled"]:
+                        return "not allowed"
+                    
+                    query = '''
+                            update inward set
+                            inward_status = %s,
+                            updated_at = %s
+                            where inward_id = %s and brand_id = %s
+                            '''
+                    values = (status, datetime.now(), inward_data.get("inward_id"), brand_id)
+                    await cursor.execute(query, values)
+                    for unit in inward_data.get("usku_ids", []):
+                        query = '''
+                                update inward_items set
+                                received_qtt = %s,
+                                rejected=%s where
+                                inward_id = %s and usku_id = %s 
+                                '''
+                        values = (unit.get("recieved", 0), unit.get("rejected", 0), 
+                                  inward_data.get("inward_id"), unit.get("usku_id"))
+                        
+                        await cursor.execute(query, values)
+
+                        query = '''
+                            update catalog
+                            join usku_record as u on catalog.usku_id = u.usku_id
+                            set catalog.product_stock = catalog.product_stock + %s
+                            where
+                            catalog.usku_id = %s and u.brand_id = %s
+                        '''
+                        values = ((unit.get("recieved", 0) - unit.get("rejected", 0)), unit.get("usku_id"), brand_id)
+
+                        await cursor.execute(query, values)
+
+                    '''create the grn record'''
+                    prefix = "GRN"
+                    year = datetime.now().date().year
+                    count = 0 
+                    query = '''
+                            select count(grn_id) as count from grn where inward_id = %s
+                            '''
+                    values = (inward_id, )
+                    await cursor.execute(query, values)
+                    count = await cursor.fetchone()
+
+                    count = count.get("count")
+                    grn_id = f"{prefix}-{year}-{inward_id}{count}"
+                    '''create grn record'''
+                    query = '''insert into grn(grn_id, inward_id, created_at)
+                            values(%s, %s, %s)
+                            '''
+                    values = (grn_id, inward_id, datetime.now())
+                    
+                    await cursor.execute(query, values)
+                    await connection.commit()
+                    return grn_id
+            except Exception as e:
+                print(f"Error countered while updating the inward for brand {brand_id}\n {e}")
+                return "error"
 
 
 class Fetch:
@@ -280,13 +302,16 @@ class Fetch:
                 async with connection.cursor(cursor=DictCursor) as cursor:
                     if inward_id:
                         # fetch the specified inward for the logged in brand
-                        query = '''select created_at from inward where inward_id = %s and brand_id = %s'''
+                        query = '''select created_at, inward_status from inward where inward_id = %s and brand_id = %s'''
                         values = (inward_id, brand_id)
 
                         await cursor.execute(query, values)
-                        date = await cursor.fetchone()
+                        inward = await cursor.fetchone()
+                        
+                        # if inward.get("inward_status") == "completed":
+                        #     return "not allowed"
 
-                        query = '''select img.image_type, img.image_url, u.sku_id, c.product_title, niche.product_name as product_type, 
+                        query = '''select img.image_type, img.image_url, u.usku_id, u.sku_id, c.product_title, niche.product_name as product_type, 
                                 inward_items.uom, inward_items.expected_qtt
                                 from
                                 inward
@@ -302,10 +327,10 @@ class Fetch:
                         values = await cursor.execute(query, values)
                         inward_items = await cursor.fetchall() 
 
-                        if not date or not inward_items:
+                        if not inward or not inward_items:
                             return "error"
                         else:
-                            return {"created_at": date, "uskus": inward_items}
+                            return {"created_at": inward.get("created_at"), "uskus": inward_items, "status": inward.get("inward_status")}
 
                     ''' if the inward_id is not provided rather brand_id and condition is provided'''
                     if condition == "completed":

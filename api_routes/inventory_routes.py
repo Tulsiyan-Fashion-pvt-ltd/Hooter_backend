@@ -59,6 +59,7 @@ async def inward_count():
     brand_id = session.get("brand")
 
     inward_id = request.args.get("id")
+    print(inward_id)
 
     if inward_id:
         inward = await inventorydb.Fetch.inward(None, brand_id, inward_id)
@@ -68,6 +69,8 @@ async def inward_count():
 
     if inward == "error":
         return jsonify({"status": "failed", "msg": "internal server error"}), 500
+    elif inward == "not allowed":
+        return jsonify({"status": "failed", "msg": "The inward has already completed"}), 403
     return jsonify(inward), 200
 
 
@@ -116,7 +119,7 @@ async def upload_inward():
         return jsonify({"status": "rejected", "msg": "invalid request"}), 400
     
     payload = await request.get_json()
-    accepted_paylaod = ["status", "id", "usku_ids"]
+    accepted_paylaod = ["usku_ids"]
     mandatory_paylaod = accepted_paylaod
 
     if not Helper.check_required_payload(payload, accepted_paylaod, mandatory_paylaod):
@@ -124,18 +127,19 @@ async def upload_inward():
     
 
     inward = {
-        "inward_id": payload.get("id"),
-        "status": payload.get("status"),
+        "inward_id": inward_id,
+        "status": upload_type,
         "usku_ids": [{
-            "usku_id": unit.get("usku_id"),
+            "usku_id": usku_id,
             "recieved": unit.get("recieved"),
             "shortage": unit.get("shortage"),
-            "rejected": unit.get("rejected")
-        }for unit in payload.get("usku_ids") if payload.get("usku_ids")]
+            "rejected": unit.get("rejected"),
+            "overage": unit.get("overage")
+        }for usku_id, unit in payload.get("usku_ids").items() if payload.get("usku_ids")]
     }
 
-    db_query = await inventorydb.Write.inward(inward, session.get("brand"))
-    if db_query != "ok": 
+    db_query = await inventorydb.Update.inward(inward, session.get("brand"))
+    if db_query == "error": 
         return jsonify({"status": "failed", "msg": "could not process the request"}), 500
     return jsonify({"status": "successful", "msg": f"inward uploaded as {payload.get("status")}", "grn_id": db_query}), 200
 
