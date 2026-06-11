@@ -343,7 +343,7 @@ class Fetch:
                         condition = "1=1"
 
                     query = f'''
-                                select inward.inward_id, inward.created_at, inward.updated_at, s.name as supplier
+                                select inward.inward_id, inward.inward_status, inward.created_at, inward.updated_at, s.name as supplier
                                 from inward
                                 inner join supplier as s on inward.supplier_id=s.supplier_id
                                 where inward.brand_id=%s and {condition}

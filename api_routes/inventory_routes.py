@@ -132,9 +132,7 @@ async def upload_inward():
         "usku_ids": [{
             "usku_id": usku_id,
             "recieved": unit.get("recieved"),
-            "shortage": unit.get("shortage"),
             "rejected": unit.get("rejected"),
-            "overage": unit.get("overage")
         }for usku_id, unit in payload.get("usku_ids").items() if payload.get("usku_ids")]
     }
 
