@@ -39,7 +39,7 @@ class Write:
                                     rejected, uom)
                                     values(%s, %s, %s, %s, %s, %s, %s)
                                 '''
-                        values = (inward_id, usku_id, obj.get("po"), obj.get("exp_stock"), obj.get("recieved", 0), 
+                        values = (inward_id, usku_id, obj.get("po"), obj.get("exp_stock"), obj.get("receievd", 0), 
                                   obj.get("rejected", 0), obj.get("uom"))
                         await cursor.execute(query, values)
                     
@@ -162,11 +162,11 @@ class Update:
                     for unit in inward_data.get("usku_ids", []):
                         query = '''
                                 update inward_items set
-                                received_qtt = %s,
-                                rejected=%s where
+                                received_qtt = received_qtt + %s,
+                                rejected= rejected + %s where
                                 inward_id = %s and usku_id = %s 
                                 '''
-                        values = (unit.get("recieved", 0), unit.get("rejected", 0), 
+                        values = (unit.get("receievd", 0), unit.get("rejected", 0), 
                                   inward_data.get("inward_id"), unit.get("usku_id"))
                         
                         await cursor.execute(query, values)
@@ -178,7 +178,7 @@ class Update:
                             where
                             catalog.usku_id = %s and u.brand_id = %s
                         '''
-                        values = ((unit.get("recieved", 0) - unit.get("rejected", 0)), unit.get("usku_id"), brand_id)
+                        values = ((unit.get("receievd", 0) - unit.get("rejected", 0)), unit.get("usku_id"), brand_id)
 
                         await cursor.execute(query, values)
 
@@ -312,7 +312,10 @@ class Fetch:
                         #     return "not allowed"
 
                         query = '''select img.image_type, img.image_url, u.usku_id, u.sku_id, c.product_title, niche.product_name as product_type, 
-                                inward_items.uom, inward_items.expected_qtt
+                                inward_items.uom, 
+                                case when inward.inward_status = "partial" then 
+                                (inward_items.expected_qtt - inward_items.received_qtt) 
+                                else inward_items.expected_qtt end as expected_qtt
                                 from
                                 inward
                                 inner join inward_items on inward.inward_id = inward_items.inward_id

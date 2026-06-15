@@ -131,7 +131,7 @@ async def upload_inward():
         "status": upload_type,
         "usku_ids": [{
             "usku_id": usku_id,
-            "recieved": unit.get("recieved"),
+            "received": unit.get("received"),
             "rejected": unit.get("rejected"),
         }for usku_id, unit in payload.get("usku_ids").items() if payload.get("usku_ids")]
     }
