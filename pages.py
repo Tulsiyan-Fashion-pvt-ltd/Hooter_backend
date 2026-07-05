@@ -1,4 +1,4 @@
-from quart import Blueprint, render_template
+from quart import Blueprint, render_template, request
 
 page = Blueprint('page', __name__)
 

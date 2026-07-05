@@ -1,10 +1,14 @@
 import logging
 from utils.encryption import TokenEncryption
-from sql_queries.storesdb import Fetch
+from sql_queries.shopify_storesdb import Fetch
 from services.shopify_graphql import ShopifyGraphQLClient
 from services.exceptions import AuthorizationError, ShopifyAPIError
+import hmac
+import hashlib
+import os
+from dotenv import load_dotenv
 
-
+load_dotenv()
 logger = logging.getLogger(__name__)
 
 
@@ -47,3 +51,36 @@ def validate_shopify_token(shop_name: str, access_token: str) -> None:
     except Exception as exc:
         logger.error("Shopify token validation failed for %s: %s", shop_name, str(exc))
         raise ShopifyAPIError("Invalid Shopify token")
+    
+
+def verify_hmac(args):
+    # Copy parameters
+    params = dict(args)
+    SHOPIFY_CLIENT_SECRET = os.getenv("SHOPIFY_CLIENT_SECRET")
+
+    # Remove hmac
+    received_hmac = params.pop("hmac", None)
+
+    if not received_hmac:
+        return False
+
+    # Sort alphabetically
+    sorted_params = sorted(params.items())
+
+    # Build message
+    message = "&".join(
+        f"{key}={value}"
+        for key, value in sorted_params
+    )
+
+    # Generate HMAC
+    generated_hmac = hmac.new(
+        SHOPIFY_CLIENT_SECRET.encode(),
+        message.encode(),
+        hashlib.sha256
+    ).hexdigest()
+
+    return hmac.compare_digest(
+        generated_hmac,
+        received_hmac
+    )

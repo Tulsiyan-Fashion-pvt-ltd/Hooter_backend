@@ -1,11 +1,89 @@
-from quart import Blueprint, request, jsonify, session
-from sql_queries.storesdb import Write, Fetch
-from services.shopify_helpers import validate_shopify_token, ShopifyAPIError
+from quart import Blueprint, request, jsonify, session, abort, redirect
+import requests
+from sql_queries import shopify_storesdb
+from services.shopify_helpers import validate_shopify_token, ShopifyAPIError, verify_hmac
+from utils.prerequirements import login_required, brand_required
+import os
+from dotenv import load_dotenv
+from urllib.parse import urlencode
+import secrets
+import aiohttp
 
 stores = Blueprint("stores", __name__)
+load_dotenv()
+
+
+"""
+SHOPIFY OAUTH INTEGRATION DOCUMENT
+https://shopify.dev/docs/apps/build/authentication-authorization/access-tokens/authorization-code-grant  
+"""
+
+
+@stores.post("/shopify/install-store")
+@login_required
+@brand_required
+async def install_store():
+    payload = await request.get_json()
+    
+    if not payload or not verify_hmac(payload):
+        return abort(400)
+    
+    session["shopify_shop_name"] = payload.get("shop")
+    auth_redirect_url = auth()
+    return jsonify({"status": "acquired the shop name", "redirect": auth_redirect_url}), 200
+
+
+def auth():
+    shop = session.get("shopify_shop_name")
+    session["shopify_state"] = secrets.token_urlsafe(32)
+    params = {
+        "client_id": os.environ.get("SHOPIFY_CLIENT_ID"),
+        "scope": "read_orders,write_orders",
+        "redirect_uri": f"{os.environ.get("APP_DOMAIN")}/shopify/auth/callback",
+        "state": session.get("shopify_state")
+    }
+
+    url = f"https://{shop}/admin/oauth/authorize?{urlencode(params)}"
+    return url
+
+
+@stores.get("/shopify/auth/callback")
+@login_required
+@brand_required
+async def auth_callback():
+    params = request.args.to_dict()
+    params.pop("hmac", None)
+
+    if not params or verify_hmac(params) or params.get("state") != session.get("shopify_state"):
+        return abort(403)
+    
+    '''making the post request to exchange the access token'''
+    url = f"https://{session.get("shopify_shop_name")}/admin/oauth/access_token"
+    payload = {
+        "client_id": os.environ.get("SHOPIFY_CLIENT_ID"),
+        "client_secret": os.environ.get("SHOPIFY_CLIENT_SECRET"),
+        "code": params.get("code"),
+        "expiring": 0
+    }
+
+    access_token = None
+    async with aiohttp.ClientSession() as http_session:
+        async with http_session.post(url, json=payload) as response:
+            if response.status != 200:
+                raise Exception(await response.text())
+
+            data = await response.json()
+            access_token = data.get("access_token")
+
+    '''save this access token in the db'''
+    await shopify_storesdb.Write.add_store(session.get("brand"), session.get("shopify_shop_name"), access_token)
+    return redirect(os.environ.get("DASHBOARD_DOMAIN"))
+
 
 
 @stores.route("/stores", methods=["POST"])
+@login_required
+@brand_required
 async def add_store():
     """
     Add a new Shopify store for the logged-in user.
@@ -22,8 +100,6 @@ async def add_store():
     """
     try:
         user = session.get('user')
-        if not user:
-            return jsonify({'status': 'error', 'message': 'Unauthorized access'}), 401
 
         data = await request.get_json()
         if not data:
@@ -50,7 +126,7 @@ async def add_store():
             }), 400
 
         # Add store to database
-        result = await Write.add_store(
+        result = await shopify_storesdb.Write.add_store(
             user_id=user,
             shopify_shop_name=shopify_shop_name,
             shopify_access_token=shopify_access_token,
@@ -86,7 +162,7 @@ async def list_stores():
         if not user:
             return jsonify({'status': 'error', 'message': 'Unauthorized access'}), 401
 
-        user_stores = await Fetch.get_user_stores(user)
+        user_stores = await shopify_storesdb.Fetch.get_user_stores(user)
 
         return jsonify({
             'status': 'success',
@@ -118,7 +194,7 @@ async def get_store(store_id):
         if not user:
             return jsonify({'status': 'error', 'message': 'Unauthorized access'}), 401
 
-        store = await Fetch.get_store_by_id(store_id, user)
+        store = await shopify_storesdb.Fetch.get_store_by_id(store_id, user)
         if not store:
             return jsonify({
                 'status': 'error',
@@ -177,7 +253,7 @@ async def update_store(store_id):
         if not update_params:
             return jsonify({'status': 'error', 'message': 'No fields to update'}), 400
 
-        result = await Write.update_store(store_id, user, **update_params)
+        result = await shopify_storesdb.Write.update_store(store_id, user, **update_params)
 
         if result['status'] == 'error':
             return jsonify(result), 400
@@ -211,7 +287,7 @@ async def delete_store(store_id):
         if not user:
             return jsonify({'status': 'error', 'message': 'Unauthorized access'}), 401
 
-        result = await Write.delete_store(store_id, user)
+        result = await shopify_storesdb.Write.delete_store(store_id, user)
 
         if result['status'] == 'error':
             return jsonify(result), 400
@@ -242,7 +318,7 @@ async def set_primary_store(store_id):
         if not user:
             return jsonify({'status': 'error', 'message': 'Unauthorized access'}), 401
 
-        result = await Write.update_store(store_id, user, is_primary=True)
+        result = await shopify_storesdb.Write.update_store(store_id, user, is_primary=True)
 
         if result['status'] == 'error':
             return jsonify(result), 400

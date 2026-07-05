@@ -4,7 +4,7 @@ import time
 import requests
 from quart import current_app
 from asyncmy.cursors import DictCursor
-from sql_queries.storesdb import Fetch, Write
+from sql_queries.shopify_storesdb import Fetch, Write
 from services.shopify_graphql import ShopifyRetryableError
 from services.shopify_helpers import get_store_config
 from services.exceptions import AuthorizationError, ShopifyAPIError, ValidationError, IdempotencyConflict

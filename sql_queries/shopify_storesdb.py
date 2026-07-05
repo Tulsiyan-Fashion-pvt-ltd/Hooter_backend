@@ -5,7 +5,7 @@ from utils.encryption import TokenEncryption
 
 class Write:
     @staticmethod
-    async def add_store(user_id: str, shopify_shop_name: str, shopify_access_token: str, store_name: str = None, is_primary: bool = False) -> dict:
+    async def add_store(brand_id: str, shopify_shop_name: str, shopify_access_token: str) -> dict:
         """Add a new Shopify store for a user."""
 
         pool = current_app.pool
@@ -15,31 +15,16 @@ class Write:
                     # Encrypt token before storage
                     encrypted_token = TokenEncryption.encrypt_token(shopify_access_token)
 
-                    # If this is the first store, make it primary
-                    await cursor.execute('SELECT COUNT(*) FROM stores WHERE user_id = %s', (user_id,))
-                    store_count_result = await cursor.fetchone()
-                    store_count = list(store_count_result.values())[0] if store_count_result else 0
-                    if store_count == 0:
-                        is_primary = True
-
-                    # If making this primary, unset other primary stores
-                    if is_primary:
-                        await cursor.execute('''
-                            UPDATE stores SET is_primary = FALSE 
-                            WHERE user_id = %s AND is_primary = TRUE
-                        ''', (user_id,))
-
                     await cursor.execute('''
-                        INSERT INTO stores (user_id, shopify_shop_name, shopify_access_token_encrypted, store_name, is_primary, is_active)
-                        VALUES (%s, %s, %s, %s, %s, TRUE)
-                    ''', (user_id, shopify_shop_name, encrypted_token, store_name or shopify_shop_name, is_primary))
+                        INSERT INTO shopify_stores (brand_id, shopify_shop_name, shopify_access_token_encrypted)
+                        VALUES (%s, %s, %s)
+                    ''', (brand_id, shopify_shop_name, encrypted_token))
 
                     await conn.commit()
 
                     # Fetch and return the created store
                     store_id = cursor.lastrowid
-                    store = await Fetch.get_store_by_id(store_id, user_id)
-                    return {'status': 'ok', 'message': 'Store added successfully', 'store': store}
+                    return {'status': 'ok', 'message': 'Store added successfully', 'store': shopify_shop_name}
 
                 except Exception as e:
                     await conn.rollback()
@@ -49,6 +34,7 @@ class Write:
                         return {'status': 'error', 'message': 'Store already exists for this Shopify shop'}
 
                     return {'status': 'error', 'message': f'Unable to add store: {str(e)}'}
+                
 
     @staticmethod
     async def update_store(store_id: int, user_id: str, **kwargs) -> dict:

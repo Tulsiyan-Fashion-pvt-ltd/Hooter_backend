@@ -19,7 +19,10 @@ load_dotenv()  # Load environment variables from .env file
 
 app = Quart(__name__)
 cors(app, allow_credentials=True,
-    allow_origin=['http://192.168.1.26:5173', 'http://127.0.0.1:5173', 'http://localhost:5173', 'https://workspace.h0oter.com', 'https://staging_workspace.h0oter.com'],
+    allow_origin=['http://192.168.1.26:5173', 'http://127.0.0.1:5173', 'http://localhost:5173', 
+                  'https://workspace.h0oter.com', 
+                  'https://staging_workspace.h0oter.com',
+                  "https://hooter.h0oter.com"],
     # send_origin_wildcard=False,
     max_age=timedelta(days=1))
 
@@ -51,7 +54,7 @@ app.register_blueprint(catalog_routes.catalog)
 app.register_blueprint(inventory_routes.inventory)
 # need to conver the programs and methods as per asgi
 # app.register_blueprint(products)
-# app.register_blueprint(stores)
+app.register_blueprint(stores)
 
 
 # creating and closing of the connection pool

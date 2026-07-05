@@ -64,6 +64,7 @@ async def login():
         login_check = await userdb.Fetch.check_password(userid, hashed_password)
 
         if login_check == 'valid':
+            session.clear()
             session['user'] = userid
             session.permanent = False
             # print(session.get('user'))
