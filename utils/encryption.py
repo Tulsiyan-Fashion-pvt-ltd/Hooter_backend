@@ -26,7 +26,7 @@ class TokenEncryption:
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
             length=32,
-            salt=b'hooter_salt_v1',  # Fixed salt for consistency
+            salt=b'H0oter_encyption_salt@farhanAhmad@lead-dev',  # Fixed salt for consistency
             iterations=100000,
             backend=default_backend()
         )

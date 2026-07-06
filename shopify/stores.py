@@ -18,7 +18,6 @@ SHOPIFY OAUTH INTEGRATION DOCUMENT
 https://shopify.dev/docs/apps/build/authentication-authorization/access-tokens/authorization-code-grant  
 """
 
-
 @stores.post("/shopify/install-store")
 @login_required
 @brand_required
@@ -79,74 +78,6 @@ async def auth_callback():
     await shopify_storesdb.Write.add_store(session.get("brand"), session.get("shopify_shop_name"), access_token)
     return redirect(os.environ.get("DASHBOARD_DOMAIN"))
 
-
-
-@stores.route("/stores", methods=["POST"])
-@login_required
-@brand_required
-async def add_store():
-    """
-    Add a new Shopify store for the logged-in user.
-
-    Expected JSON payload:
-    {
-        "shopify_shop_name": "mystore",
-        "shopify_access_token": "shpat_...",
-        "store_name": "My Store" (optional)
-    }
-
-    Returns:
-        JSON response with store data
-    """
-    try:
-        user = session.get('user')
-
-        data = await request.get_json()
-        if not data:
-            return jsonify({'status': 'error', 'message': 'Request body must be valid JSON'}), 400
-
-        shopify_shop_name = str(data.get("shopify_shop_name", "")).strip()
-        shopify_access_token = str(data.get("shopify_access_token", "")).strip()
-        store_name = str(data.get("store_name", "")).strip()
-
-        # Validate required fields
-        if not shopify_shop_name or not shopify_access_token:
-            return jsonify({
-                'status': 'error',
-                'message': 'shopify_shop_name and shopify_access_token are required'
-            }), 400
-
-        # Validate token before storing
-        try:
-            validate_shopify_token(shopify_shop_name, shopify_access_token)
-        except ShopifyAPIError as exc:
-            return jsonify({
-                'status': 'error',
-                'message': str(exc)
-            }), 400
-
-        # Add store to database
-        result = await shopify_storesdb.Write.add_store(
-            user_id=user,
-            shopify_shop_name=shopify_shop_name,
-            shopify_access_token=shopify_access_token,
-            store_name=store_name or shopify_shop_name
-        )
-
-        if result['status'] == 'error':
-            return jsonify(result), 400
-
-        return jsonify({
-            'status': 'success',
-            'data': result['store']
-        }), 201
-
-    except Exception as e:
-        print(f"Error adding store: {str(e)}")
-        return jsonify({
-            'status': 'error',
-            'message': f'Failed to add store: {str(e)}'
-        }), 500
 
 
 @stores.route("/stores", methods=["GET"])
