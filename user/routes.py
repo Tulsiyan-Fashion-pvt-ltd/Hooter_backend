@@ -1,0 +1,120 @@
+from quart import Blueprint, request, Response, jsonify, session
+from user.repository import mariadb
+from utils.helper import Validate, User, Helper
+from utils.prerequirements import login_required
+from brand.routes import connect_brand
+
+user = Blueprint('user', __name__)
+
+@user.route('/signup', methods=['POST'])
+async def signup():
+    data = await request.get_json()
+    name=data.get('name')
+    number = data.get('number')
+    email = data.get('email')
+    password = data.get('password')
+    designation = data.get('designation')
+    
+    if designation == None:
+        designation = 'Owner'
+    # verify number and email
+    if number and email and password and designation and Validate.email(email) and Validate.in_phone_num(number):
+        # verify number and email
+        user_creds = {
+            'name': name,
+            'userid': User.create_userid(),
+            'number': number,
+            'email': email,
+            'hashed_password': User.hash_password(password),
+            'designation': designation
+            }
+
+        response = await mariadb.Write.signup_user(user_creds)
+
+        if response and response.get('status') != 'ok':
+            if response.get('message') == 'user_already_registered':
+                return jsonify({'status': 'already_registered'}), 409
+        print('registered the user')
+    else:
+        return jsonify({'status': 'Bad Request', 'message': 'all required field not provided'}), 400
+    
+    return jsonify({'status': 'ok'}), 200
+
+
+
+@user.route('/login', methods=['POST'])
+async def login():
+    # print(request.headers)
+    # print(request.cookies)
+    data = await request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+
+    #checking if the data is coming or not
+    if not email or not password:
+        return jsonify({'status': 'invalid request', 'message': 'email or password not provided'}), 400
+
+    if Validate.email(email):
+        userid = await mariadb.Fetch.userid_by_email(email)
+
+        # if the userid is null then return then do not log in
+        if userid == None:
+            return jsonify({'status': 'error', 'message': 'user not found with this email'}), 401
+        hashed_password = User.hash_password(password)
+        login_check = await mariadb.Fetch.check_password(userid, hashed_password)
+
+        if login_check == 'valid':
+            session.clear()
+            session['user'] = userid
+            session.permanent = False
+            # print(session.get('user'))
+            
+            # a brand needs to link to the user
+            # if no brand is linnked to the user then redirect to register
+            brand_access = await connect_brand()
+            return jsonify({"login": {'status': 'ok', 'message': 'login successfull'}, "brand_connection": await Response.get_json(brand_access)}), 200
+        else:
+            return jsonify({'status': 'unauthorised', 'message': 'incorrect password'}), 401
+    else:
+        return jsonify({'status': 'bad request', 'message': 'invalid email'}), 400
+
+
+# request to fetch user session
+@user.route('/session', methods=['GET'])
+async def check_session():
+    # print(request.cookies)
+    user = session.get('user')
+    # print(user)
+    if user:
+        return jsonify({'login': 'ok'}), 200
+    else:
+        return jsonify({'login': 'deny'}), 401
+    
+
+@user.route('/logout', methods=['POST'])
+@login_required
+async def logout():
+    # print(session.get('user'))
+    session.clear()
+    # print(session.get('user'))
+    return jsonify({'status': 'ok', 'message': 'user logout'}), 200
+
+
+@user.get('/request-user-credentials')
+@login_required
+async def fetch_user_creds():
+    user = session.get('user')
+    # print(user)
+    if user==None:
+        return jsonify({'status': 'unauthorised access', 'message': 'no loged in user found'}), 401
+    _ = await mariadb.Fetch.user_details(user)
+
+    print(_)
+    user_data = {
+                'name': _.get('user_name'),
+                'number': _.get('phone_number'),
+                'email': _.get('user_email'),
+                'designation': _.get('user_designation'),
+                'access': _.get('user_access')
+                }
+    return jsonify({'status': 'ok', 'user_data': user_data}), 200

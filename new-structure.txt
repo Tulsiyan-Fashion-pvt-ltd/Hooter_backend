@@ -1,0 +1,91 @@
+tree -I '*.pyc|*.png|*ttf|*jpg|*svg|__pycache__' -n -o new-structure.txt
+.
+├── access_specifiers.json
+├── app.py
+├── brand
+│   ├── repository
+│   │   └── mariadb.py
+│   └── routes.py
+├── catalog
+│   ├── providers
+│   │   └── shopify.py
+│   ├── repository
+│   │   ├── mariadb.py
+│   │   └── mongo.py
+│   └── routes.py
+├── inventory
+│   ├── repository
+│   │   └── mariadb.py
+│   └── routes.py
+├── new-structure.txt
+├── orders
+├── pages.py
+├── payments
+├── platforms
+│   └── shopify
+│       ├── auth.py
+│       ├── catalog
+│       │   └── mariadb.py
+│       ├── helper.py
+│       ├── __init__.py
+│       ├── mariadb.py
+│       └── stores
+│           └── routes.py
+├── Readme.md
+├── requirements.txt
+├── shipping
+├── shopify_archives
+│   ├── exceptions.py
+│   ├── graphql.py
+│   └── utils.py
+├── static
+│   ├── assets
+│   ├── favicon
+│   │   ├── favicon.ico
+│   │   └── site.webmanifest
+│   ├── fonts
+│   │   ├── Barlow
+│   │   │   └── OFL.txt
+│   │   ├── DM_Sans
+│   │   │   ├── OFL.txt
+│   │   │   ├── README.txt
+│   │   │   └── static
+│   │   ├── Poppins
+│   │   │   └── OFL.txt
+│   │   └── Roboto
+│   │       ├── OFL.txt
+│   │       ├── README.txt
+│   │       └── static
+│   ├── icons
+│   ├── images
+│   └── stylesheet
+│       ├── layout
+│       │   ├── animations.css
+│       │   ├── footer.css
+│       │   ├── header.css
+│       │   └── universal_layout.css
+│       └── pages
+│           └── homepage.css
+├── stats
+├── structure.txt
+├── templates
+│   ├── components
+│   │   ├── footer.html
+│   │   └── header.html
+│   └── index.html
+├── update_description.md
+├── user
+│   ├── repository
+│   │   └── mariadb.py
+│   └── routes.py
+└── utils
+    ├── encryption.py
+    ├── helper.py
+    ├── image_compression.py
+    ├── imageio.py
+    ├── inr.py
+    ├── prerequirements.py
+    ├── products.py
+    └── sheets.py
+
+37 directories, 51 files
