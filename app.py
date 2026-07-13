@@ -1,13 +1,12 @@
 from quart import Quart
 from quart_cors import cors
 from pages import page # importing the page blueprint for the page routes
-from api_routes.user_routes import handle_user #importing the request blueprint from requests
-# from database_connection import __init_sql__, __init_mongodb__
 import os
-from api_routes.brand_routes import brand
-# from shopify.products import products8800
-from shopify.stores import stores
-from api_routes import catalog_routes, inventory_routes
+from inventory.routes import inventory 
+from catalog.routes import catalog  
+from brand.routes import brand
+from user.routes import user
+from platforms import shopify
 from dotenv import load_dotenv
 import asyncmy
 from datetime import timedelta
@@ -48,13 +47,14 @@ app.config["IMAGE_READ_BUFFER"] = 64 * 1024 # 64 KB
 app.config["IMAGE_WRITE_BUFFER"] = 64 * 1024
 
 app.register_blueprint(page)
-app.register_blueprint(handle_user)
 app.register_blueprint(brand)
-app.register_blueprint(catalog_routes.catalog)
-app.register_blueprint(inventory_routes.inventory)
-# need to conver the programs and methods as per asgi
+app.register_blueprint(catalog)
+app.register_blueprint(inventory)
+app.register_blueprint(user)
+app.register_blueprint(shopify.shopify)
+# need to convert the programs and methods as per asgi
 # app.register_blueprint(products)
-app.register_blueprint(stores)
+
 
 
 # creating and closing of the connection pool
