@@ -104,8 +104,9 @@ async def list_taxonomy():
         taxonomy = json.loads(contents)
         taxonomy = taxonomy.get('verticals')
 
-        for categories in taxonomy:
-            print(categories["name"])
+    print("*********************************")
+    print("shopify taxonomy loaded")
+    print("*********************************")
 
 
 if __name__ == "__main__":
