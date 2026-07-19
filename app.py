@@ -2,7 +2,7 @@ from quart import Quart
 from quart_cors import cors
 from pages import page # importing the page blueprint for the page routes
 import os
-from inventory.routes import inventory 
+from inventory import inventory 
 from catalog.routes import catalog  
 from brand.routes import brand
 from user.routes import user
@@ -12,6 +12,8 @@ import asyncmy
 from datetime import timedelta
 from quart_mongo import Mongo
 import asyncio
+import aiofiles
+import json
 
 
 load_dotenv()  # Load environment variables from .env file
@@ -87,6 +89,23 @@ async def sql_connection_startup():
 async def sql_connection_shutdown(response):
     app.pool.close()
     await app.pool.wait_closed()
+
+
+'''
+INITIALIZING THE TAXONOMY VARIABLE (it's temporary dude)
+'''
+app.taxonomy = []
+
+@app.before_serving
+async def list_taxonomy():
+    taxonomy = app.taxonomy
+    async with aiofiles.open('shopify_taxonomy.json', mode='r') as f:
+        contents = await f.read()
+        taxonomy = json.loads(contents)
+        taxonomy = taxonomy.get('verticals')
+
+        for categories in taxonomy:
+            print(categories["name"])
 
 
 if __name__ == "__main__":

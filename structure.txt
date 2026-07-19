@@ -1,293 +1,63 @@
+tree -I '*.pyc|*.png|*ttf|*jpg|*svg|__pycache__' -n -o new-structure.txt
 .
 ├── access_specifiers.json
-├── api_routes
-│   ├── brand_routes.py
-│   ├── catalog_routes.py
-│   ├── __pycache__
-│   │   ├── brand_routes.cpython-314.pyc
-│   │   ├── catalog_routes.cpython-314.pyc
-│   │   └── user_routes.cpython-314.pyc
-│   └── user_routes.py
 ├── app.py
-├── handle_brand
-│   └── __pycache__
-│       ├── brand_handler.cpython-314.pyc
-│       └── brand_handlerdb.cpython-314.pyc
-├── handle_user
-│   └── __pycache__
-│       ├── user_handler.cpython-314.pyc
-│       └── user_hanlderdb.cpython-314.pyc
-├── mongo_queries
-│   ├── mongo_catalogdb.py
-│   └── __pycache__
-│       └── mongo_catalogdb.cpython-314.pyc
-├── niche_attributes.json
-├── niche.json
+├── brand
+│   ├── repository
+│   │   └── mariadb.py
+│   └── routes.py
+├── catalog
+│   ├── providers
+│   │   └── shopify.py
+│   ├── repository
+│   │   ├── mariadb.py
+│   │   └── mongo.py
+│   └── routes.py
+├── inventory
+│   ├── repository
+│   │   └── mariadb.py
+│   └── routes.py
+├── new-structure.txt
+├── orders
 ├── pages.py
-├── __pycache__
-│   ├── app.cpython-314.pyc
-│   ├── brand_handler.cpython-314.pyc
-│   ├── brand_handlerdb.cpython-314.pyc
-│   ├── database_connection.cpython-314.pyc
-│   ├── database.cpython-314.pyc
-│   ├── encryption.cpython-314.pyc
-│   ├── helper.cpython-314.pyc
-│   ├── pages.cpython-314.pyc
-│   ├── products.cpython-314.pyc
-│   ├── stores.cpython-314.pyc
-│   ├── user_handler.cpython-314.pyc
-│   └── user_hanlderdb.cpython-314.pyc
+├── payments
+├── platforms
+│   └── shopify
+│       ├── auth.py
+│       ├── catalog
+│       │   └── mariadb.py
+│       ├── helper.py
+│       ├── __init__.py
+│       ├── mariadb.py
+│       └── stores
+│           └── routes.py
 ├── Readme.md
 ├── requirements.txt
-├── services
+├── shipping
+├── shopify_archives
 │   ├── exceptions.py
-│   ├── product_service.py
-│   ├── __pycache__
-│   │   ├── exceptions.cpython-314.pyc
-│   │   ├── product_service.cpython-314.pyc
-│   │   ├── shopify_graphql.cpython-314.pyc
-│   │   └── shopify_helpers.cpython-314.pyc
-│   ├── shopify_graphql.py
-│   └── shopify_helpers.py
-├── shopify
-│   ├── products.py
-│   ├── __pycache__
-│   │   ├── products.cpython-314.pyc
-│   │   └── stores.cpython-314.pyc
-│   └── stores.py
-├── sql_queries
-│   ├── branddb.py
-│   ├── catalogdb.py
-│   ├── __pycache__
-│   │   ├── branddb.cpython-314.pyc
-│   │   ├── catalogdb.cpython-314.pyc
-│   │   ├── storesdb.cpython-314.pyc
-│   │   └── userdb.cpython-314.pyc
-│   ├── storesdb.py
-│   └── userdb.py
+│   ├── graphql.py
+│   └── utils.py
 ├── static
 │   ├── assets
 │   ├── favicon
-│   │   ├── android-chrome-192x192.png
-│   │   ├── android-chrome-512x512.png
-│   │   ├── apple-touch-icon.png
-│   │   ├── favicon-16x16.png
-│   │   ├── favicon-32x32.png
 │   │   ├── favicon.ico
 │   │   └── site.webmanifest
 │   ├── fonts
 │   │   ├── Barlow
-│   │   │   ├── Barlow-BlackItalic.ttf
-│   │   │   ├── Barlow-Black.ttf
-│   │   │   ├── Barlow-BoldItalic.ttf
-│   │   │   ├── Barlow-Bold.ttf
-│   │   │   ├── Barlow-ExtraBoldItalic.ttf
-│   │   │   ├── Barlow-ExtraBold.ttf
-│   │   │   ├── Barlow-ExtraLightItalic.ttf
-│   │   │   ├── Barlow-ExtraLight.ttf
-│   │   │   ├── Barlow-Italic.ttf
-│   │   │   ├── Barlow-LightItalic.ttf
-│   │   │   ├── Barlow-Light.ttf
-│   │   │   ├── Barlow-MediumItalic.ttf
-│   │   │   ├── Barlow-Medium.ttf
-│   │   │   ├── Barlow-Regular.ttf
-│   │   │   ├── Barlow-SemiBoldItalic.ttf
-│   │   │   ├── Barlow-SemiBold.ttf
-│   │   │   ├── Barlow-ThinItalic.ttf
-│   │   │   ├── Barlow-Thin.ttf
 │   │   │   └── OFL.txt
 │   │   ├── DM_Sans
-│   │   │   ├── DMSans-Italic-VariableFont_opsz,wght.ttf
-│   │   │   ├── DMSans-VariableFont_opsz,wght.ttf
 │   │   │   ├── OFL.txt
 │   │   │   ├── README.txt
 │   │   │   └── static
-│   │   │       ├── DMSans_18pt-BlackItalic.ttf
-│   │   │       ├── DMSans_18pt-Black.ttf
-│   │   │       ├── DMSans_18pt-BoldItalic.ttf
-│   │   │       ├── DMSans_18pt-Bold.ttf
-│   │   │       ├── DMSans_18pt-ExtraBoldItalic.ttf
-│   │   │       ├── DMSans_18pt-ExtraBold.ttf
-│   │   │       ├── DMSans_18pt-ExtraLightItalic.ttf
-│   │   │       ├── DMSans_18pt-ExtraLight.ttf
-│   │   │       ├── DMSans_18pt-Italic.ttf
-│   │   │       ├── DMSans_18pt-LightItalic.ttf
-│   │   │       ├── DMSans_18pt-Light.ttf
-│   │   │       ├── DMSans_18pt-MediumItalic.ttf
-│   │   │       ├── DMSans_18pt-Medium.ttf
-│   │   │       ├── DMSans_18pt-Regular.ttf
-│   │   │       ├── DMSans_18pt-SemiBoldItalic.ttf
-│   │   │       ├── DMSans_18pt-SemiBold.ttf
-│   │   │       ├── DMSans_18pt-ThinItalic.ttf
-│   │   │       ├── DMSans_18pt-Thin.ttf
-│   │   │       ├── DMSans_24pt-BlackItalic.ttf
-│   │   │       ├── DMSans_24pt-Black.ttf
-│   │   │       ├── DMSans_24pt-BoldItalic.ttf
-│   │   │       ├── DMSans_24pt-Bold.ttf
-│   │   │       ├── DMSans_24pt-ExtraBoldItalic.ttf
-│   │   │       ├── DMSans_24pt-ExtraBold.ttf
-│   │   │       ├── DMSans_24pt-ExtraLightItalic.ttf
-│   │   │       ├── DMSans_24pt-ExtraLight.ttf
-│   │   │       ├── DMSans_24pt-Italic.ttf
-│   │   │       ├── DMSans_24pt-LightItalic.ttf
-│   │   │       ├── DMSans_24pt-Light.ttf
-│   │   │       ├── DMSans_24pt-MediumItalic.ttf
-│   │   │       ├── DMSans_24pt-Medium.ttf
-│   │   │       ├── DMSans_24pt-Regular.ttf
-│   │   │       ├── DMSans_24pt-SemiBoldItalic.ttf
-│   │   │       ├── DMSans_24pt-SemiBold.ttf
-│   │   │       ├── DMSans_24pt-ThinItalic.ttf
-│   │   │       ├── DMSans_24pt-Thin.ttf
-│   │   │       ├── DMSans_36pt-BlackItalic.ttf
-│   │   │       ├── DMSans_36pt-Black.ttf
-│   │   │       ├── DMSans_36pt-BoldItalic.ttf
-│   │   │       ├── DMSans_36pt-Bold.ttf
-│   │   │       ├── DMSans_36pt-ExtraBoldItalic.ttf
-│   │   │       ├── DMSans_36pt-ExtraBold.ttf
-│   │   │       ├── DMSans_36pt-ExtraLightItalic.ttf
-│   │   │       ├── DMSans_36pt-ExtraLight.ttf
-│   │   │       ├── DMSans_36pt-Italic.ttf
-│   │   │       ├── DMSans_36pt-LightItalic.ttf
-│   │   │       ├── DMSans_36pt-Light.ttf
-│   │   │       ├── DMSans_36pt-MediumItalic.ttf
-│   │   │       ├── DMSans_36pt-Medium.ttf
-│   │   │       ├── DMSans_36pt-Regular.ttf
-│   │   │       ├── DMSans_36pt-SemiBoldItalic.ttf
-│   │   │       ├── DMSans_36pt-SemiBold.ttf
-│   │   │       ├── DMSans_36pt-ThinItalic.ttf
-│   │   │       ├── DMSans_36pt-Thin.ttf
-│   │   │       ├── DMSans-BlackItalic.ttf
-│   │   │       ├── DMSans-Black.ttf
-│   │   │       ├── DMSans-BoldItalic.ttf
-│   │   │       ├── DMSans-Bold.ttf
-│   │   │       ├── DMSans-ExtraBoldItalic.ttf
-│   │   │       ├── DMSans-ExtraBold.ttf
-│   │   │       ├── DMSans-ExtraLightItalic.ttf
-│   │   │       ├── DMSans-ExtraLight.ttf
-│   │   │       ├── DMSans-Italic.ttf
-│   │   │       ├── DMSans-LightItalic.ttf
-│   │   │       ├── DMSans-Light.ttf
-│   │   │       ├── DMSans-MediumItalic.ttf
-│   │   │       ├── DMSans-Medium.ttf
-│   │   │       ├── DMSans-Regular.ttf
-│   │   │       ├── DMSans-SemiBoldItalic.ttf
-│   │   │       ├── DMSans-SemiBold.ttf
-│   │   │       ├── DMSans-ThinItalic.ttf
-│   │   │       └── DMSans-Thin.ttf
 │   │   ├── Poppins
-│   │   │   ├── OFL.txt
-│   │   │   ├── Poppins-BlackItalic.ttf
-│   │   │   ├── Poppins-Black.ttf
-│   │   │   ├── Poppins-BoldItalic.ttf
-│   │   │   ├── Poppins-Bold.ttf
-│   │   │   ├── Poppins-ExtraBoldItalic.ttf
-│   │   │   ├── Poppins-ExtraBold.ttf
-│   │   │   ├── Poppins-ExtraLightItalic.ttf
-│   │   │   ├── Poppins-ExtraLight.ttf
-│   │   │   ├── Poppins-Italic.ttf
-│   │   │   ├── Poppins-LightItalic.ttf
-│   │   │   ├── Poppins-Light.ttf
-│   │   │   ├── Poppins-MediumItalic.ttf
-│   │   │   ├── Poppins-Medium.ttf
-│   │   │   ├── Poppins-Regular.ttf
-│   │   │   ├── Poppins-SemiBoldItalic.ttf
-│   │   │   ├── Poppins-SemiBold.ttf
-│   │   │   ├── Poppins-ThinItalic.ttf
-│   │   │   └── Poppins-Thin.ttf
+│   │   │   └── OFL.txt
 │   │   └── Roboto
 │   │       ├── OFL.txt
 │   │       ├── README.txt
-│   │       ├── Roboto-Italic-VariableFont_wdth,wght.ttf
-│   │       ├── Roboto-VariableFont_wdth,wght.ttf
 │   │       └── static
-│   │           ├── Roboto-BlackItalic.ttf
-│   │           ├── Roboto-Black.ttf
-│   │           ├── Roboto-BoldItalic.ttf
-│   │           ├── Roboto-Bold.ttf
-│   │           ├── Roboto_Condensed-BlackItalic.ttf
-│   │           ├── Roboto_Condensed-Black.ttf
-│   │           ├── Roboto_Condensed-BoldItalic.ttf
-│   │           ├── Roboto_Condensed-Bold.ttf
-│   │           ├── Roboto_Condensed-ExtraBoldItalic.ttf
-│   │           ├── Roboto_Condensed-ExtraBold.ttf
-│   │           ├── Roboto_Condensed-ExtraLightItalic.ttf
-│   │           ├── Roboto_Condensed-ExtraLight.ttf
-│   │           ├── Roboto_Condensed-Italic.ttf
-│   │           ├── Roboto_Condensed-LightItalic.ttf
-│   │           ├── Roboto_Condensed-Light.ttf
-│   │           ├── Roboto_Condensed-MediumItalic.ttf
-│   │           ├── Roboto_Condensed-Medium.ttf
-│   │           ├── Roboto_Condensed-Regular.ttf
-│   │           ├── Roboto_Condensed-SemiBoldItalic.ttf
-│   │           ├── Roboto_Condensed-SemiBold.ttf
-│   │           ├── Roboto_Condensed-ThinItalic.ttf
-│   │           ├── Roboto_Condensed-Thin.ttf
-│   │           ├── Roboto-ExtraBoldItalic.ttf
-│   │           ├── Roboto-ExtraBold.ttf
-│   │           ├── Roboto-ExtraLightItalic.ttf
-│   │           ├── Roboto-ExtraLight.ttf
-│   │           ├── Roboto-Italic.ttf
-│   │           ├── Roboto-LightItalic.ttf
-│   │           ├── Roboto-Light.ttf
-│   │           ├── Roboto-MediumItalic.ttf
-│   │           ├── Roboto-Medium.ttf
-│   │           ├── Roboto-Regular.ttf
-│   │           ├── Roboto-SemiBoldItalic.ttf
-│   │           ├── Roboto-SemiBold.ttf
-│   │           ├── Roboto_SemiCondensed-BlackItalic.ttf
-│   │           ├── Roboto_SemiCondensed-Black.ttf
-│   │           ├── Roboto_SemiCondensed-BoldItalic.ttf
-│   │           ├── Roboto_SemiCondensed-Bold.ttf
-│   │           ├── Roboto_SemiCondensed-ExtraBoldItalic.ttf
-│   │           ├── Roboto_SemiCondensed-ExtraBold.ttf
-│   │           ├── Roboto_SemiCondensed-ExtraLightItalic.ttf
-│   │           ├── Roboto_SemiCondensed-ExtraLight.ttf
-│   │           ├── Roboto_SemiCondensed-Italic.ttf
-│   │           ├── Roboto_SemiCondensed-LightItalic.ttf
-│   │           ├── Roboto_SemiCondensed-Light.ttf
-│   │           ├── Roboto_SemiCondensed-MediumItalic.ttf
-│   │           ├── Roboto_SemiCondensed-Medium.ttf
-│   │           ├── Roboto_SemiCondensed-Regular.ttf
-│   │           ├── Roboto_SemiCondensed-SemiBoldItalic.ttf
-│   │           ├── Roboto_SemiCondensed-SemiBold.ttf
-│   │           ├── Roboto_SemiCondensed-ThinItalic.ttf
-│   │           ├── Roboto_SemiCondensed-Thin.ttf
-│   │           ├── Roboto-ThinItalic.ttf
-│   │           └── Roboto-Thin.ttf
 │   ├── icons
-│   │   ├── facebook.png
-│   │   ├── insta.png
-│   │   ├── linkedin.png
-│   │   ├── logo.png
-│   │   ├── logo.svg
-│   │   ├── twitter.png
-│   │   └── youtube.png
 │   ├── images
-│   │   ├── 58bc9277572fd907f6b25162a84565ecf4c4170b.png
-│   │   ├── a4ad5556ed1446252d87e82457d415cb6b3e4a89.jpg
-│   │   ├── check.png
-│   │   ├── circle01.svg
-│   │   ├── circle02.svg
-│   │   ├── d14275c6add53ce0a5579ed5e1a164debc3a2bf6.png
-│   │   ├── dashboard.png
-│   │   ├── focus.png
-│   │   ├── hero-dashboard.png
-│   │   ├── homepage_art01.svg
-│   │   ├── homepage_mesh_art02.png
-│   │   ├── homepage_mesh_art03.png
-│   │   ├── homepage_mesh_art04.png
-│   │   ├── homepage_mesh_art05.png
-│   │   ├── homepage_mesh_art06.png
-│   │   ├── homepage_mesh_art07.png
-│   │   ├── homepage_mesh_art08.png
-│   │   ├── homepage_mesh_art09.png
-│   │   ├── homepage_mesh_art10.png
-│   │   ├── homepage_mesh_art.png
-│   │   ├── man_at_desk.png
-│   │   ├── mountain.png
-│   │   ├── solution-icon.png
-│   │   ├── stats.png
-│   │   └── year-scale.png
 │   └── stylesheet
 │       ├── layout
 │       │   ├── animations.css
@@ -296,30 +66,26 @@
 │       │   └── universal_layout.css
 │       └── pages
 │           └── homepage.css
+├── stats
 ├── structure.txt
 ├── templates
 │   ├── components
 │   │   ├── footer.html
 │   │   └── header.html
 │   └── index.html
-├── tests
-│   ├── smoke_shopify_catalogue.py
-│   ├── smoke_test_shopify.py
-│   └── test_shopify_graphql_failures.py
 ├── update_description.md
+├── user
+│   ├── repository
+│   │   └── mariadb.py
+│   └── routes.py
 └── utils
     ├── encryption.py
     ├── helper.py
+    ├── image_compression.py
+    ├── imageio.py
     ├── inr.py
     ├── prerequirements.py
     ├── products.py
-    ├── __pycache__
-    │   ├── encryption.cpython-314.pyc
-    │   ├── helper.cpython-314.pyc
-    │   ├── login_required.cpython-314.pyc
-    │   ├── prerequirements.cpython-314.pyc
-    │   ├── products.cpython-314.pyc
-    │   └── sheets.cpython-314.pyc
     └── sheets.py
 
-36 directories, 287 files
+37 directories, 51 files

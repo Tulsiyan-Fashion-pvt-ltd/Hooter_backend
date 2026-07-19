@@ -1,7 +1,7 @@
 import logging
 from utils.encryption import TokenEncryption
 from .mariadb import Fetch
-from shopify_archives.graphql import ShopifyGraphQLClient
+from .graphql import ShopifyGraphQLClient
 from shopify_archives.exceptions import AuthorizationError, ShopifyAPIError
 import hmac
 import hashlib
@@ -12,21 +12,21 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 
 
-async def get_store_config(store_id: int, user_id: str) -> dict:
-    """Fetch store + decrypt token for Shopify client usage."""
-    store = await Fetch.get_store_by_id(store_id, user_id)
-    if not store:
-        raise AuthorizationError("Store not found or access denied")
-    token = TokenEncryption.decrypt_token(store["shopify_access_token_encrypted"])
-    return {
-        "store": store,
-        "shop_name": store["shopify_shop_name"],
-        "token": token,
-        "client": ShopifyGraphQLClient(store["shopify_shop_name"], token)
-    }
+# async def get_store_config(store_id: int, user_id: str) -> dict:
+#     """Fetch store + decrypt token for Shopify client usage."""
+#     store = await Fetch.get_store_by_id(store_id, user_id)
+#     if not store:
+#         raise AuthorizationError("Store not found or access denied")
+#     token = TokenEncryption.decrypt_token(store["shopify_access_token_encrypted"])
+#     return {
+#         "store": store,
+#         "shop_name": store["shopify_shop_name"],
+#         "token": token,
+#         "client": ShopifyGraphQLClient(store["shopify_shop_name"], token)
+#     }
 
 
-def validate_shopify_token(shop_name: str, access_token: str) -> None:
+async def validate_shopify_token(shop_name: str, access_token: str) -> None:
     """Validate Shopify access token with a harmless query."""
     client = ShopifyGraphQLClient(shop_name, access_token)
     query = """
@@ -35,15 +35,8 @@ def validate_shopify_token(shop_name: str, access_token: str) -> None:
     }
     """
     try:
-        import requests
-        resp = requests.post(
-            client.endpoint,
-            json={"query": query},
-            headers=client.headers,
-            timeout=10
-        )
-        resp.raise_for_status()
-        data = resp.json()
+        response = await client.query(query)
+        data = response.get("data", {})
         user_errors = data.get("errors") or []
         if user_errors:
             logger.error("Shopify token validation errors for %s: %s", shop_name, user_errors)

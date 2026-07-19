@@ -5,6 +5,9 @@ Uses Fernet (AES-128 + HMAC) for secure encryption.
 
 from cryptography.fernet import Fernet
 import os
+from dotenv import load_dotenv
+
+load_dotenv()  # Load environment variables from .env file
 
 
 class TokenEncryption:
@@ -26,7 +29,7 @@ class TokenEncryption:
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
             length=32,
-            salt=b'H0oter_encyption_salt@farhanAhmad@lead-dev',  # Fixed salt for consistency
+            salt=os.environ.get('HOOTER_ENCRYPTION_KEY', 'default-salt').encode(),  # Fixed salt for consistency
             iterations=100000,
             backend=default_backend()
         )

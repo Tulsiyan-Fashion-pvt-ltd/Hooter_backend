@@ -10,12 +10,14 @@ from catalog.repository import mongo
 import asyncio
 from collections import Counter
 
-catalog = Blueprint('catalog', __name__)
+
+catalog = Blueprint('catalog', __name__, url_prefix='/catalog')
+
 niche_data = None
 
 
 # check if the user has even added a single catalog or not.
-@catalog.get('/catalog/if-exists')
+@catalog.get('/if-exists')
 @login_required
 @brand_required
 async def if_catalog_exists():
@@ -27,7 +29,7 @@ async def if_catalog_exists():
     
 
 '''get the niche, subniche and categories'''
-@catalog.get("/catalog/niche-data")
+@catalog.get("/niche-data")
 @login_required
 @brand_required
 async def get_niche_data():
@@ -69,7 +71,7 @@ async def get_niche_data():
 
 
 # upload single catalog to the hooter backend
-@catalog.post('/catalog/single-catalog')
+@catalog.post('/single-catalog')
 @login_required
 @brand_required
 async def upload_single_catalog():
@@ -140,7 +142,7 @@ async def upload_single_catalog():
 
 
 # upload bulk catalog to the hooter backend
-@catalog.post('/catalog/bulk-catalog')
+@catalog.post('/bulk-catalog')
 @login_required
 @brand_required
 async def upload_bulk_catalog():
@@ -236,7 +238,7 @@ async def upload_bulk_catalog():
 
 
 # get the xlsx sheet for bulk upload
-@catalog.get('/catalog/bulk-excel-sheet')
+@catalog.get('/bulk-excel-sheet')
 @login_required
 @brand_required
 async def get_bulk_upload_sheet():
@@ -257,7 +259,7 @@ async def get_bulk_upload_sheet():
 
 # some data are niche specific soo for the front end to show them, it has to fetch it first
 # this route will provide the data fields which for niche specific attributes
-@catalog.get('/catalog/attribute-fields')
+@catalog.get('/attribute-fields')
 @login_required
 @brand_required
 async def get_attribute_fields():
@@ -294,7 +296,7 @@ async def get_attribute_fields():
     HANDLING THE IMAGE
 '''
 
-@catalog.post("/catalog/image")
+@catalog.post("/image")
 @login_required
 @brand_required
 async def upload_image():
@@ -363,7 +365,7 @@ async def upload_image():
     return jsonify("ok")
 
 
-@catalog.get("/catalog/image")
+@catalog.get("/image")
 @login_required
 @brand_required
 async def get_product_image():
@@ -395,7 +397,7 @@ async def get_product_image():
     return jsonify(image_urls)
 
 
-@catalog.get("/catalog/<image_variant>/<filename>")
+@catalog.get("/<image_variant>/<filename>")
 async def image_url(image_variant: str, filename: str):
     buffer_size = current_app.config["IMAGE_READ_BUFFER"]
 
@@ -424,7 +426,7 @@ async def image_url(image_variant: str, filename: str):
 
 
 # get the uploaded catalog products and status
-@catalog.get("/catalog")
+@catalog.get("")
 @login_required
 @brand_required
 async def list_catalog():
@@ -458,7 +460,7 @@ async def list_catalog():
 '''
     this route serves the resource to delete a product from the catalog
 '''
-@catalog.delete("/catalog")
+@catalog.delete("")
 @login_required
 @brand_required
 async def delete_product():
@@ -510,7 +512,7 @@ async def delete_product():
 
 
 '''route to update the catalog'''
-@catalog.put("/catalog")
+@catalog.put("")
 @login_required
 @brand_required
 async def update_catalog_data():
@@ -577,7 +579,7 @@ async def update_catalog_data():
 
 # mark the catalog upload as completed
 '''this function is meant to call after the images and catalog upload is successfull'''
-@catalog.put("/catalog/mark-complete")
+@catalog.put("/mark-complete")
 @login_required
 @brand_required
 async def mark_complete():
