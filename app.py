@@ -3,7 +3,7 @@ from quart_cors import cors
 from pages import page # importing the page blueprint for the page routes
 import os
 from inventory import inventory 
-from catalog.routes import catalog  
+from catalog import catalog  
 from brand.routes import brand
 from user.routes import user
 from platforms import shopify
@@ -98,11 +98,11 @@ app.taxonomy = []
 
 @app.before_serving
 async def list_taxonomy():
-    taxonomy = app.taxonomy
+    app.taxonomy
     async with aiofiles.open('shopify_taxonomy.json', mode='r') as f:
         contents = await f.read()
-        taxonomy = json.loads(contents)
-        taxonomy = taxonomy.get('verticals')
+        app.taxonomy = json.loads(contents)
+        app.taxonomy = app.taxonomy.get('verticals')
 
     print("*********************************")
     print("shopify taxonomy loaded")

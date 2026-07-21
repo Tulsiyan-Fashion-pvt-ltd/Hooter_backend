@@ -19,7 +19,6 @@ async def show_next_level(vertical: int, id: str):
 
         if category.get("level") == level+1 and id == category.get("parent_id"):
             next_level.append({
-                "vertical": vertical,
                 "name": category.get("name"),
                 "full_name": category.get("full_name"),
                 "id": category.get("id"),

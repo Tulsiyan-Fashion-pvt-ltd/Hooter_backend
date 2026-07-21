@@ -29,45 +29,45 @@ async def if_catalog_exists():
     
 
 '''get the niche, subniche and categories'''
-@catalog.get("/niche-data")
-@login_required
-@brand_required
-async def get_niche_data():
-    niches = await mariadb.Fetch.niches()
-    global niche_data
-    # print(niches)
-    try:
-        if not niche_data:
-            niche_data ={
-                            niche.get("niche_id"): {
-                                "niche": niche.get("niche"),
-                                "subniches": {
-                                    sub_niche.get("subniche_id"):{
-                                        "subniche": sub_niche.get("subniche_name"),
-                                        "categories": {
-                                            category.get("category_id"): {
-                                                "category": category.get("category_name"),
-                                                "products": {
-                                                    product.get("type_id"): {
-                                                        "product": product.get("product_name")
-                                                    }
-                                                    for product in await mariadb.Fetch.niche_products(category.get("category_id"))
-                                                }
-                                            }
-                                            for category in await mariadb.Fetch.niche_categories(sub_niche.get("subniche_id"))
-                                        }
-                                    }
-                                    for sub_niche in await mariadb.Fetch.sub_niches(niche.get("niche_id"))
-                                }
+# @catalog.get("/niche-data")
+# @login_required
+# @brand_required
+# async def get_niche_data():
+#     niches = await mariadb.Fetch.niches()
+#     global niche_data
+#     # print(niches)
+#     try:
+#         if not niche_data:
+#             niche_data ={
+#                             niche.get("niche_id"): {
+#                                 "niche": niche.get("niche"),
+#                                 "subniches": {
+#                                     sub_niche.get("subniche_id"):{
+#                                         "subniche": sub_niche.get("subniche_name"),
+#                                         "categories": {
+#                                             category.get("category_id"): {
+#                                                 "category": category.get("category_name"),
+#                                                 "products": {
+#                                                     product.get("type_id"): {
+#                                                         "product": product.get("product_name")
+#                                                     }
+#                                                     for product in await mariadb.Fetch.niche_products(category.get("category_id"))
+#                                                 }
+#                                             }
+#                                             for category in await mariadb.Fetch.niche_categories(sub_niche.get("subniche_id"))
+#                                         }
+#                                     }
+#                                     for sub_niche in await mariadb.Fetch.sub_niches(niche.get("niche_id"))
+#                                 }
 
-                            }
-                            for niche in niches
-                        }
-    except Exception as e:
-        print(e)
-        return jsonify({"error": "failed", "msg": "could not complete the request"}), 500
+#                             }
+#                             for niche in niches
+#                         }
+#     except Exception as e:
+#         print(e)
+#         return jsonify({"error": "failed", "msg": "could not complete the request"}), 500
 
-    return jsonify({"niche_data": niche_data}), 200
+#     return jsonify({"niche_data": niche_data}), 200
 
 
 # upload single catalog to the hooter backend
