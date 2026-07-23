@@ -3,7 +3,6 @@ from user.repository import mariadb
 from utils.helper import User, Helper, Brand
 from brand.repository import mariadb
 from utils.prerequirements import login_required, brand_required, super_admin_required
-from utils import products
 
 brand = Blueprint('brand', __name__)
 

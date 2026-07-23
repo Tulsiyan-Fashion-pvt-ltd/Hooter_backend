@@ -1,6 +1,6 @@
 from uuid import uuid4
 from datetime import datetime
-from catalog.repository import mariadb
+from catalog.categories import mariadb
 
 async def create_usku():
     prefix = "Usku"

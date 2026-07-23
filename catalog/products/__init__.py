@@ -1,23 +1,23 @@
 from quart import Blueprint, session, request, jsonify, Response, current_app, abort, json
-from brand.repository import mariadb
+from catalog.products import mariadb
+from catalog.services import products
 from utils.prerequirements import login_required, brand_required
-from catalog.repository import mariadb
-from utils import helper, products
+from catalog.categories import mongodb as categories
+from catalog.products import mongodb 
+from utils import helper
 from utils import sheets
 from utils import imageio
-from datetime import datetime
-from catalog.repository import mongo
+# from datetime import datetime
+from . import mongodb
 import asyncio
 from collections import Counter
 
 
-catalog = Blueprint('catalog', __name__, url_prefix='/catalog')
-
-niche_data = None
+procucts = Blueprint("products", __name__, url_prefix = "/products")
 
 
 # check if the user has even added a single catalog or not.
-@catalog.get('/if-exists')
+@products.get('/if-exists')
 @login_required
 @brand_required
 async def if_catalog_exists():
@@ -26,52 +26,10 @@ async def if_catalog_exists():
         return jsonify({"catalog": "available"})
     else:
         return jsonify({"catalog": "unavailable"})
-    
-
-'''get the niche, subniche and categories'''
-# @catalog.get("/niche-data")
-# @login_required
-# @brand_required
-# async def get_niche_data():
-#     niches = await mariadb.Fetch.niches()
-#     global niche_data
-#     # print(niches)
-#     try:
-#         if not niche_data:
-#             niche_data ={
-#                             niche.get("niche_id"): {
-#                                 "niche": niche.get("niche"),
-#                                 "subniches": {
-#                                     sub_niche.get("subniche_id"):{
-#                                         "subniche": sub_niche.get("subniche_name"),
-#                                         "categories": {
-#                                             category.get("category_id"): {
-#                                                 "category": category.get("category_name"),
-#                                                 "products": {
-#                                                     product.get("type_id"): {
-#                                                         "product": product.get("product_name")
-#                                                     }
-#                                                     for product in await mariadb.Fetch.niche_products(category.get("category_id"))
-#                                                 }
-#                                             }
-#                                             for category in await mariadb.Fetch.niche_categories(sub_niche.get("subniche_id"))
-#                                         }
-#                                     }
-#                                     for sub_niche in await mariadb.Fetch.sub_niches(niche.get("niche_id"))
-#                                 }
-
-#                             }
-#                             for niche in niches
-#                         }
-#     except Exception as e:
-#         print(e)
-#         return jsonify({"error": "failed", "msg": "could not complete the request"}), 500
-
-#     return jsonify({"niche_data": niche_data}), 200
 
 
 # upload single catalog to the hooter backend
-@catalog.post('/single-catalog')
+@products.post('/single-catalog')
 @login_required
 @brand_required
 async def upload_single_catalog():
@@ -91,8 +49,8 @@ async def upload_single_catalog():
         return jsonify({"status": "invalid argument"}), 400
 
     #checking the payload 
-    system_keys = await asyncio.gather(mongo.Fetch.attributes(niche_type).all(),
-                                       mongo.Fetch.attributes(niche_type).mandatory())
+    system_keys = await asyncio.gather(categories.Fetch.attributes(niche_type).all(),
+                                       categories.Fetch.attributes(niche_type).mandatory())
     accepted_data_keys = system_keys[0]
     necessary_data_keys = system_keys[1]
 
@@ -130,19 +88,19 @@ async def upload_single_catalog():
             return jsonify({"error encountered while adding the catalog"}), 500
     
 
-    # add the details in the mongo db
-    mongo_catalog_data = {"type_id": niche_type, "usku_id": catalog.get("usku_id")}
-    niche_specific_keys = await mongo.Fetch.attributes(niche_type).niche_specific()
+    # add the details in the mongodb db
+    mongodb_catalog_data = {"type_id": niche_type, "usku_id": catalog.get("usku_id")}
+    niche_specific_keys = await categories.Fetch.attributes(niche_type).niche_specific()
     for key in niche_specific_keys:
-        mongo_catalog_data[key] = data.get(key)
+        mongodb_catalog_data[key] = data.get(key)
 
-    await mongo.Write.single_catalog(mongo_catalog_data)
+    await mongodb.Write.single_catalog(mongodb_catalog_data)
     return jsonify({"Status": "successful", "message": "added the single catalog", "usku_id": catalog.get("usku_id")}), 200
 
 
 
 # upload bulk catalog to the hooter backend
-@catalog.post('/bulk-catalog')
+@products.post('/bulk-catalog')
 @login_required
 @brand_required
 async def upload_bulk_catalog():
@@ -174,10 +132,10 @@ async def upload_bulk_catalog():
         if not then exit the function 
     '''
 
-    mandatory_fields = await mongo.Fetch.attributes(type_id).mandatory()  
-    all_fields = await mongo.Fetch.attributes(type_id).all()
+    mandatory_fields = await categories.Fetch.attributes(type_id).mandatory()  
+    all_fields = await categories.Fetch.attributes(type_id).all()
 
-    niche_specific_fields = await mongo.Fetch.attributes(type_id).niche_specific()
+    niche_specific_fields = await categories.Fetch.attributes(type_id).niche_specific()
 
     sheet = await asyncio.to_thread(sheets.read_xlsx, xlsx_sheet)
 
@@ -209,9 +167,9 @@ async def upload_bulk_catalog():
             sql_catalog_data["brand_id"] = session.get("brand")
             sql_catalog_data["type_id"] = type_id
 
-            mongo_catalog_data = {key: document.get(key) for key in document if key in niche_specific_fields}
-            mongo_catalog_data["type_id"] = type_id
-            mongo_catalog_data["usku_id"] = usku_id
+            mongodb_catalog_data = {key: document.get(key) for key in document if key in niche_specific_fields}
+            mongodb_catalog_data["type_id"] = type_id
+            mongodb_catalog_data["usku_id"] = usku_id
 
             response = await mariadb.Write.catalog(sql_catalog_data)
             
@@ -219,7 +177,7 @@ async def upload_bulk_catalog():
                 if new_sheet == None:
                     new_sheet = xlsx_sheet
 
-                await mongo.Write.single_catalog(mongo_catalog_data)
+                await mongodb.Write.single_catalog(mongodb_catalog_data)
                 new_sheet = await asyncio.to_thread(sheets.remove_row, new_sheet, iteration+2) # iteration starts from 0 and gives first row so he have to add 1
             else:
                 if response.get("error") == 1062:
@@ -238,7 +196,7 @@ async def upload_bulk_catalog():
 
 
 # get the xlsx sheet for bulk upload
-@catalog.get('/bulk-excel-sheet')
+@products.get('/bulk-excel-sheet')
 @login_required
 @brand_required
 async def get_bulk_upload_sheet():
@@ -250,183 +208,15 @@ async def get_bulk_upload_sheet():
     except Exception:
         return jsonify({"status": "invalid id", "msg": "id should be an integer"}), 400
 
-    headers = await mongo.Fetch.attributes(product_type_id).all()
-    mandatory_fields = await mongo.Fetch.attributes(product_type_id).mandatory()
+    headers = await categories.Fetch.attributes(product_type_id).all()
+    mandatory_fields = await categories.Fetch.attributes(product_type_id).mandatory()
     sheet = await asyncio.to_thread(sheets.create_xlsx, headers, mandatory_fields)
     return  Response(sheet)
 
 
 
-# some data are niche specific soo for the front end to show them, it has to fetch it first
-# this route will provide the data fields which for niche specific attributes
-@catalog.get('/attribute-fields')
-@login_required
-@brand_required
-async def get_attribute_fields():
-
-    niche_id = request.args.get('type')
-
-    #sanitising the arguments
-    if niche_id is None:
-        return jsonify({'status': "invalid argument", "msg": "no niche field available, it should be ?niche=<id>"}), 400
-    else:
-        try:
-            niche_id = int(niche_id)
-        except Exception as e:
-            return jsonify({"staus": "invalid value", "msg": "the id should be int type"}), 422
-
-    
-    product_attributes = await asyncio.gather(mongo.Fetch.catalog_schema(niche_id), 
-                   mongo.Fetch.image_schema(niche_id))
-    
-    # print(product_attributes)
-    niche_attributes = product_attributes[0] 
-    image_attributes = product_attributes[1] 
-
-    if niche_attributes.get('error') is not None:
-        return jsonify({"status": "interrupted", "msg": "attributes are not available for this product"}), 500
-    
-    return jsonify({
-        "field_attributes": niche_attributes,
-        "image_attributes": image_attributes
-    })
-
-
-'''
-    HANDLING THE IMAGE
-'''
-
-@catalog.post("/image")
-@login_required
-@brand_required
-async def upload_image():
-    args = request.args
-    usku_id = args.get("usku-id", type=str)
-    order = args.get("order", default=-1, type=int)
-    image_type = args.get("image-type", default="front", type=str)
-
-    if usku_id is None:
-        sku_id = args.get("sku-id")
-        # print(sku_id)
-        is_sku = await mariadb.Fetch.is_sku_id_exists(sku_id, session.get("brand"))
-        # print(is_sku)
-        if is_sku and is_sku.get("found"):
-            usku_id=is_sku.get("usku_id")
-        else:
-            return jsonify({"status": "failed", "msg": "invalid sku id"}), 422
-    else:
-        '''checking if the usku_id is correct'''
-        is_usku_exists = await mariadb.Fetch.is_usku_id_exists(usku_id)
-
-        if is_usku_exists != True:
-            return jsonify({"status": "invalid usku_id", "msg": 'usku id does not exists'}), 422
-    
-    if order < 0:
-        return jsonify({"status": "request failed", "error": "invalid value for order in argument"}), 409
-
-    file = await request.files
-    image_file = file.get("image")
-    # print(image_file.filename)
-    '''checking the file type'''
-    check_image = image_file.filename.endswith((".png", ".webp", ".jpeg", ".jpg"))
-
-    if check_image is False:
-        return jsonify({"status": "failed", "msg": "file type should be an image"}), 415
-    
-    '''store the original image to .product_images/.original_images'''
-
-    image_extended_filename = image_file.filename.split(".")
-    image_extension = image_extended_filename[len(image_extended_filename)-1]
-    
-    original_image_name = f"{usku_id}_-_{image_type}.{image_extension}"
-    webp_image_name = f"{usku_id}_-_{image_type}.webp"
-
-    image = image_file.read()
-    
-    '''adding image entry into the databases'''
-    img_object = {
-        "usku_id": usku_id,
-        "url": {"original" :f"/catalog/original_image/{original_image_name}",
-                "high_resol_webp": f"/catalog/high_resol_webp/{webp_image_name}",
-                "low_resol_webp": f"/catalog/low_resol_webp/{webp_image_name}",
-                "webp_card": f"/catalog/webp_card/{webp_image_name}",
-                },
-        "type": image_type,
-        "order": order 
-    }
-
-    write_buffer_size = current_app.config["IMAGE_WRITE_BUFFER"]
-    result = await asyncio.gather(imageio.write(image, original_image_name, write_buffer_size), 
-                                  mariadb.Write.image(img_object))
-
-    if result[0] == "error" or result[1] != "ok":
-        return jsonify({"status": "failed", "msg": "issue occured while uploading the image"}), 500
-    
-    return jsonify("ok")
-
-
-@catalog.get("/image")
-@login_required
-@brand_required
-async def get_product_image():
-    arguments = request.args
-
-    usku_id = arguments.get("usku-id")
-    type = arguments.get("image-type")
-
-    if usku_id == None:
-        return jsonify({"status": "failed", "msg": "usku id is not provided"}), 409
-    # elif type == None:
-    #     return jsonify({"status": "failed", "msg": "image type is is not provided"}), 409
-
-    '''checking the usku_id'''
-    if not await mariadb.Fetch.is_usku_id_exists(usku_id):
-        return jsonify({"status": "failed", "msg": "invalid usku-id"}), 409
-
-    image_urls = await mariadb.Fetch.image(usku_id, type)
-
-    if image_url == "error":
-        return jsonify({"status": "failed", "msg": "could not finish the request"}), 500
-    elif image_url == None:
-        return jsonify({"status": "failed", "msg": "invalid image type"}), 409
-
-    if type is None:
-        # print(image_urls)
-        image_urls = {value.get("image_type"): {"url": json.loads(value.get("image_url")), "order": value.get("image_order")} for index, value in enumerate(image_urls)}
-        return jsonify(image_urls)
-    return jsonify(image_urls)
-
-
-@catalog.get("/<image_variant>/<filename>")
-async def image_url(image_variant: str, filename: str):
-    buffer_size = current_app.config["IMAGE_READ_BUFFER"]
-
-    mimetype = "image/webp"
-    if image_variant == "webp_card":
-        filename = f"./.product_images/.image_cards/{filename}"
-    elif image_variant == "original":
-        split_name = filename.split(".")
-        extension = split_name[len(split_name)-1]
-        mimetype = f"image/{extension}"
-        filename = f"./.product_images/.original_images/{filename}"
-        
-    elif image_variant == "high_resol_webp":
-        filename = f"./.product_images/.high_resol_images/{filename}"
-    elif image_variant == "low_resol_webp":
-        filename = f"./.product_images/.low_resol_images/{filename}"
-    else:
-        abort(404)
-
-    image = imageio.read_image_card(filename, buffer_size)
-    
-    if image is None:
-        abort(404)
-    
-    return Response(image, mimetype=mimetype), 200
-
-
 # get the uploaded catalog products and status
-@catalog.get("")
+@products.get("")
 @login_required
 @brand_required
 async def list_catalog():
@@ -435,7 +225,7 @@ async def list_catalog():
 
     if usku_id:
         product_data = await asyncio.gather(mariadb.Fetch.catalog_product(usku_id),
-                                            mongo.Fetch.catalog_product(usku_id))
+                                            mongodb.Fetch.catalog_product(usku_id))
         
         if product_data[0].get("error") or product_data[1].get("error"):
             return jsonify({"status": "failed", "msg": "request failed"}), 500
@@ -460,7 +250,7 @@ async def list_catalog():
 '''
     this route serves the resource to delete a product from the catalog
 '''
-@catalog.delete("")
+@products.delete("")
 @login_required
 @brand_required
 async def delete_product():
@@ -473,7 +263,7 @@ async def delete_product():
     images = await mariadb.Fetch.image(usku_id)
     
     db_query = await asyncio.gather(mariadb.Write.delete_catalog(usku_id), 
-                                    mongo.Write.delete_catalog(usku_id)
+                                    mongodb.Write.delete_catalog(usku_id)
                                     )
     
     if db_query[0] != "ok" or db_query[1] != "ok" or images == "error": 
@@ -512,7 +302,7 @@ async def delete_product():
 
 
 '''route to update the catalog'''
-@catalog.put("")
+@products.put("")
 @login_required
 @brand_required
 async def update_catalog_data():
@@ -525,8 +315,8 @@ async def update_catalog_data():
         return jsonify({"status": "failed", "msg": "invalid payload"}), 400
 
     '''checking the payload'''
-    payload_list = await asyncio.gather(mongo.Fetch.attributes(type_id).all(),
-                                  mongo.Fetch.attributes(type_id).mandatory())
+    payload_list = await asyncio.gather(categories.Fetch.attributes(type_id).all(),
+                                  categories.Fetch.attributes(type_id).mandatory())
     
     accepted_payload = payload_list[0]
     mandatory_payload = payload_list[1]
@@ -563,13 +353,13 @@ async def update_catalog_data():
         "brand_name": data.get("brand_name") if data.get("brand_name") else brand_name  # TEMP FIX: was "brand-name"
     }
 
-    #data for mongodb
-    mongo_catalog = {key: value for key, value in data.items() 
+    #data for mongodbdb
+    mongodb_catalog = {key: value for key, value in data.items() 
                     if (key not in catalog) or (key in ("usku_id", "type_id"))}
 
 
     response = await asyncio.gather(mariadb.Write.update_catalog(catalog), 
-                                    mongo.Write.update_catalog(mongo_catalog))
+                                    mongodb.Write.update_catalog(mongodb_catalog))
     
     if response[0] != "ok" or response[1] != "ok": 
         return jsonify({"status": "failed", "msg": "error occured while updating the catalog"}), 500
@@ -579,7 +369,7 @@ async def update_catalog_data():
 
 # mark the catalog upload as completed
 '''this function is meant to call after the images and catalog upload is successfull'''
-@catalog.put("/mark-complete")
+@products.put("/mark-complete")
 @login_required
 @brand_required
 async def mark_complete():
