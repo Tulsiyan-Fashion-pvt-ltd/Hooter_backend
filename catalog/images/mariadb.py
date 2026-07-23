@@ -26,25 +26,6 @@ class Write:
                 await connection.rollback()
                 print(f"error encountered while adding a single product\n{e}")
                 return {"error": e.args[0]}                          
-
-    @staticmethod
-    async def status_complete(usku_id):
-        pool = current_app.pool
-        async with pool.acquire() as connection:
-            try:
-                async with connection.cursor(cursor=DictCursor) as cursor:
-                    query = '''update usku_record set status="completed"
-                            where  usku_id=%s
-                            '''
-                    values = (usku_id,)
-
-                    await cursor.execute(query, values)
-                    await connection.commit()
-                    return "ok"
-            except Exception as e:
-                await connection.rollback()
-                print(f"error encountered while updating the catalog status as completed\n{e}")
-                return {"error": e.args[0]}
             
 
     @staticmethod

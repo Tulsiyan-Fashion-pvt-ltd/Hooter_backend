@@ -7,7 +7,6 @@ from catalog.products import mongodb
 from utils import helper
 from utils import sheets
 from utils import imageio
-# from datetime import datetime
 from . import mongodb
 import asyncio
 from collections import Counter
