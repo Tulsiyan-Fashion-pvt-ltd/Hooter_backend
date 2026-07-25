@@ -12,7 +12,7 @@ import asyncio
 from collections import Counter
 
 
-procucts = Blueprint("products", __name__, url_prefix = "/products")
+products = Blueprint("products", __name__, url_prefix = "/products")
 
 
 # check if the user has even added a single catalog or not.
@@ -280,15 +280,16 @@ async def delete_product():
                 url_split = url.split("/")
                 filename = url_split[len(url_split) -1]
                 file_path = ''
+                root_path = current_app.root_path
 
                 if image_type == "webp_card":
-                    file_path = f"./.product_images/.image_cards/{filename}"
+                    file_path = f"{root_path}/.product_images/.image_cards/{filename}"
                 elif image_type == "original":
-                    file_path = f"./.product_images/.original_images/{filename}"    
+                    file_path = f"{root_path}/.product_images/.original_images/{filename}"    
                 elif image_type == "high_resol_webp":
-                    file_path = f"./.product_images/.high_resol_images/{filename}"
+                    file_path = f"{root_path}/.product_images/.high_resol_images/{filename}"
                 elif image_type == "low_resol_webp":
-                    file_path = f"./.product_images/.low_resol_images/{filename}"
+                    file_path = f"{root_path}/.product_images/.low_resol_images/{filename}"
 
                 tasks.append(imageio.delete_image(file_path))                  
                 

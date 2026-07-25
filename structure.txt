@@ -3,20 +3,44 @@ tree -I '*.pyc|*.png|*ttf|*jpg|*svg|__pycache__' -n -o new-structure.txt
 ├── access_specifiers.json
 ├── app.py
 ├── brand
-│   ├── repository
+│   ├── auth
+│   │   ├── api.py
 │   │   └── mariadb.py
 │   └── routes.py
 ├── catalog
+│   ├── categories
+│   │   ├── api.py
+│   │   ├── mariadb.py
+│   │   └── mongodb.py
+│   ├── images
+│   │   ├── api.py
+│   │   └── mariadb.py
+│   ├── products
+│   │   ├── api.py
+│   │   ├── mariadb.py
+│   │   └── mongodb.py
 │   ├── providers
 │   │   └── shopify.py
-│   ├── repository
-│   │   ├── mariadb.py
-│   │   └── mongo.py
-│   └── routes.py
+│   ├── routes.py
+│   └── services
+│       ├── attributes.py
+│       └── products.py
 ├── inventory
-│   ├── repository
+│   ├── inward
+│   │   ├── api.py
 │   │   └── mariadb.py
-│   └── routes.py
+│   ├── providers
+│   │   └── shopify.py
+│   ├── routes.py
+│   ├── stocks
+│   │   ├── api.py
+│   │   └── mariadb.py
+│   ├── supplier
+│   │   ├── api.py
+│   │   └── mariadb.py
+│   └── warehouse
+│       ├── api.py
+│       └── mariadb.py
 ├── new-structure.txt
 ├── orders
 ├── pages.py
@@ -24,8 +48,7 @@ tree -I '*.pyc|*.png|*ttf|*jpg|*svg|__pycache__' -n -o new-structure.txt
 ├── platforms
 │   └── shopify
 │       ├── auth.py
-│       ├── catalog
-│       │   └── mariadb.py
+│       ├── graphql.py
 │       ├── helper.py
 │       ├── __init__.py
 │       ├── mariadb.py
@@ -38,6 +61,7 @@ tree -I '*.pyc|*.png|*ttf|*jpg|*svg|__pycache__' -n -o new-structure.txt
 │   ├── exceptions.py
 │   ├── graphql.py
 │   └── utils.py
+├── shopify_taxonomy.json
 ├── static
 │   ├── assets
 │   ├── favicon
@@ -74,18 +98,26 @@ tree -I '*.pyc|*.png|*ttf|*jpg|*svg|__pycache__' -n -o new-structure.txt
 │   │   └── header.html
 │   └── index.html
 ├── update_description.md
-├── user
+├── users
+│   ├── authentication
+│   │   ├── api.py
+│   │   └── mariadb.py
+│   ├── authorization
+│   ├── helper
+│   │   └── __init__.py
+│   ├── profile
 │   ├── repository
 │   │   └── mariadb.py
-│   └── routes.py
+│   ├── routes.py
+│   └── services
 └── utils
     ├── encryption.py
     ├── helper.py
     ├── image_compression.py
     ├── imageio.py
     ├── inr.py
+    ├── path.py
     ├── prerequirements.py
-    ├── products.py
     └── sheets.py
 
-37 directories, 51 files
+48 directories, 72 files

@@ -1,7 +1,7 @@
 from quart import Blueprint
-from .categories import categories
-from .products import products
-from .images import images
+from .categories.api import categories
+from .products.api import products
+from .images.api import images
 
 catalog = Blueprint("catalog", __name__, url_prefix = "/catalog")
 

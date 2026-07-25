@@ -76,7 +76,7 @@ async def upload_image():
     if result[0] == "error" or result[1] != "ok":
         return jsonify({"status": "failed", "msg": "issue occured while uploading the image"}), 500
     
-    return jsonify("ok")
+    return jsonify({"status": "successful", "message": "image uploaded"}), 200
 
 
 @images.get("")

@@ -3,24 +3,6 @@ import datetime
 import re
 import hashlib
 import json
-
-class User:
-    
-    @staticmethod
-    def create_userid() -> str:
-        # create hooter user ids-
-        prefix = 'user_'
-        unique_id = str(uuid.uuid4())[:18]
-        date = str(datetime.datetime.now().date()).replace('-', '')
-        userid = prefix+unique_id+date
-        return userid
-    
-    @staticmethod
-    def hash_password(password):
-        encoded_password = password.encode()
-        hash_object = hashlib.sha256(encoded_password)
-        hashed_password = hash_object.hexdigest()
-        return hashed_password
     
 
 # class handling all the validating
@@ -80,15 +62,6 @@ class Brand:
         id = prefix+unique_id+date
         return id
     
-    @staticmethod
-    def fetch_niches() -> list:
-        try:
-            with open('./niche.json', 'r')as file:
-                read = json.load(file)
-            return (list(read.get('niche')[0].keys()))
-        except Exception as e:
-            print(f"error while reading the niche.json file as \n{e}")
-            return list()
 
     @staticmethod
     async def access_specifiers():

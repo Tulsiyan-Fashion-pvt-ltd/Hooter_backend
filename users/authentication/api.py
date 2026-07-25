@@ -1,12 +1,15 @@
 from quart import Blueprint, request, Response, jsonify, session
-from user.repository import mariadb
-from utils.helper import Validate, User, Helper
+from users.authentication import mariadb
+from utils.helper import Validate, Helper
+from users.helper import create_userid, hash_password, verify_hashed_password
 from utils.prerequirements import login_required
-from brand.routes import connect_brand
+from brand.auth.api import connect_brand
 
-user = Blueprint('user', __name__)
 
-@user.route('/signup', methods=['POST'])
+auth = Blueprint("auth", __name__)
+
+
+@auth.route('/signup', methods=['POST'])
 async def signup():
     data = await request.get_json()
     name=data.get('name')
@@ -22,10 +25,10 @@ async def signup():
         # verify number and email
         user_creds = {
             'name': name,
-            'userid': User.create_userid(),
+            'userid': create_userid(),
             'number': number,
             'email': email,
-            'hashed_password': User.hash_password(password),
+            'hashed_password': hash_password(password),
             'designation': designation
             }
 
@@ -42,10 +45,8 @@ async def signup():
 
 
 
-@user.route('/login', methods=['POST'])
+@auth.route('/login', methods=['POST'])
 async def login():
-    # print(request.headers)
-    # print(request.cookies)
     data = await request.get_json()
     email = data.get('email')
     password = data.get('password')
@@ -60,10 +61,11 @@ async def login():
         # if the userid is null then return then do not log in
         if userid == None:
             return jsonify({'status': 'error', 'message': 'user not found with this email'}), 401
-        hashed_password = User.hash_password(password)
-        login_check = await mariadb.Fetch.check_password(userid, hashed_password)
 
-        if login_check == 'valid':
+        hashed_password = await mariadb.Fetch.user_password(userid)
+        login_check = verify_hashed_password(password, hashed_password)
+
+        if login_check == True:
             session.clear()
             session['user'] = userid
             session.permanent = False
@@ -80,7 +82,7 @@ async def login():
 
 
 # request to fetch user session
-@user.route('/session', methods=['GET'])
+@auth.route('/session', methods=['GET'])
 async def check_session():
     # print(request.cookies)
     user = session.get('user')
@@ -91,7 +93,7 @@ async def check_session():
         return jsonify({'login': 'deny'}), 401
     
 
-@user.route('/logout', methods=['POST'])
+@auth.route('/logout', methods=['POST'])
 @login_required
 async def logout():
     # print(session.get('user'))
@@ -100,7 +102,7 @@ async def logout():
     return jsonify({'status': 'ok', 'message': 'user logout'}), 200
 
 
-@user.get('/request-user-credentials')
+@auth.get('/request-user-credentials')
 @login_required
 async def fetch_user_creds():
     user = session.get('user')

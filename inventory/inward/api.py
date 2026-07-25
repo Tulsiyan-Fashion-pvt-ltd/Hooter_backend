@@ -1,6 +1,6 @@
 from quart import Blueprint, jsonify, request, session, json
 # import asyncio
-import inventory
+import inventory.routes as routes
 from utils.prerequirements import login_required, brand_required
 from . import mariadb
 from utils.helper import Helper

@@ -2,10 +2,10 @@ from quart import Quart
 from quart_cors import cors
 from pages import page # importing the page blueprint for the page routes
 import os
-from inventory import inventory 
-from catalog import catalog  
+from inventory.routes import inventory 
+from catalog.routes import catalog  
 from brand.routes import brand
-from user.routes import user
+from users.routes import users
 from platforms import shopify
 from dotenv import load_dotenv
 import asyncmy
@@ -14,6 +14,7 @@ from quart_mongo import Mongo
 import asyncio
 import aiofiles
 import json
+from pathlib import Path
 
 
 load_dotenv()  # Load environment variables from .env file
@@ -47,12 +48,13 @@ app.mongo = Mongo(app)
 
 app.config["IMAGE_READ_BUFFER"] = 64 * 1024 # 64 KB 
 app.config["IMAGE_WRITE_BUFFER"] = 64 * 1024
+app.root_path = Path(__file__).resolve()
 
 app.register_blueprint(page)
 app.register_blueprint(brand)
 app.register_blueprint(catalog)
 app.register_blueprint(inventory)
-app.register_blueprint(user)
+app.register_blueprint(users)
 app.register_blueprint(shopify.shopify)
 # need to convert the programs and methods as per asgi
 # app.register_blueprint(products)
