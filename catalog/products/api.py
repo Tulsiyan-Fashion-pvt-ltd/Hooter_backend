@@ -10,6 +10,8 @@ from utils import imageio
 from . import mongodb
 import asyncio
 from collections import Counter
+from catalog.providers.shopify import products as shopify_products
+from config import _platforms
 
 
 products = Blueprint("products", __name__, url_prefix = "/products")
@@ -32,7 +34,9 @@ async def if_catalog_exists():
 @login_required
 @brand_required
 async def upload_single_catalog():
-
+    """
+    UPLOAD SINGLE PRODUCT TO THE CATALOG
+    """
     payload = await request.get_json()
 
     accepted_main_keys = ["type", "data"]
@@ -103,6 +107,9 @@ async def upload_single_catalog():
 @login_required
 @brand_required
 async def upload_bulk_catalog():
+    """
+    UPLOAD BULK PRODUCT USING XLSX EXCEL FILE
+    """
     file_payload = await request.files
     json_payload = await request.form
 
@@ -199,41 +206,48 @@ async def upload_bulk_catalog():
 @login_required
 @brand_required
 async def get_bulk_upload_sheet():
-    product_type_id = request.args.get('type')
+    """
+    DOWNLOAD FUNCTION FOR THE XLSX EXCEL SHEET
+    """
+    type_id = request.args.get('type')
 
     # checking whether the id is int or not
     try:
-        product_type_id = int(product_type_id)
+        type_id = int(type_id)
     except Exception:
         return jsonify({"status": "invalid id", "msg": "id should be an integer"}), 400
 
-    headers = await categories.Fetch.attributes(product_type_id).all()
-    mandatory_fields = await categories.Fetch.attributes(product_type_id).mandatory()
+    headers = await categories.Fetch.attributes(type_id).all()
+    mandatory_fields = await categories.Fetch.attributes(type_id).mandatory()
     sheet = await asyncio.to_thread(sheets.create_xlsx, headers, mandatory_fields)
     return  Response(sheet)
 
 
 
 # get the uploaded catalog products and status
+@products.get("/<usku_id>")
+@login_required
+@brand_required
+async def show_product(usku_id: str):
+    
+    product_data = await asyncio.gather(mariadb.Fetch.catalog_product(usku_id),
+                                        mongodb.Fetch.catalog_product(usku_id))
+    
+    if product_data[0].get("error") or product_data[1].get("error"):
+        return jsonify({"status": "failed", "msg": "request failed"}), 500
+    else:
+        # print(product_data[1])
+        product_data = product_data[0] | product_data[1]
+        return jsonify(product_data), 200
+
+
 @products.get("")
 @login_required
 @brand_required
-async def list_catalog():
-    args = request.args
-    usku_id = args.get('usku-id')
-
-    if usku_id:
-        product_data = await asyncio.gather(mariadb.Fetch.catalog_product(usku_id),
-                                            mongodb.Fetch.catalog_product(usku_id))
-        
-        if product_data[0].get("error") or product_data[1].get("error"):
-            return jsonify({"status": "failed", "msg": "request failed"}), 500
-        else:
-            # print(product_data[1])
-            product_data = product_data[0] | product_data[1]
-            return jsonify(product_data), 200
-    
-
+async def list_products():
+    """
+    SERVING THE LISTS OF UPLOADED CATALOG IF USKU_ID IS PROVIDED
+    """
     brand_id = session.get("brand")
 
     catalog_data = await asyncio.gather(mariadb.Fetch.catalog_upload_count(brand_id), 
@@ -245,16 +259,13 @@ async def list_catalog():
     return jsonify({"count": catalog_data[0], "catalog-list": catalog_data[1]}), 200
 
 
-
 '''
     this route serves the resource to delete a product from the catalog
 '''
-@products.delete("")
+@products.delete("/<usku_id>")
 @login_required
 @brand_required
-async def delete_product():
-    args = request.args
-    usku_id = args.get("usku-id")
+async def delete_product(usku_id: str):
     # print(usku_id)
     if not usku_id:
         return jsonify({"status": "invalid request", "msg": "usku-id not provided"}), 400
@@ -301,14 +312,17 @@ async def delete_product():
         return jsonify({"status": "successful", "msg": "item deleted from the catalog"}), 200   
 
 
-'''route to update the catalog'''
-@products.put("")
+'''THIS FUNCTION REQUIRE SOME CORRECTION'''
+@products.put("/<usku_id>")
 @login_required
 @brand_required
-async def update_catalog_data():
+async def update_catalog_data(usku_id):
+    """
+    UPDATES THE CATALOG PRODUCT DATA
+    """
     payload = await request.get_json()
 
-    type_id = payload.get("type")
+    type_id = request.args.get("id")
     data = payload.get("data")
 
     if type_id == None or data == None:
@@ -320,14 +334,9 @@ async def update_catalog_data():
     
     accepted_payload = payload_list[0]
     mandatory_payload = payload_list[1]
-    
-    mandatory_payload.append("usku_id")
-    accepted_payload.append("usku_id")
-    accepted_payload.append("discount")
 
-    # print(mandatory_payload)
-    # print("\n")
-    # print(accepted_payload)
+    
+    accepted_payload.append("discount")
 
     if not helper.Helper.check_required_payload(data, accepted_payload, mandatory_payload):
         return jsonify({"status": "failed", "msg": "invalid payload"}), 400
@@ -337,7 +346,7 @@ async def update_catalog_data():
     # data for sql
     catalog = {
         "brand_id": session.get('brand'),
-        "usku_id": data.get("usku_id"),
+        "usku_id": usku_id,
         "sku_id": data.get("sku_id"),                          # TEMP FIX: was "sku-id"
         "type_id": type_id,
         "title": data.get('product_title'),
@@ -355,8 +364,10 @@ async def update_catalog_data():
 
     #data for mongodbdb
     mongodb_catalog = {key: value for key, value in data.items() 
-                    if (key not in catalog) or (key in ("usku_id", "type_id"))}
+                    if (key not in catalog)}
 
+    mongodb["usku_id"] = usku_id
+    mongodb["type_id"] = type_id  
 
     response = await asyncio.gather(mariadb.Write.update_catalog(catalog), 
                                     mongodb.Write.update_catalog(mongodb_catalog))
@@ -369,12 +380,13 @@ async def update_catalog_data():
 
 # mark the catalog upload as completed
 '''this function is meant to call after the images and catalog upload is successfull'''
-@products.put("/mark-complete")
+@products.put("/<usku_id>/completed")
 @login_required
 @brand_required
-async def mark_complete():
-    args = request.args
-    usku_id = args.get("usku-id")
+async def mark_complete(usku_id):
+    """
+    UPDATE THE PRODUCT UPLOAD STATUS AS COMPLETED 
+    """
 
     if usku_id and await mariadb.Fetch.is_usku_id_exists(usku_id):
         db_query = await mariadb.Write.status_complete(usku_id)
@@ -385,3 +397,19 @@ async def mark_complete():
     else:
         return jsonify({"status": "failed request", "msg": "usku_id does not exists"}), 400               
     return jsonify({"status": "request completed", "msg": "reqeust completed without updating the status"}), 202
+
+
+
+@products.put("/<usku_id>")
+@login_required
+@brand_required
+async def upload_product_to_platforms(platform: str):
+    """
+    RESPONSIBLE FOR UPLOADING AND ENABLING THE PRODUCT ON THE PLATFORMS
+    """
+    #check the platform resource
+    if not platform or platform not in _platforms:
+        return abort(404)
+
+    await shopify_products.upload_product()
+    return

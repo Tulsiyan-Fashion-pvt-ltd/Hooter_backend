@@ -5,7 +5,7 @@ import os
 from inventory.routes import inventory 
 from catalog.routes import catalog  
 from brand.routes import brand
-from users.routes import users
+from users.routes import user
 from platforms import shopify
 from dotenv import load_dotenv
 import asyncmy
@@ -46,15 +46,13 @@ app.config['MYSQL_PORT'] = int(os.environ.get('HOOTER_DB_PORT', '3306'))
 app.config['MONGO_URI'] = os.environ.get('MONGO_HOST')
 app.mongo = Mongo(app)
 
-app.config["IMAGE_READ_BUFFER"] = 64 * 1024 # 64 KB 
-app.config["IMAGE_WRITE_BUFFER"] = 64 * 1024
-app.root_path = Path(__file__).resolve()
+app.root_path = Path(__file__).resolve() # root path for the main directory
 
 app.register_blueprint(page)
 app.register_blueprint(brand)
 app.register_blueprint(catalog)
 app.register_blueprint(inventory)
-app.register_blueprint(users)
+app.register_blueprint(user)
 app.register_blueprint(shopify.shopify)
 # need to convert the programs and methods as per asgi
 # app.register_blueprint(products)

@@ -80,7 +80,7 @@ class Fetch:
                 return userid
             
     @staticmethod
-    async def user_password(userid: str):
+    async def user_password(userid: str) -> dict:
         pool = current_app.pool
         async with pool.acquire() as conn:
             async with conn.cursor(DictCursor) as cursor:
@@ -94,38 +94,14 @@ class Fetch:
                         (userid)
                     )
                     result = await cursor.fetchone()
-                    return result if result.get('user_password') else None
+                    return result
                 except Exception as e:
                     print(f'error occurred while checking the password as {e}')
-                    return None
-    
-    @staticmethod
-    async def user_details(userid):
-        if userid is None:
-            return ()
-        pool = current_app.pool
-        async with pool.acquire() as conn:
-            async with conn.cursor(DictCursor) as cursor:
-                try:
-                    await cursor.execute(
-                        '''
-                        SELECT user_name,
-                               phone_number,
-                               user_email,
-                               user_designation,
-                               user_access
-                        FROM user_creds
-                        WHERE user_id=%s
-                        ''',
-                        (userid,)
-                    )
-                    return await cursor.fetchone()
-                except Exception as e:
-                    print(f'encountered error while fetching user credentials\n{e}')
-                    return None
+                    return {}
+                
                 
     @staticmethod
-    async def user_access(user_id):
+    async def user_access(user_id: str) -> str:
         pool = current_app.pool
         async with pool.acquire() as conn:
             async with conn.cursor(DictCursor) as cursor:

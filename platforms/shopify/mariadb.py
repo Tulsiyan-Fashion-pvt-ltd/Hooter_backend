@@ -1,4 +1,4 @@
-from quart import current_app
+from quart import current_app, session
 from asyncmy.cursors import DictCursor
 from utils.encryption import TokenEncryption
 
@@ -237,73 +237,7 @@ class Write:
 
 class Fetch:
     @staticmethod
-    async def get_user_stores(user_id: str) -> list:
-        """Fetch all stores for a user."""
-        pool = current_app.pool
-        async with pool.acquire() as conn:
-            async with conn.cursor(cursor=DictCursor) as cursor:
-                stores = []
-                try:
-                    await cursor.execute('''
-                        SELECT store_id, shopify_shop_name, shopify_access_token_encrypted, store_name, is_primary, is_active
-                        FROM stores
-                        WHERE user_id = %s AND is_active = TRUE
-                        ORDER BY is_primary DESC, created_at DESC
-                    ''', (user_id,))
-
-                    stores = await cursor.fetchall()
-                except Exception as e:
-                    print(f'Error fetching user stores: {str(e)}')
-                return stores
-
-    @staticmethod
-    async def get_store_by_id(store_id: int, user_id: str = None) -> dict:
-        """Fetch a specific store. Optionally verify user ownership."""
-        pool = current_app.pool
-        async with pool.acquire() as conn:
-            async with conn.cursor(cursor=DictCursor) as cursor:
-                store = None
-                try:
-                    if user_id:
-                        await cursor.execute('''
-                            SELECT store_id, user_id, shopify_shop_name, shopify_access_token_encrypted, store_name, is_primary, is_active
-                            FROM stores
-                            WHERE store_id = %s AND user_id = %s
-                        ''', (store_id, user_id))
-                    else:
-                        await cursor.execute('''
-                            SELECT store_id, user_id, shopify_shop_name, shopify_access_token_encrypted, store_name, is_primary, is_active
-                            FROM stores
-                            WHERE store_id = %s
-                        ''', (store_id,))
-
-                    store = await cursor.fetchone()
-                except Exception as e:
-                    print(f'Error fetching store: {str(e)}')
-                return store
-
-    @staticmethod
-    async def get_primary_store(user_id: str) -> dict:
-        """Fetch the primary store for a user."""
-        pool = current_app.pool
-        async with pool.acquire() as conn:
-            async with conn.cursor(cursor=DictCursor) as cursor:
-                store = None
-                try:
-                    await cursor.execute('''
-                        SELECT store_id, user_id, shopify_shop_name, shopify_access_token_encrypted, store_name, is_primary
-                        FROM stores
-                        WHERE user_id = %s AND is_primary = TRUE AND is_active = TRUE
-                        LIMIT 1
-                    ''', (user_id,))
-
-                    store = await cursor.fetchone()
-                except Exception as e:
-                    print(f'Error fetching primary store: {str(e)}')
-                return store
-
-    @staticmethod
-    async def get_brand_stores(brand_id: str) -> list:
+    async def get_brand_stores() -> list:
         """Fetch all stores assigned to a brand."""
         pool = current_app.pool
         async with pool.acquire() as conn:
@@ -315,7 +249,7 @@ class Fetch:
                         FROM shopify_stores s
                         WHERE s.brand_id = %s
                         ORDER BY s.created_at DESC
-                    ''', (brand_id,))
+                    ''', (session.get("brand"),))
 
                     stores = await cursor.fetchall()
                     return stores if stores else []
@@ -324,40 +258,82 @@ class Fetch:
                 return stores
 
     @staticmethod
-    async def get_brand_by_id(brand_id: int) -> dict:
-        """Fetch a specific brand by ID."""
+    async def get_store_by_id(store_id: int) -> dict:
+        """Fetch a specific store. Optionally verify user ownership.
+            Returns: shopify_shop_name, shopify_access_token_encrypted
+        """
         pool = current_app.pool
         async with pool.acquire() as conn:
             async with conn.cursor(cursor=DictCursor) as cursor:
-                brand = None
+                store = None
                 try:
                     await cursor.execute('''
-                        SELECT brand_id, brand_name, brand_logo, brand_description, created_at
-                        FROM brand
-                        WHERE brand_id = %s
-                    ''', (brand_id,))
+                        SELECT shopify_shop_name, shopify_access_token_encrypted
+                        FROM stores
+                        WHERE store_id = %s AND brand_id = %s
+                    ''', (store_id, session.get('brand')))
 
-                    brand = await cursor.fetchone()
+                    store = await cursor.fetchone()
                 except Exception as e:
-                    print(f'Error fetching brand: {str(e)}')
-                return brand
+                    print(f'Error fetching store: {str(e)}')
+                return store
 
-    @staticmethod
-    async def verify_brand_ownership(brand_id: int, user_id: str) -> bool:
-        """Verify that a user has access to a brand."""
-        pool = current_app.pool
-        async with pool.acquire() as conn:
-            async with conn.cursor(cursor=DictCursor) as cursor:
-                try:
-                    await cursor.execute(
-                        'SELECT brand_id FROM brand_access WHERE brand_id = %s AND user_id = %s',
-                        (brand_id, user_id)
-                    )
-                    result = await cursor.fetchone()
-                    return result is not None
-                except Exception as e:
-                    print(f'Error verifying brand ownership: {str(e)}')
-                    return False
+    # @staticmethod
+    # async def get_primary_store(user_id: str) -> dict:
+    #     """Fetch the primary store for a user."""
+    #     pool = current_app.pool
+    #     async with pool.acquire() as conn:
+    #         async with conn.cursor(cursor=DictCursor) as cursor:
+    #             store = None
+    #             try:
+    #                 await cursor.execute('''
+    #                     SELECT store_id, user_id, shopify_shop_name, shopify_access_token_encrypted, store_name, is_primary
+    #                     FROM stores
+    #                     WHERE user_id = %s AND is_primary = TRUE AND is_active = TRUE
+    #                     LIMIT 1
+    #                 ''', (user_id,))
+
+    #                 store = await cursor.fetchone()
+    #             except Exception as e:
+    #                 print(f'Error fetching primary store: {str(e)}')
+    #             return store
+
+
+    # @staticmethod
+    # async def get_brand_by_id(brand_id: int) -> dict:
+    #     """Fetch a specific brand by ID."""
+    #     pool = current_app.pool
+    #     async with pool.acquire() as conn:
+    #         async with conn.cursor(cursor=DictCursor) as cursor:
+    #             brand = None
+    #             try:
+    #                 await cursor.execute('''
+    #                     SELECT brand_id, brand_name, brand_logo, brand_description, created_at
+    #                     FROM brand
+    #                     WHERE brand_id = %s
+    #                 ''', (brand_id,))
+
+    #                 brand = await cursor.fetchone()
+    #             except Exception as e:
+    #                 print(f'Error fetching brand: {str(e)}')
+    #             return brand
+
+    # @staticmethod
+    # async def verify_brand_ownership(brand_id: int, user_id: str) -> bool:
+    #     """Verify that a user has access to a brand."""
+    #     pool = current_app.pool
+    #     async with pool.acquire() as conn:
+    #         async with conn.cursor(cursor=DictCursor) as cursor:
+    #             try:
+    #                 await cursor.execute(
+    #                     'SELECT brand_id FROM brand_access WHERE brand_id = %s AND user_id = %s',
+    #                     (brand_id, user_id)
+    #                 )
+    #                 result = await cursor.fetchone()
+    #                 return result is not None
+    #             except Exception as e:
+    #                 print(f'Error verifying brand ownership: {str(e)}')
+    #                 return False
 
     @staticmethod
     async def get_product_by_uid(uid: str, brand_id: int = None) -> dict:

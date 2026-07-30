@@ -63,20 +63,6 @@ class Brand:
         return id
     
 
-    @staticmethod
-    async def access_specifiers():
-        #access specifiers
-        user_access_specifiers=None
-        access_specifier=None
-        try:
-            with open('./access_specifiers.json', 'r') as file:
-                user_access_specifiers = json.load(file)
-            access_specifier = user_access_specifiers.get('access')
-        except Exception as e:
-            print(f'error encountered as\n{e}')
-        return access_specifier
-
-
 
 if __name__ == "__main__":
     print(Brand.access_specifiers())

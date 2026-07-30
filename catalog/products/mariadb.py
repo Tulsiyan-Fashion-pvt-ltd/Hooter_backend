@@ -10,7 +10,7 @@ class Write:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
                     usku_query = '''insert into usku_record
-                                (usku_id, brand_id, sku_id, product_type_id)
+                                (usku_id, brand_id, sku_id, type_id)
                                 values
                                 (%s, %s, %s, %s)
                             '''
@@ -245,7 +245,7 @@ class Fetch:
                     inner join catalog as c on s.usku_id = c.usku_id
                     left join images img on img.usku_id = s.usku_id and
                     img.image_type="front"
-                    inner join niche_products as niche on s.product_type_id = niche.type_id
+                    inner join niche_products as niche on s.type_id = niche.type_id
                     where
                     s.brand_id = %s
                     '''

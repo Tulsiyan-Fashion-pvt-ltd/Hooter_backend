@@ -41,7 +41,7 @@ class Write:
                 except Exception as e:
                     print(f'error occured while registering brand as \n{e}')
                     await connection.rollback()
-                    return 'failed'
+                    return e.args[0]
                 return 'ok'
     @staticmethod
     async def map_user_brand(user_id, brand_id):

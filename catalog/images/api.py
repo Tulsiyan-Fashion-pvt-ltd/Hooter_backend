@@ -1,10 +1,11 @@
-from quart import Blueprint, request, session, jsonify, current_app, abort, Response
+from quart import Blueprint, request, session, jsonify, abort, Response
 from utils.prerequirements import login_required, brand_required
 from . import mariadb
 from catalog.categories import mariadb as categorydb
 import asyncio
 from utils import imageio
 import json
+from config import _IMAGE_READ_BUFFER, _IMAGE_WRITE_BUFFER
 
 images = Blueprint("images", __name__, url_prefix = "/images")
 
@@ -58,7 +59,7 @@ async def upload_image():
     image = image_file.read()
     
     '''adding image entry into the databases'''
-    img_object = {
+    image_path_object = {
         "usku_id": usku_id,
         "url": {"original" :f"/catalog/images/original_image/{original_image_name}",
                 "high_resol_webp": f"/catalog/images/high_resol_webp/{webp_image_name}",
@@ -69,9 +70,9 @@ async def upload_image():
         "order": order 
     }
 
-    write_buffer_size = current_app.config["IMAGE_WRITE_BUFFER"]
+    write_buffer_size = _IMAGE_WRITE_BUFFER
     result = await asyncio.gather(imageio.write(image, original_image_name, write_buffer_size), 
-                                  mariadb.Write.image(img_object))
+                                  mariadb.Write.image(image_path_object))
 
     if result[0] == "error" or result[1] != "ok":
         return jsonify({"status": "failed", "msg": "issue occured while uploading the image"}), 500
@@ -113,7 +114,7 @@ async def get_product_image():
 
 @images.get("/<image_variant>/<filename>")
 async def image_url(image_variant: str, filename: str):
-    buffer_size = current_app.config["IMAGE_READ_BUFFER"]
+    buffer_size = _IMAGE_READ_BUFFER
 
     mimetype = "image/webp"
     if image_variant == "webp_card":

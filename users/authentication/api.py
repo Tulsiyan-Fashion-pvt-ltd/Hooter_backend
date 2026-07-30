@@ -63,8 +63,8 @@ async def login():
             return jsonify({'status': 'error', 'message': 'user not found with this email'}), 401
 
         hashed_password = await mariadb.Fetch.user_password(userid)
-        login_check = verify_hashed_password(password, hashed_password)
-
+        login_check = verify_hashed_password(password, hashed_password.get("user_password"))
+        
         if login_check == True:
             session.clear()
             session['user'] = userid
@@ -100,23 +100,3 @@ async def logout():
     session.clear()
     # print(session.get('user'))
     return jsonify({'status': 'ok', 'message': 'user logout'}), 200
-
-
-@auth.get('/request-user-credentials')
-@login_required
-async def fetch_user_creds():
-    user = session.get('user')
-    # print(user)
-    if user==None:
-        return jsonify({'status': 'unauthorised access', 'message': 'no loged in user found'}), 401
-    _ = await mariadb.Fetch.user_details(user)
-
-    print(_)
-    user_data = {
-                'name': _.get('user_name'),
-                'number': _.get('phone_number'),
-                'email': _.get('user_email'),
-                'designation': _.get('user_designation'),
-                'access': _.get('user_access')
-                }
-    return jsonify({'status': 'ok', 'user_data': user_data}), 200

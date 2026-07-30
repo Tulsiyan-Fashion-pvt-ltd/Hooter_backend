@@ -4,6 +4,7 @@ from utils.helper import Helper, Brand
 from users.helper import hash_password, create_userid
 from brand.auth import mariadb
 from utils.prerequirements import login_required, super_admin_required
+import config
 
 auth = Blueprint('auth', __name__)
 
@@ -54,12 +55,14 @@ async def register_entity():
 
     try:
         # Check if the user is self POC
-        if poc_data.get('self') == 'true':
+        if poc_data.get('self') == True:
 
             # User is self POC - don't insert POC, just map user to brand
             result = await mariadb.Write.insert_brand(brand_id, user_id, brand_data)
 
-            if result == 'failed':
+            if result == 1265:
+                return jsonify({"status": "failed", "message": "Invalid value provided"})
+            if result != "ok":
                 return jsonify({'status': 'failed', 'message': 'error occured while registering the brand'}), 500
 
         else:
@@ -79,7 +82,7 @@ async def register_entity():
             poc_user_id = create_userid()
 
             # fetch access allower access_specifiers
-            access_specifier = Brand.access_specifiers()
+            access_specifier = config._access
             
             # checking if user specified the access
             if poc_data['access'] not in access_specifier or poc_data.get('password')==None:

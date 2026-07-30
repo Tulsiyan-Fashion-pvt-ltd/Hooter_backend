@@ -6,7 +6,7 @@ def create_userid() -> str:
     # create hooter user ids-
     prefix = 'user_'
     unique_id = str(uuid.uuid4())[:18]
-    date = str(datetime.datetime.now().date()).replace('-', '')
+    date = str(datetime.now().date()).replace('-', '')
     userid = prefix+unique_id+date
     return userid
 
