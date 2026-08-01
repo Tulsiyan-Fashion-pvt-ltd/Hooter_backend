@@ -8,7 +8,7 @@ categories = Blueprint("categories", __name__, url_prefix = "/categories")
 
 
 
-@categories.get("/top")
+@categories.get("/top") 
 @login_required
 @brand_required
 @alru_cache(maxsize=32)
