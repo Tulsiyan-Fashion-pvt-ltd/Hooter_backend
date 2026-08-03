@@ -11,12 +11,13 @@ def get_keys(doc):
 
 class Fetch:
     # fetch catalog attributes
-    async def catalog_schema(type_id: int):
+    async def category_schema(type_id: str):
+      """
+      SCHEMA IMPORTANT FOR PRODUCT CATEGORY SPECIFIC
+      """
       mongo = current_app.mongo
 
-      try:
-            # Ensure correct type (adjust if needed)
-            type_id = int(type_id)  
+      try: 
             doc = await mongo.db.product_info_schema.find_one({"type_id": type_id}, {"_id": 0, "type_id": 0})  
             if not doc:
                 return {"error": "Not found"}
@@ -25,10 +26,27 @@ class Fetch:
       except Exception as e:
             print(e)
             return {"error": str(e)}
-      
+
+
+    async def catalog_schema():
+          """
+          SCHEMA IMPORTANT FOR LISTING
+          """
+          mongo = current_app.mongo
+    
+          try:
+                doc = await mongo.db.universal_catalog_schema.find_one({}, {"_id": 0, "type_id": 0})  
+                if not doc:
+                    return {"error": "Not found"}
+    
+                return doc
+          except Exception as e:
+                print(e)
+                return {"error": str(e)}
+
 
     # fetching the image schema from the sql based upon the product type id
-    async def image_schema(type_id: int):
+    async def image_schema(type_id: str):
         mongo = current_app.mongo
         try:
             doc = await mongo.db.image_schema.find_one({"type_id": type_id}, {"_id": 0, "type_id": 0})
@@ -45,59 +63,62 @@ class Fetch:
 
     # fetch all the attributes of the product or stock
     class attributes():
-        def __init__(self, type_id):
-           self.type_id = type_id
+        """
+        LISTS OF ATTRIBUTES
+        """
+
+        class category():
+            """
+            Listing specific attributes
+            """
+            def __init__(self, type_id: str):
+                self.type_id = type_id
+
         
-        # fetch only mandatory schema keys of any niche
-        async def mandatory(self):
-            mongo = current_app.mongo
-            doc = await mongo.db.universal_catalog_schema.find_one()
+            # fetch only mandatory schema keys of any niche
+            async def mandatory(self):
+                doc = await Fetch.catalog_shema(self.type_id)
+                if not doc:
+                  return None
 
-            if not doc:
-              return None
+                attributes = doc.get("attributes")
+                category_mandatory_keys = [attribute.get("field") for attribute in attributes if attribute.get("required") == True]
+                return category_mandatory_keys
+
+
+            # to fetch all the attribute schema any niche id
+            async def all(self):
+                doc = await Fetch.category_schema(self.type_id)                               
+                if not doc:
+                  return None
+               
+                attributes = doc.get("attributes")
+                category_keys = [attribute.get("field") for attribute in attributes ]
+                return category_keys
+
+
+        class catalog():
+            """
+            Catalog specific attribute
+            """
+
+            # fetch only mandatory schema keys of any niche
+            async def mandatory():
+                doc = await Fetch.catalog_shema()
+                if not doc:
+                  return None
+                
+                attributes = doc.get("attributes")
+                universal_mandatory_keys = [attribute.get("field") for attribute in attributes if attribute.get("required") == True]
+                return universal_mandatory_keys
+            # to fetch all the attribute schema any niche id
             
-            doc.pop("_id")
 
-            universal_mandatory_keys = [ key for key in doc.keys() if doc.get(key) == "*" or "*" in doc.get(key)]
-
-            niche_schema = await Fetch.catalog_schema(self.type_id)
-
-            if niche_schema == None:
-               return None
-            
-            niche_mandatory_keys = [key for key in niche_schema.keys() if niche_schema.get(key) == "*" or "*" in niche_schema.get(key)]
-
-            universal_mandatory_keys.extend(niche_mandatory_keys) 
-            return universal_mandatory_keys
-
-        # to fetch all the attribute schema any niche id
-        async def all(self):
-            mongo = current_app.mongo
-            doc = await mongo.db.universal_catalog_schema.find_one()
-
-            if not doc:
-              return None
-            
-            doc.pop("_id")
-
-            universal_mandatory_keys = [ key for key in doc.keys()]
-
-            niche_schema = await Fetch.catalog_schema(self.type_id)
-
-            if niche_schema == None:
-               return None
-            
-            niche_mandatory_keys = [key for key in niche_schema.keys()]
-
-            universal_mandatory_keys.extend(niche_mandatory_keys) 
-            return universal_mandatory_keys
-
-        async def niche_specific(self):
-            niche_schema = await Fetch.catalog_schema(self.type_id)
-
-            if niche_schema == None:
-               return None
-            
-            niche_mandatory_keys = [key for key in niche_schema.keys()]
- 
-            return niche_mandatory_keys
+            async def all(self):
+                doc = await Fetch.catalog_shema()
+                if not doc:
+                  return None
+                
+                attributes = doc.get("attributes")
+                universal_mandatory_keys = [attribute.get("field") for attribute in attributes]
+                return universal_mandatory_keys

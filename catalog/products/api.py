@@ -7,6 +7,7 @@ from catalog.products import mongodb
 from utils import helper
 from utils import sheets
 from utils import imageio
+from utils.helper import Payload
 from . import mongodb
 import asyncio
 from collections import Counter
@@ -37,19 +38,11 @@ async def upload_single_catalog():
     """
     UPLOAD SINGLE PRODUCT TO THE CATALOG
     """
+    niche_type = request.args.get('type-id', type=str)
+
     payload = await request.get_json()
-
-    accepted_main_keys = ["type", "data"]
-    if not helper.Helper.check_required_payload(payload, accepted_main_keys, accepted_main_keys):
-        return jsonify({"status": "invalid payload", "missing keys": accepted_main_keys}), 422
-
-    data = payload.get('data')
-    niche_type = payload.get('type')
-
-    try:
-        niche_type = int(niche_type)
-    except:
-        return jsonify({"status": "invalid argument"}), 400
+    listing_attributes = payload.get('listing_attributes')
+    product_attributes = payload.get("product_attributes")
 
     #checking the payload 
     system_keys = await asyncio.gather(categories.Fetch.attributes(niche_type).all(),
@@ -57,7 +50,7 @@ async def upload_single_catalog():
     accepted_data_keys = system_keys[0]
     necessary_data_keys = system_keys[1]
 
-    if not helper.Helper.check_required_payload(data, accepted_data_keys, necessary_data_keys):
+    if not Payload.check_required_payload(payload, accepted_data_keys, necessary_data_keys):
         return jsonify({"status": "invalid payload", "accepted_keys": accepted_data_keys, "mandatory": necessary_data_keys}), 400
 
     
@@ -80,7 +73,7 @@ async def upload_single_catalog():
     "dead_weight_kg": data.get("dead_weight_kg"),                # TEMP FIX: was "dead-weight"
     "volumetric_weight_kg": data.get("volumetric_weight_kg"),    # TEMP FIX: was "volumentric_weight" + "volumetric-weight" (typo + hyphen)
     "brand_name": data.get("brand_name") if data.get("brand_name") else brand_name  # TEMP FIX: was "brand-name"
-}
+    }
 
     response = await mariadb.Write.catalog(catalog)
 

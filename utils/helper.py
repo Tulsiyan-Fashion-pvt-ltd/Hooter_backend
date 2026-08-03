@@ -45,12 +45,19 @@ class Helper:
     # if you want to check if the current payload is valid or not
     # create a list of expected payloads
     # and pass the json response payload of the request here
+
+
+class Payload:
     @staticmethod
-    def check_required_payload(payload: dict, accepted_keys: list, necessary_keys: list):
+    def check_required_payload(payload: dict, necessary_keys: list):
         return (
-            all(key in accepted_keys for key in payload) and 
             all(key in payload and payload[key] is not None for key in necessary_keys)
         )
+
+    @staticmethod
+    def check_accepted_payload(payload: dict, accepted_keys: list) -> bool:
+        return all((key in accepted_keys for key in payload))
+
 
 class Brand:
     @staticmethod

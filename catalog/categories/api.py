@@ -71,30 +71,29 @@ async def list_next_level_categories():
 @brand_required
 @alru_cache(maxsize=128)
 async def get_attribute_fields():
-
-    category_id = request.args.get('type', type=int)
+    """
+    RETURNS THE PRODUCT ATTRIBUTE
+    """
+    category_id = request.args.get("type-id", type=str)
 
     #sanitising the arguments
     if category_id is None:
-        return jsonify({'status': "invalid argument", "msg": "no niche field available, it should be ?niche=<id>"}), 400
-    else:
-        try:
-            category_id = int(category_id)
-        except Exception as e:
-            return jsonify({"staus": "invalid value", "msg": "the id should be int type"}), 422
+        return jsonify({'status': "invalid argument", "msg": "no niche field available, it should be ?type-id=<id>"}), 400
 
     
-    product_attributes = await asyncio.gather(mongodb.Fetch.catalog_schema(category_id), 
+    product_attributes = await asyncio.gather(mongodb.Fetch.catalog_schema(), mongodb.Fetch.category_schema(category_id),
                    mongodb.Fetch.image_schema(category_id))
     
     # print(product_attributes)
-    niche_attributes = product_attributes[0] 
-    image_attributes = product_attributes[1] 
+    catalog_schema = product_attributes[0] 
+    category_schema = product_attributes[1]
+    image_attributes = product_attributes[2] 
 
-    if niche_attributes.get('error') is not None:
+    if catalog_schema.get('error') is not None:
         return jsonify({"status": "interrupted", "msg": "attributes are not available for this product"}), 500
     
     return jsonify({
-        "field_attributes": niche_attributes,
-        "image_attributes": image_attributes
+        "listing_attributes": catalog_schema.get("attributes"),
+        "category_attributes": category_schema.get("attributes"),
+        "image_attributes": image_attributes.get("attributes")
     })
