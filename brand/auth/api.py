@@ -1,6 +1,6 @@
 from quart import Blueprint, session, request, jsonify
 from users.authentication import mariadb
-from utils.helper import Helper, Brand
+from utils.helper import Payload, Brand
 from users.helper import hash_password, create_userid
 from brand.auth import mariadb
 from utils.prerequirements import login_required, super_admin_required
@@ -19,7 +19,8 @@ async def register_entity():
     '''
     required_payload = ['brand', 'poc']
     accepted_payload = required_payload
-    valid_payload = Helper.check_required_payload(response, accepted_payload, required_payload)
+    valid_payload = (Payload.check_required_payload(response, required_payload) and 
+                    Payload.check_accepted_payload(response, accepted_payload))
 
     if valid_payload is not True:
         return jsonify({'status': 'error', 'message': 'payload does not provide necessary values brand and poc'}), 400
@@ -28,10 +29,11 @@ async def register_entity():
     brand_data = response.get('brand')
     poc_data = response.get('poc')
 
-    accepted_brand_payload = ['entity-name', 'brand-name', 'gstin', 'plan', 'address', 'pincode', 'estyear']
-    required_brand_payload = ['entity-name', 'brand-name', 'plan', 'address', 'pincode', 'estyear']
+    accepted_brand_payload = ['entity_name', 'brand_name', 'gstin', 'plan', 'address', 'pincode', 'estyear']
+    required_brand_payload = ['entity_name', 'brand_name', 'plan', 'address', 'pincode', 'estyear']
     
-    valid_payload = Helper.check_required_payload(brand_data, accepted_brand_payload, required_brand_payload)
+    valid_payload = (Payload.check_required_payload(brand_data, required_brand_payload) and
+                     Payload.check_accepted_payload(brand_data, accepted_brand_payload))
 
     if valid_payload is not True:
         return jsonify({'status': 'error', 'message': 'payload does not provide necessary values brand-data and poc-data'}), 400
@@ -41,17 +43,7 @@ async def register_entity():
     '''
 
     brand_id = Brand.create_id()
-    user_id = session.get('user')
-
-    #inserting the brand
-    brand_data = {
-            'entity_name': brand_data.get('entity-name'),
-            'brand_name': brand_data.get('brand-name'),
-            'gstin': brand_data.get('gstin'),
-            'plan': brand_data.get('plan'),
-            'address': f"({brand_data.get('address')}, {brand_data.get('pincode')})",
-            'estyear': brand_data.get('estyear')
-        }        
+    user_id = session.get('user')    
 
     try:
         # Check if the user is self POC
@@ -71,39 +63,38 @@ async def register_entity():
             accepted_poc_payload = ['self', 'name', 'number', 'email', 'designation', 'access', 'password']
             required_poc_payload = accepted_payload
 
-            valid_payload = Helper.check_required_payload(poc_data, accepted_poc_payload, required_poc_payload)
+            if not Payload.check_accepted_payload(poc_data, accepted_poc_payload):
+                return jsonify({"status": "request cancelled", "message": "Unrecognised payload"}), 400
 
-            if valid_payload is not True:
+            if not Payload.check_required_payload(poc_data, required_poc_payload):
                 report = jsonify({'status': 'error', 'message': 'payload does not provide necessary values'}), 400
-                # print(report)
                 return report
              
             # User is not POC - create new POC with generated user_id
             poc_user_id = create_userid()
-
             # fetch access allower access_specifiers
             access_specifier = config._access
-            
+
             # checking if user specified the access
-            if poc_data['access'] not in access_specifier or poc_data.get('password')==None:
+            if poc_data['access'] not in access_specifier:
                 return jsonify({'status': 'invalid input', 'message': 'access specifiers are not valid'}), 422
 
             user_creds={
                 'userid': poc_user_id,
-                'name': poc_data['name'],
-                'number': poc_data['number'],
-                'email': poc_data['email'],
-                'access': poc_data['access'],
-                'designation': poc_data['designation'],
+                'name': poc_data.get('name'),
+                'number': poc_data.get('number'),
+                'email': poc_data.get('email'),
+                'access': poc_data.get('access'),
+                'designation': poc_data.get('designation'),
                 'hashed_password': hash_password(poc_data.get('password'))
-                }
+            }
             
-            await mariadb.Write().signup_user(user_creds)
+            await mariadb.Write.signup_user(user_creds)
             result = await mariadb.Write.insert_brand(brand_id, poc_user_id, brand_data)
 
             if result == 'failed':
                 return jsonify({'status': 'failed', 'message': 'error occured while registering the brand'}), 500
-
+                
         return jsonify({
             'status': 'ok',
             'message': 'registered the brand successfully'

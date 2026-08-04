@@ -1,8 +1,6 @@
 import uuid
 import datetime
 import re
-import hashlib
-import json
     
 
 # class handling all the validating

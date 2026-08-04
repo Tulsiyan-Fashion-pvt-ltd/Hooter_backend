@@ -19,22 +19,26 @@ class Write:
                             gstin,
                             hooter_plan,
                             registered_address,
+                            pincode,
                             established_year,
                             poc,
-                            created_at
                         ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
                     """
-                    await cursor.execute(query, (
+
+                    values = (
                         brand_id,
                         brand_data.get('entity_name'),
                         brand_data.get('brand_name'),
                         brand_data.get('gstin'),
                         brand_data.get('plan'),
                         brand_data.get('address'),
+                        brand_data.get('pincode'),
                         brand_data.get('estyear'),
-                        user_id,
-                        datetime.now().date()
-                    ))
+                        user_id
+                    )
+
+                    await cursor.execute(query, values)
+
                     await cursor.execute('''INSERT INTO brand_access (brand_id, user_id)
                         VALUES(%s, %s)''', (brand_id, user_id))
                     await connection.commit()
@@ -43,6 +47,8 @@ class Write:
                     await connection.rollback()
                     return e.args[0]
                 return 'ok'
+
+
     @staticmethod
     async def map_user_brand(user_id, brand_id):
         pool = current_app.pool
