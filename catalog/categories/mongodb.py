@@ -28,7 +28,7 @@ class Fetch:
             return {"error": str(e)}
 
 
-    async def catalog_schema():
+    async def listing_schema():
           """
           SCHEMA IMPORTANT FOR LISTING
           """
@@ -62,12 +62,12 @@ class Fetch:
     
 
     # fetch all the attributes of the product or stock
-    class attributes():
+    class Attributes():
         """
         LISTS OF ATTRIBUTES
         """
 
-        class category():
+        class Category():
             """
             Listing specific attributes
             """
@@ -77,12 +77,12 @@ class Fetch:
         
             # fetch only mandatory schema keys of any niche
             async def mandatory(self):
-                doc = await Fetch.catalog_shema(self.type_id)
+                doc = await Fetch.listing_schema()
                 if not doc:
                   return None
 
                 attributes = doc.get("attributes")
-                category_mandatory_keys = [attribute.get("field") for attribute in attributes if attribute.get("required") == True]
+                category_mandatory_keys = [attribute.get("field") for attribute in attributes if attribute.get("required") == True] if attributes else []
                 return category_mandatory_keys
 
 
@@ -93,18 +93,18 @@ class Fetch:
                   return None
                
                 attributes = doc.get("attributes")
-                category_keys = [attribute.get("field") for attribute in attributes ]
+                category_keys = [attribute.get("field") for attribute in attributes if attributes] if attributes else []
                 return category_keys
 
 
-        class catalog():
+        class Catalog():
             """
             Catalog specific attribute
             """
 
             # fetch only mandatory schema keys of any niche
             async def mandatory():
-                doc = await Fetch.catalog_shema()
+                doc = await Fetch.listing_schema()
                 if not doc:
                   return None
                 
@@ -114,8 +114,8 @@ class Fetch:
             # to fetch all the attribute schema any niche id
             
 
-            async def all(self):
-                doc = await Fetch.catalog_shema()
+            async def all():
+                doc = await Fetch.listing_schema()
                 if not doc:
                   return None
                 

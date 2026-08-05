@@ -1,14 +1,14 @@
 from quart import Blueprint, session, request, jsonify, Response, current_app, abort, json
 from catalog.products import mariadb
-from catalog.services import products
-from utils.prerequirements import login_required, brand_required
+from brand.auth import mariadb as brand_sql
 from catalog.categories import mongodb as categories
 from catalog.products import mongodb 
+from catalog.products.utils import create_usku, create_variant_id
+from utils.prerequirements import login_required, brand_required
 from utils import helper
 from utils import sheets
 from utils import imageio
 from utils.helper import Payload
-from . import mongodb
 import asyncio
 from collections import Counter
 from catalog.providers.shopify import products as shopify_products
@@ -38,60 +38,81 @@ async def upload_single_catalog():
     """
     UPLOAD SINGLE PRODUCT TO THE CATALOG
     """
-    niche_type = request.args.get('type-id', type=str)
+    category_id = request.args.get('type-id', type=str)
+    taxonomy_full_name = request.args.get("taxonomy-full-name", type=str)
 
     payload = await request.get_json()
-    listing_attributes = payload.get('listing_attributes')
-    product_attributes = payload.get("product_attributes")
+    listing_attributes = dict(payload.get('listing_attributes'))
+    product_attributes = dict(payload.get("category_attributes"))
+    variants = list(payload.get("variants"))
 
-    #checking the payload 
-    system_keys = await asyncio.gather(categories.Fetch.attributes(niche_type).all(),
-                                       categories.Fetch.attributes(niche_type).mandatory())
-    accepted_data_keys = system_keys[0]
-    necessary_data_keys = system_keys[1]
+    # checking the payload
+    system_keys = await asyncio.gather(categories.Fetch.Attributes.Catalog.all(),
+                                       categories.Fetch.Attributes.Catalog.mandatory(),
+                                       categories.Fetch.Attributes.Category(category_id).mandatory())
 
-    if not Payload.check_required_payload(payload, accepted_data_keys, necessary_data_keys):
-        return jsonify({"status": "invalid payload", "accepted_keys": accepted_data_keys, "mandatory": necessary_data_keys}), 400
 
-    
+    catalog_accepted_keys = system_keys[0]
+    catalog_mandatory_keys = system_keys[1]
+    category_mandatory_keys = system_keys[2]
+
+    if not (Payload.check_accepted_payload(listing_attributes, catalog_accepted_keys) and 
+            Payload.check_required_payload(listing_attributes, catalog_mandatory_keys)):
+        return jsonify({"status": "bad request", "message": "Invalid listing attributes"}), 400
+
+    if category_mandatory_keys != [] and Payload.check_required_payload(product_attributes, category_mandatory_keys):
+        # we're not checking the accepted once because there could be custom attributes
+        return jsonify({"status": "bad request", "message": "Invalid product attributes"}), 400
+
+    '''USKU ID and BRAND NAME'''
+    usku_id = create_usku()
+    brand_name = await brand_sql.Fetch.brand_name_by_id(session.get('brand'))
+
     ## ADDING THE THE DATA IN THE SQL
-    brand_name = await mariadb.Fetch.brand_name_by_id(session.get('brand'))
-
-    catalog = {
+    sql_attributes_value = {
     "brand_id": session.get('brand'),
-    "usku_id": await products.create_usku(),
-    "sku_id": data.get("sku_id"),                          # TEMP FIX: was "sku-id"
-    "type_id": niche_type,
-    "product_title": data.get('product_title'),
-    "price": data.get("price"),
-    "compared_price": data.get("compared_price"),          # TEMP FIX: was "compared-price" (key + get)
-    "purchasing_cost": data.get("purchasing_cost"),        # TEMP FIX: was "purchasing-cost"
-    "vendor": data.get("vendor") if data.get("vendor") else brand_name,
-    "ean": data.get('ean'),
-    "hsn": data.get("hsn"),
-    "net_weight_kg": data.get("net_weight_kg"),                  # TEMP FIX: was "net-weight"
-    "dead_weight_kg": data.get("dead_weight_kg"),                # TEMP FIX: was "dead-weight"
-    "volumetric_weight_kg": data.get("volumetric_weight_kg"),    # TEMP FIX: was "volumentric_weight" + "volumetric-weight" (typo + hyphen)
-    "brand_name": data.get("brand_name") if data.get("brand_name") else brand_name  # TEMP FIX: was "brand-name"
+    "usku_id": usku_id,                     
+    "type_id": category_id,
+    "taxonomy_full_name": taxonomy_full_name,
+    "vendor": listing_attributes.get("vendor", brand_name),                   
+    "brand_name": listing_attributes.get("brand_name", brand_name),
     }
 
-    response = await mariadb.Write.catalog(catalog)
+    mongodb_attribute_value = {
+        "usku_id": usku_id
+    }
+
+
+    '''VARIANT HANDLING'''
+    variant_ids = [create_variant_id(usku_id) for _ in variants]
+
+    #updating the values
+    listing_attributes.update(sql_attributes_value)
+    product_attributes.update(mongodb_attribute_value)
+
+    print(listing_attributes)
+    '''adding variant_id to each variants'''
+    for index, variant in enumerate(variants):
+        variant["variant_id"] = variant_ids[index]
+
+    response = await mariadb.Write.product(listing_attributes, variants = variant_ids)
 
     if response != "ok":
         if response.get('error') == 1062:
-            return jsonify({"status": "failed", "error": "duplicate sku id"}), 409
+            return jsonify({"status": "failed", "message": "duplicate sku id"}), 409
+        elif response.get("error") == 1366:
+            return json({"status": "failed", "message": "Incorrect value for the listing_attributes fields"})
         else:
             return jsonify({"error encountered while adding the catalog"}), 500
     
-
     # add the details in the mongodb db
-    mongodb_catalog_data = {"type_id": niche_type, "usku_id": catalog.get("usku_id")}
-    niche_specific_keys = await categories.Fetch.attributes(niche_type).niche_specific()
-    for key in niche_specific_keys:
-        mongodb_catalog_data[key] = data.get(key)
+    mongo_response = await asyncio.gather(mongodb.Write.single_catalog(product_attributes),
+                        mongodb.Write.variants(variants))
 
-    await mongodb.Write.single_catalog(mongodb_catalog_data)
-    return jsonify({"Status": "successful", "message": "added the single catalog", "usku_id": catalog.get("usku_id")}), 200
+    if (mongo_response[0].get('error') or mongo_response[1].get("error")):
+        return jsonify({"status": "failed", "message": "Product has listed but could not store the product data\nTry updating the product details"}), 202
+
+    return jsonify({"status": "successful", "message": "added the single catalog", "usku_id": usku_id}), 200
 
 
 
@@ -157,7 +178,7 @@ async def upload_bulk_catalog():
         valid_paylaod = helper.Helper.check_required_payload(document, all_fields, mandatory_fields)
     
         if valid_paylaod == True:
-            usku_id = await products.create_usku()
+            usku_id = await create_usku()
 
             sql_catalog_data = {key: document.get(key) for key in document if key not in niche_specific_fields}
 

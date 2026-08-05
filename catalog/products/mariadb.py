@@ -4,38 +4,47 @@ from datetime import datetime
 
 class Write:
     @staticmethod
-    async def catalog(catalog):
+    async def product(product, variants=None):
         pool = current_app.pool
+
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
                     usku_query = '''insert into usku_record
-                                (usku_id, brand_id, sku_id, type_id)
+                                (usku_id, brand_id, sku_id, type_id, taxonomy_full_name)
                                 values
-                                (%s, %s, %s, %s)
+                                (%s, %s, %s, %s, %s)
                             '''
-                    usku_values = (catalog.get('usku_id'), catalog.get('brand_id'), catalog.get('sku_id')
-                                   , catalog.get("type_id"))
+                    usku_values = (product.get('usku_id'), product.get('brand_id'), product.get('sku_id')
+                                   , product.get("type_id"), product.get("taxonomy_full_name"))
                     
                     await cursor.execute(usku_query, usku_values)
                     catalog_query = '''insert into catalog
                                         (usku_id, product_title, price,
-                                        compared_price, purchasing_cost, vendor, ean, hsn, net_weight_kg, dead_weight_kg,
-                                        volumetric_weight_kg, brand_name, updated_at)
+                                        compared_price, purchasing_cost, vendor, ean, hsn, gtin, upc, isbn, 
+                                        net_weight_kg, dead_weight_kg,
+                                        volumetric_weight_kg, brand_name)
                                         values
-                                        (NULLIF(%s, ''), NULLIF(%s, ''), NULLIF(%s, ''), NULLIF(%s, ''), 
-                                        NULLIF(%s, ''), NULLIF(%s, ''), NULLIF(%s, ''), NULLIF(%s, ''), 
-                                        NULLIF(%s, ''), NULLIF(%s, ''), NULLIF(%s, ''), NULLIF(%s, ''), 
-                                        NULLIF(%s, ''))
+                                        (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                                     '''
                     
-                    catalog_values = (catalog.get("usku_id"), catalog.get("product_title"), 
-                                      catalog.get("price"), catalog.get("compared_price"), catalog.get("purchasing_cost"),
-                                      catalog.get("vendor"), catalog.get("ean"), catalog.get("hsn"),
-                                      catalog.get("net_weight_kg"), catalog.get("dead_weight_kg"), catalog.get("volumetric_weight_kg"),
-                                      catalog.get("brand_name"), datetime.now())
-                    
+                    catalog_values = (product.get("usku_id"), product.get("product_title"), 
+                                      product.get("price", 0.00), product.get("compared_price", 0.00), product.get("purchasing_cost", 0.00),
+                                      product.get("vendor"), product.get("ean"), product.get("hsn"), product.get("gtin"),
+                                      product.get("upc"), product.get("isbn"),
+                                      product.get("net_weight_kg"), product.get("dead_weight_kg"), product.get("volumetric_weight_kg"),
+                                      product.get("brand_name"))
+
                     await cursor.execute(catalog_query, catalog_values)
+
+                    if variants:
+                        variant_query = f'''insert into variants(usku_id, variant_id)
+                                        values (%s, %s)
+                                        '''
+
+                        variant_values = [(product.get("usku_id"), variant_id) for variant_id in variants]
+                        await cursor.executemany(variant_query, variant_values)
+
                     await connection.commit()
                     return "ok"
 
@@ -91,25 +100,26 @@ class Write:
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
-                    query = '''UPDATE usku_record AS u
-                            INNER JOIN catalog AS c 
-                                ON u.usku_id = c.usku_id
-                            SET 
-                                u.sku_id = %s,
-                                u.status = %s,
-                                c.product_title = %s,
-                                c.price = %s,
-                                c.compared_price = %s,
-                                c.purchasing_cost = %s,
-                                c.vendor = %s,
-                                c.ean = %s,
-                                c.hsn = %s,
-                                c.net_weight_kg = %s,
-                                c.dead_weight_kg = %s,
-                                c.volumetric_weight_kg = %s,
-                                c.brand_name = %s,
-                                c.updated_at = %s
-                                where u.usku_id = %s'''
+                    query = '''
+                        UPDATE usku_record AS u
+                        INNER JOIN catalog AS c
+                            ON u.usku_id = c.usku_id
+                        SET
+                            u.sku_id = %s,
+                            u.status = %s,
+                            c.product_title = %s,
+                            c.price = %s,
+                            c.compared_price = %s,
+                            c.purchasing_cost = %s,
+                            c.vendor = %s,
+                            c.ean = %s,
+                            c.hsn = %s,
+                            c.net_weight_kg = %s,
+                            c.dead_weight_kg = %s,
+                            c.volumetric_weight_kg = %s,
+                            c.brand_name = %s
+                        WHERE u.usku_id = %s
+                    '''
 
                     values = (
                         catalog.get("sku_id"),
@@ -125,17 +135,21 @@ class Write:
                         catalog.get("dead_weight"),
                         catalog.get("volumetric_weight"),
                         catalog.get("brand_name"),
-                        datetime.now(),
-                        catalog.get("usku_id")
+                        catalog.get("usku_id"),
                     )
 
                     await cursor.execute(query, values)
-                    await connection.commit()
-                    return "ok"
-            except Exception as e:
-                print(f"error occured while updating the catalog details of {catalog.get("usku_id")}\n{e}")
-                return {"error": e.args[0]}
 
+                await connection.commit()
+                return "ok"
+
+            except Exception as e:
+                await connection.rollback()
+                print(
+                    f"error occured while updating the catalog details of "
+                    f"{catalog.get('usku_id')}\n{e}"
+                )
+                return {"error": e.args[0]}
 
 
 class Fetch:
@@ -143,24 +157,25 @@ class Fetch:
     async def count_catalogs():
         pool = current_app.pool
         async with pool.acquire() as connection:
-            async with connection.cursor(cursor = DictCursor) as cursor:
-                try:
+            try:
+                async with connection.cursor(cursor = DictCursor) as cursor:
                     query = '''select count(usku_id) as count from usku_record'''
 
                     await cursor.execute(query)
                     count = await cursor.fetchone()
                     return count.get('count') if count else 0
-                except Exception as e:
-                    print(f"error encountered during fetching catalog counts\n{e}")
-                    return ("error", "error in count_catalogs")
+            except Exception as e:
+                print(f"error encountered during fetching catalog counts\n{e}")
+                return ("error", "error in count_catalogs")
 
 
     @staticmethod
     async def is_sku_id_exists(sku_id, brand_id):
         pool = current_app.pool
         async with pool.acquire() as connection:
-            async with connection.cursor(cursor=DictCursor) as cursor:
-                try:
+            try:
+                async with connection.cursor(cursor=DictCursor) as cursor:
+                
                     query = '''select 1 as found, usku_id from usku_record where sku_id=%s and brand_id=%s'''
                     values = (sku_id, brand_id)
 
@@ -171,40 +186,40 @@ class Fetch:
                         return sku
                     else:
                         return {}
-                except Exception as e:
-                    print(f"error occured while fetching the sku_id from the brand {brand_id}\n{e}")
-                    return None
+            except Exception as e:
+                print(f"error occured while fetching the sku_id from the brand {brand_id}\n{e}")
+                return None
 
 
     @staticmethod
     async def is_exists_catalog(brand_id):
         pool = current_app.pool
         async with pool.acquire() as connection:
-            async with connection.cursor(cursor=DictCursor) as cursor:
-                try:
+            try:
+                async with connection.cursor(cursor=DictCursor) as cursor:
                     query = '''Select 1 from usku_record where brand_id = %s'''
 
                     await cursor.execute(query, (brand_id, ))
                     catalog_available = await cursor.fetchone()
                     return True if catalog_available and catalog_available.get('1') else False
-                except Exception as e:
-                    print(f"error occured while fetching the catalog on is_exists_catalog function\n{e}")
-                    return ("error", "could not fetch the availability from the usku_record")
+            except Exception as e:
+                print(f"error occured while fetching the catalog on is_exists_catalog function\n{e}")
+                return ("error", "could not fetch the availability from the usku_record")
                 
     @staticmethod
     async def is_usku_id_exists(usku_id):
         pool = current_app.pool
         async with pool.acquire() as connection:
-            async with connection.cursor(cursor=DictCursor) as cursor:
-                try:
+            try:
+                async with connection.cursor(cursor=DictCursor) as cursor:
                     query = '''Select 1 from usku_record where usku_id = %s'''
 
                     await cursor.execute(query, (usku_id, ))
                     usku = await cursor.fetchone()
                     return True if usku and usku.get('1') else False
-                except Exception as e:
-                    print(f"error occured while fetching the usku_record on is_usku_id_exists function\n{e}")
-                    return ("error", "could not fetch the availability from the usku_record")
+            except Exception as e:
+                print(f"error occured while fetching the usku_record on is_usku_id_exists function\n{e}")
+                return ("error", "could not fetch the availability from the usku_record")
 
     
 

@@ -16,6 +16,7 @@ class Write:
           async with connection.start_transaction():
             try:
                 await mongo.db.product_attributes.insert_one(catalog)
+                return {"status": "ok"}
             except Exception as e:
                 connection.abort_transaction()
                 print(e)
@@ -45,7 +46,15 @@ class Write:
                     connection.abort_transaction()
                     print(e)
                     return {"error": str(e)}
-                
+
+    async def variants(variants: list) -> dict:
+        mongo = current_app.mongo
+        try:
+            await mongo.db.variants.insert_many(variants)
+            return {"status": "ok"}
+        except Exception as e:
+            print(e)
+            return {"error": str(e)}
 
 
 class Fetch:
