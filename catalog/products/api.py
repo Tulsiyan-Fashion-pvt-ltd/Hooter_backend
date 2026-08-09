@@ -1,6 +1,5 @@
 from quart import Blueprint, session, request, jsonify, Response, current_app, abort, json
 from catalog.products import mariadb
-from brand.auth import mariadb as brand_sql
 from catalog.categories import mongodb as categories
 from catalog.products import mongodb 
 from catalog.products.utils import create_usku, create_variant_id
@@ -13,6 +12,7 @@ import asyncio
 from collections import Counter
 from catalog.providers.shopify import products as shopify_products
 from config import _platforms
+from . import services
 
 
 products = Blueprint("products", __name__, url_prefix = "/products")
@@ -64,56 +64,37 @@ async def upload_single_catalog():
         # we're not checking the accepted once because there could be custom attributes
         return jsonify({"status": "bad request", "message": "Invalid product attributes"}), 400
 
-    '''USKU ID and BRAND NAME'''
-    usku_id = create_usku()
-    brand_name = await brand_sql.Fetch.brand_name_by_id(session.get('brand'))
+    """creating product in the system"""
+    usku_id = await services.Products.create(listing_attributes = listing_attributes,
+                                   category_attributes = product_attributes,
+                                   category_id = category_id,
+                                   taxonomy_full_name = taxonomy_full_name,
+                                )
 
-    ## ADDING THE THE DATA IN THE SQL
-    sql_attributes_value = {
-    "brand_id": session.get('brand'),
-    "usku_id": usku_id,                     
-    "type_id": category_id,
-    "taxonomy_full_name": taxonomy_full_name,
-    "vendor": listing_attributes.get("vendor", brand_name),                   
-    "brand_name": listing_attributes.get("brand_name", brand_name),
-    }
+    if type(usku_id) != str:
+        return jsonify({"status": "failed", "message": usku_id.get("error")}), usku_id.get("code")
 
-    mongodb_attribute_value = {
-        "usku_id": usku_id
-    }
-
-
-    '''VARIANT HANDLING'''
-    variant_ids = [create_variant_id(usku_id) for _ in variants]
-
-    #updating the values
-    listing_attributes.update(sql_attributes_value)
-    product_attributes.update(mongodb_attribute_value)
-
-    print(listing_attributes)
-    '''adding variant_id to each variants'''
-    for index, variant in enumerate(variants):
-        variant["variant_id"] = variant_ids[index]
-
-    response = await mariadb.Write.product(listing_attributes, variants = variant_ids)
-
-    if response != "ok":
-        if response.get('error') == 1062:
-            return jsonify({"status": "failed", "message": "duplicate sku id"}), 409
-        elif response.get("error") == 1366:
-            return json({"status": "failed", "message": "Incorrect value for the listing_attributes fields"})
-        else:
-            return jsonify({"error encountered while adding the catalog"}), 500
-    
-    # add the details in the mongodb db
-    mongo_response = await asyncio.gather(mongodb.Write.single_catalog(product_attributes),
-                        mongodb.Write.variants(variants))
-
-    if (mongo_response[0].get('error') or mongo_response[1].get("error")):
-        return jsonify({"status": "failed", "message": "Product has listed but could not store the product data\nTry updating the product details"}), 202
+    if variants:
+        variants_operation = await services.Variants.create(usku_id, variants)
+        if type(variants_operation) != str:
+            return {"error": variants_operation.get("error"), "code": 500}
 
     return jsonify({"status": "successful", "message": "added the single catalog", "usku_id": usku_id}), 200
 
+
+
+@products.post("/variants/<usku_id>")
+@login_required
+@brand_required
+async def upload_variants(usku_id: str):
+    variants = await request.get_json()
+
+    db = await services.Variants.create(usku_id, variants)
+    if db.get("error"):
+        return jsonify({"status": "failed", "message": db.get("error")}), 400
+
+    return jsonify({"status": "successful", "message": db.get("message")}), 200
+    
 
 
 # upload bulk catalog to the hooter backend
@@ -152,7 +133,7 @@ async def upload_bulk_catalog():
         if not then exit the function 
     '''
 
-    mandatory_fields = await categories.Fetch.attributes(type_id).mandatory()  
+    mandatory_fields = await categories.Fetch.attributes(type_id).mandatory()
     all_fields = await categories.Fetch.attributes(type_id).all()
 
     niche_specific_fields = await categories.Fetch.attributes(type_id).niche_specific()

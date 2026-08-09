@@ -4,7 +4,7 @@ from datetime import datetime
 
 class Write:
     @staticmethod
-    async def product(product, variants=None):
+    async def product(product):
         pool = current_app.pool
 
         async with pool.acquire() as connection:
@@ -36,21 +36,31 @@ class Write:
                                       product.get("brand_name"))
 
                     await cursor.execute(catalog_query, catalog_values)
-
-                    if variants:
-                        variant_query = f'''insert into variants(usku_id, variant_id)
-                                        values (%s, %s)
-                                        '''
-
-                        variant_values = [(product.get("usku_id"), variant_id) for variant_id in variants]
-                        await cursor.executemany(variant_query, variant_values)
-
                     await connection.commit()
-                    return "ok"
+                    return {"error": None}
 
             except Exception as e:
                 await connection.rollback()
                 print(f"error encountered while adding a single product\n{e}")
+                return {"error": e.args[0]}
+
+
+    @staticmethod
+    async def variants(usku_id: str, variants: list):
+        pool = current_app.pool
+        async with pool.acquire() as connection:
+            try:
+                async with connection.cursor(cursor=DictCursor) as cursor:
+                    query = '''insert into variants(usku_id, variant_id)
+                                values (%s, %s)'''
+
+                    variant_values = [(usku_id, variant.get("variant_id")) for variant in variants]
+                    await cursor.executemany(query, variant_values)
+                    await connection.commit()
+                    return {"error": None}
+            except Exception as e:
+                await connection.rollback()
+                print(f"error encountered while adding variants for usku_id {usku_id}", e)
                 return {"error": e.args[0]}
 
 

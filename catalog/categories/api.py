@@ -81,7 +81,7 @@ async def get_attribute_fields():
         return jsonify({'status': "invalid argument", "msg": "no niche field available, it should be ?type-id=<id>"}), 400
 
     
-    product_attributes = await asyncio.gather(mongodb.Fetch.catalog_schema(), mongodb.Fetch.category_schema(category_id),
+    product_attributes = await asyncio.gather(mongodb.Fetch.listing_schema(), mongodb.Fetch.category_schema(category_id),
                    mongodb.Fetch.image_schema(category_id))
     
     # print(product_attributes)
