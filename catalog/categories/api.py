@@ -1,8 +1,11 @@
-from quart import Blueprint, current_app, jsonify, request
+from quart import Blueprint, current_app, jsonify, request, Response
 from utils.prerequirements import login_required, brand_required
 from async_lru import alru_cache
 import asyncio
 from . import mongodb
+from catalog.categories import utils
+from utils import workbook
+
 
 categories = Blueprint("categories", __name__, url_prefix = "/categories")
 
@@ -75,7 +78,8 @@ async def get_attribute_fields():
     RETURNS THE PRODUCT ATTRIBUTE
     """
     category_id = request.args.get("type-id", type=str)
-
+    vertical = request.args.get("vertical", type=int)
+    # print(category_id)
     #sanitising the arguments
     if category_id is None:
         return jsonify({'status': "invalid argument", "msg": "no niche field available, it should be ?type-id=<id>"}), 400
@@ -85,15 +89,36 @@ async def get_attribute_fields():
                    mongodb.Fetch.image_schema(category_id))
     
     # print(product_attributes)
-    catalog_schema = product_attributes[0] 
+    catalog_schema = product_attributes[0]
     category_schema = product_attributes[1]
-    image_attributes = product_attributes[2] 
+    image_attributes = product_attributes[2]
 
     if catalog_schema.get('error') is not None:
         return jsonify({"status": "interrupted", "msg": "attributes are not available for this product"}), 500
+
     
     return jsonify({
         "listing_attributes": catalog_schema.get("attributes"),
-        "category_attributes": category_schema.get("attributes"),
+        "category_attributes": category_schema.get("attributes") if category_schema.get("attributes") != None else await utils.Attributes.get(vertical, category_id),
         "image_attributes": image_attributes.get("attributes")
     })
+
+
+# get the xlsx sheet for bulk upload
+@categories.get('/bulk-excel-sheet')
+@login_required
+@brand_required
+@alru_cache(maxsize=128)
+async def get_bulk_upload_sheet():
+    """
+    DOWNLOAD FUNCTION FOR THE XLSX EXCEL SHEET
+    """
+    type_id = request.args.get('type-id', type=str)
+    vertical = request.args.get("vertical", type=int)
+
+    attributes = await asyncio.gather(mongodb.Fetch.listing_schema(), 
+                                      mongodb.Fetch.category_schema(type_id))
+    attributes = attributes[0].get("attributes") + (attributes[1].get("attributes") if attributes[1].get("attributes") is not None else utils.Attributes.get(vertical, type_id))
+
+    new_workbook = await asyncio.to_thread(workbook.create, attributes)
+    return  Response(new_workbook)

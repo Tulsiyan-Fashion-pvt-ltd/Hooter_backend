@@ -1,6 +1,6 @@
 from catalog.products import mongodb 
 from catalog.products import mariadb
-from catalog.products.utils import create_variant_id, create_usku
+from catalog.products.utils.id import create_variant_id, create_usku
 from brand.auth import mariadb as brand_sql
 import asyncio
 from quart import session

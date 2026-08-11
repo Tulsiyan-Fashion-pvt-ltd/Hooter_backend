@@ -17,3 +17,5 @@ def create_variant_id(usku_id: str) -> str:
     id = usku_id + str(datetime.now())
     unique_hash = hashlib.sha256(id.encode("utf-8")).hexdigest()
     return prefix + unique_hash
+
+

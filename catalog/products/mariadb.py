@@ -11,24 +11,24 @@ class Write:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
                     usku_query = '''insert into usku_record
-                                (usku_id, brand_id, sku_id, type_id, taxonomy_full_name)
+                                (usku_id, brand_id, sku_id, type_id)
                                 values
-                                (%s, %s, %s, %s, %s)
+                                (%s, %s, %s, %s)
                             '''
                     usku_values = (product.get('usku_id'), product.get('brand_id'), product.get('sku_id')
-                                   , product.get("type_id"), product.get("taxonomy_full_name"))
+                                   , product.get("type_id"))
                     
                     await cursor.execute(usku_query, usku_values)
                     catalog_query = '''insert into catalog
-                                        (usku_id, product_title, price,
+                                        (usku_id, product_title, product_desc, price,
                                         compared_price, purchasing_cost, vendor, ean, hsn, gtin, upc, isbn, 
                                         net_weight_kg, dead_weight_kg,
                                         volumetric_weight_kg, brand_name)
                                         values
-                                        (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                        (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                                     '''
                     
-                    catalog_values = (product.get("usku_id"), product.get("product_title"), 
+                    catalog_values = (product.get("usku_id"), product.get("product_title"), product.get("product_desc"),
                                       product.get("price", 0.00), product.get("compared_price", 0.00), product.get("purchasing_cost", 0.00),
                                       product.get("vendor"), product.get("ean"), product.get("hsn"), product.get("gtin"),
                                       product.get("upc"), product.get("isbn"),
@@ -42,6 +42,53 @@ class Write:
             except Exception as e:
                 await connection.rollback()
                 print(f"error encountered while adding a single product\n{e}")
+                return {"error": e.args[0]}
+
+
+
+    @staticmethod
+    async def bulk_product(products: list) -> dict:
+        print("bulk product working")
+        pool = current_app.pool
+        async with pool.acquire() as connection:
+            try:
+                async with connection.cursor(cursor=DictCursor) as cursor:
+                    usku_query = '''insert into usku_record
+                                (usku_id, brand_id, sku_id, type_id)
+                                values
+                                (%s, %s, %s, %s)
+                            '''
+                    usku_values = [(product.get('usku_id'), product.get('brand_id'), product.get('sku_id')
+                                   , product.get("type_id"))
+                                    for product in products if products
+                                   ]
+                    
+                    catalog_query = '''insert into catalog
+                                        (usku_id, product_title, product_desc, price,
+                                        compared_price, purchasing_cost, vendor, ean, hsn, gtin, upc, isbn, 
+                                        net_weight_kg, dead_weight_kg,
+                                        volumetric_weight_kg, brand_name)
+                                        values
+                                        (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                    '''
+                    
+                    catalog_values = [(product.get("usku_id"), product.get("product_title"), product.get("product_desc"),
+                                      product.get("price", 0.00), product.get("compared_price", 0.00), product.get("purchasing_cost", 0.00),
+                                      product.get("vendor"), product.get("ean"), product.get("hsn"), product.get("gtin"),
+                                      product.get("upc"), product.get("isbn"),
+                                      product.get("net_weight_kg"), product.get("dead_weight_kg"), product.get("volumetric_weight_kg"),
+                                      product.get("brand_name"))
+                                        for product in products if products
+                                      ]
+                    
+                    await cursor.executemany(usku_query, usku_values)
+                    await cursor.executemany(catalog_query, catalog_values)
+                    await connection.commit()
+                    return {"error": None}
+
+            except Exception as e:
+                await connection.rollback()
+                print(f"error encountered while adding a bulk product\n{e}")
                 return {"error": e.args[0]}
 
 

@@ -1,15 +1,15 @@
 from quart import Blueprint, session, request, jsonify, Response, current_app, abort, json
 from catalog.products import mariadb
+from brand.auth import mariadb as brand_sql
 from catalog.categories import mongodb as categories
 from catalog.products import mongodb 
-from catalog.products.utils import create_usku, create_variant_id
+from catalog.products.utils.id import create_usku, create_variant_id
 from utils.prerequirements import login_required, brand_required
 from utils import helper
-from utils import sheets
+from utils import workbook
 from utils import imageio
 from utils.helper import Payload
 import asyncio
-from collections import Counter
 from catalog.providers.shopify import products as shopify_products
 from config import _platforms
 from . import services
@@ -31,7 +31,7 @@ async def if_catalog_exists():
 
 
 # upload single catalog to the hooter backend
-@products.post('/single-catalog')
+@products.post('/single')
 @login_required
 @brand_required
 async def upload_single_catalog():
@@ -39,12 +39,11 @@ async def upload_single_catalog():
     UPLOAD SINGLE PRODUCT TO THE CATALOG
     """
     category_id = request.args.get('type-id', type=str)
-    taxonomy_full_name = request.args.get("taxonomy-full-name", type=str)
 
     payload = await request.get_json()
     listing_attributes = dict(payload.get('listing_attributes'))
     product_attributes = dict(payload.get("category_attributes"))
-    variants = list(payload.get("variants"))
+    # variants = list(payload.get("variants"))
 
     # checking the payload
     system_keys = await asyncio.gather(categories.Fetch.Attributes.Catalog.all(),
@@ -67,38 +66,32 @@ async def upload_single_catalog():
     """creating product in the system"""
     usku_id = await services.Products.create(listing_attributes = listing_attributes,
                                    category_attributes = product_attributes,
-                                   category_id = category_id,
-                                   taxonomy_full_name = taxonomy_full_name,
+                                   category_id = category_id
                                 )
 
     if type(usku_id) != str:
         return jsonify({"status": "failed", "message": usku_id.get("error")}), usku_id.get("code")
 
-    if variants:
-        variants_operation = await services.Variants.create(usku_id, variants)
-        if type(variants_operation) != str:
-            return {"error": variants_operation.get("error"), "code": 500}
-
     return jsonify({"status": "successful", "message": "added the single catalog", "usku_id": usku_id}), 200
 
 
+"""UNDER CONSTRUCTION 🚧🚧🚧"""
+# @products.post("/variants/<usku_id>")
+# @login_required
+# @brand_required
+# async def upload_variants(usku_id: str):
+#     variants = await request.get_json()
 
-@products.post("/variants/<usku_id>")
-@login_required
-@brand_required
-async def upload_variants(usku_id: str):
-    variants = await request.get_json()
+#     db = await services.Variants.create(usku_id, variants)
+#     if db.get("error"):
+#         return jsonify({"status": "failed", "message": db.get("error")}), 400
 
-    db = await services.Variants.create(usku_id, variants)
-    if db.get("error"):
-        return jsonify({"status": "failed", "message": db.get("error")}), 400
-
-    return jsonify({"status": "successful", "message": db.get("message")}), 200
+#     return jsonify({"status": "successful", "message": db.get("message")}), 200
     
 
 
 # upload bulk catalog to the hooter backend
-@products.post('/bulk-catalog')
+@products.post('/bulk')
 @login_required
 @brand_required
 async def upload_bulk_catalog():
@@ -106,10 +99,9 @@ async def upload_bulk_catalog():
     UPLOAD BULK PRODUCT USING XLSX EXCEL FILE
     """
     file_payload = await request.files
-    json_payload = await request.form
 
     xlsx_sheet = file_payload.get("sheet")
-    type_id = json_payload.get("type")
+    type_id = request.args.get("type-id", type=str)
 
     '''
         checking the payload and files
@@ -121,11 +113,6 @@ async def upload_bulk_catalog():
     if not xlsx_sheet.filename.endswith(".xlsx"):
         return jsonify({"status": "invalid sheet", "error": "file should have .xlsx extension"}), 415
     
-    # checking if the type-id is int or not
-    try:
-        type_id = int(type_id)
-    except:
-        return jsonify({"status": "invalid form data", "error": "type id is not int"}), 400
 
     ''' after verifying everything is correct '''
 
@@ -133,22 +120,25 @@ async def upload_bulk_catalog():
         if not then exit the function 
     '''
 
-    mandatory_fields = await categories.Fetch.attributes(type_id).mandatory()
-    all_fields = await categories.Fetch.attributes(type_id).all()
+    catalog_all_keys, catalog_mandatory_keys, category_mandatory_keys = await asyncio.gather(categories.Fetch.Attributes.Catalog.all(),
+                                                                                            categories.Fetch.Attributes.Catalog.mandatory(), 
+                                                                                             categories.Fetch.Attributes.Category(type_id).mandatory())
+    expected_mandatory_keys  = catalog_mandatory_keys + category_mandatory_keys
 
-    niche_specific_fields = await categories.Fetch.attributes(type_id).niche_specific()
+    sheet = await asyncio.to_thread(workbook.read, xlsx_sheet)
 
-    sheet = await asyncio.to_thread(sheets.read_xlsx, xlsx_sheet)
+    new_sheet = None # new sheet for the un-uploaded files
+    brand_name = await brand_sql.Fetch.brand_name_by_id(session.get('brand'))
 
-    new_sheet = None
-    brand_name = await mariadb.Fetch.brand_name_by_id(session.get('brand'))
-    error_encountered = False
+    #values for bulk upload
+    sql_values = []
+    mongo_values = []
     for iteration, document in enumerate(sheet):
 
         '''only check once if headers are tempered or not'''
         if iteration == 0:
-            document_header = [key for key in document.keys()]
-            if Counter(document_header) != Counter(all_fields):
+            document_header = document.keys()
+            if set(document_header).issubset(set(expected_mandatory_keys)): # if mandatory keys exists
                 return jsonify({"status": "failed", "msg": "redownload the bulk upload file and re-upload"}), 422
 
         ''' in case user didn't give the vendor name then brand by default is the brand '''
@@ -156,66 +146,52 @@ async def upload_bulk_catalog():
             document["vendor"] = brand_name
 
         '''validate the document whether all the required fields are given or not'''
-        valid_paylaod = helper.Helper.check_required_payload(document, all_fields, mandatory_fields)
+        valid_paylaod = helper.Payload.check_required_payload(document, expected_mandatory_keys)
     
         if valid_paylaod == True:
-            usku_id = await create_usku()
+            usku_id = create_usku()
 
-            sql_catalog_data = {key: document.get(key) for key in document if key not in niche_specific_fields}
+            sql_catalog_data = {key: document.get(key) for key in document if key in catalog_all_keys}
 
             '''adding the necessary ids to the sql catalog data'''
             sql_catalog_data["usku_id"] = usku_id
             sql_catalog_data["brand_id"] = session.get("brand")
             sql_catalog_data["type_id"] = type_id
 
-            mongodb_catalog_data = {key: document.get(key) for key in document if key in niche_specific_fields}
-            mongodb_catalog_data["type_id"] = type_id
+
+            mongodb_catalog_data = {key: document.get(key) for key in document if key not in catalog_all_keys}
             mongodb_catalog_data["usku_id"] = usku_id
 
-            response = await mariadb.Write.catalog(sql_catalog_data)
-            
-            if response == "ok":
-                if new_sheet == None:
-                    new_sheet = xlsx_sheet
-
-                await mongodb.Write.single_catalog(mongodb_catalog_data)
-                new_sheet = await asyncio.to_thread(sheets.remove_row, new_sheet, iteration+2) # iteration starts from 0 and gives first row so he have to add 1
-            else:
-                if response.get("error") == 1062:
-                    return jsonify({"status": "failed", "msg": f"duplicate Sku id at row {iteration+2}"}), 409
-                error_encountered = True
+            """Making bulk payload"""
+            sql_values.append(sql_catalog_data)
+            mongo_values.append(mongodb_catalog_data)
         else:
-            error_encountered = True
+            """"""
+            if new_sheet == None:
+                fields = workbook.read(xlsx_sheet, index=1)
+                names = workbook.read(xlsx_sheet, index=2)
+
+                new_sheet = workbook.create(fields=fields, names = names)
+
+            new_sheet = new_sheet.append([document.get(key) for key in catalog_all_keys])
+
+    response = await mariadb.Write.bulk_product(sql_values)      
+    if not response.get("error"):
+        await mongodb.Write.bulk_product(mongo_values)
+        # new_sheet = await asyncio.to_thread(workbook.remove_row, new_sheet, iteration+2) # iteration starts from 0 and gives first row so he have to add 1
+    else:
+        if response.get("error") == 1062:
+            return jsonify({"status": "failed", "msg": f"duplicate Sku id at row {iteration+2}"}), 409
+        elif response.get("error") == 1048:
+            return jsonify({"status": "failed", "msg": "Mandatory columns can not be null"}), 400
+        else:
+            return jsonify({"status": "failed", "msg": "could not complete the upload"}), 500
 
     '''return the sheet containing the data which could not be uploaded due to mandatory data not being available'''
-    if error_encountered == True and new_sheet != None:
-        return Response(new_sheet), 422
-    elif error_encountered == True and new_sheet == None: # which means it didn't even upload any
-        return jsonify({"status": "failed", "msg": "check the whether you have filled the mandatory fields"}), 422
+    if new_sheet != None:
+        return Response(new_sheet), 202
+    
     return jsonify({"status": "ok"}), 200
-
-
-
-# get the xlsx sheet for bulk upload
-@products.get('/bulk-excel-sheet')
-@login_required
-@brand_required
-async def get_bulk_upload_sheet():
-    """
-    DOWNLOAD FUNCTION FOR THE XLSX EXCEL SHEET
-    """
-    type_id = request.args.get('type')
-
-    # checking whether the id is int or not
-    try:
-        type_id = int(type_id)
-    except Exception:
-        return jsonify({"status": "invalid id", "msg": "id should be an integer"}), 400
-
-    headers = await categories.Fetch.attributes(type_id).all()
-    mandatory_fields = await categories.Fetch.attributes(type_id).mandatory()
-    sheet = await asyncio.to_thread(sheets.create_xlsx, headers, mandatory_fields)
-    return  Response(sheet)
 
 
 

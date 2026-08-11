@@ -1,7 +1,7 @@
 from quart import Blueprint, request, session, jsonify, abort, Response
 from utils.prerequirements import login_required, brand_required
 from . import mariadb
-from catalog.categories import mariadb as categorydb
+from catalog.products import mariadb as productdb
 import asyncio
 from utils import imageio
 import json
@@ -23,7 +23,7 @@ async def upload_image():
     if usku_id is None:
         sku_id = args.get("sku-id")
         # print(sku_id)
-        is_sku = await mariadb.Fetch.is_sku_id_exists(sku_id, session.get("brand"))
+        is_sku = await productdb.Fetch.is_sku_id_exists(sku_id, session.get("brand"))
         # print(is_sku)
         if is_sku and is_sku.get("found"):
             usku_id=is_sku.get("usku_id")
@@ -31,7 +31,7 @@ async def upload_image():
             return jsonify({"status": "failed", "msg": "invalid sku id"}), 422
     else:
         '''checking if the usku_id is correct'''
-        is_usku_exists = await categorydb.Fetch.is_usku_id_exists(usku_id)
+        is_usku_exists = await productdb.Fetch.is_usku_id_exists(usku_id)
 
         if is_usku_exists != True:
             return jsonify({"status": "invalid usku_id", "msg": 'usku id does not exists'}), 422
@@ -41,7 +41,7 @@ async def upload_image():
 
     file = await request.files
     image_file = file.get("image")
-    # print(image_file.filename)
+    print(image_file.filename)
     '''checking the file type'''
     check_image = image_file.filename.endswith((".png", ".webp", ".jpeg", ".jpg"))
 
@@ -95,7 +95,7 @@ async def get_product_image():
     #     return jsonify({"status": "failed", "msg": "image type is is not provided"}), 409
 
     '''checking the usku_id'''
-    if not await mariadb.Fetch.is_usku_id_exists(usku_id):
+    if not await productdb.Fetch.is_usku_id_exists(usku_id):
         return jsonify({"status": "failed", "msg": "invalid usku-id"}), 409
 
     image_urls = await mariadb.Fetch.image(usku_id, type)

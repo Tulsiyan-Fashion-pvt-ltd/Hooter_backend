@@ -10,17 +10,32 @@ def get_keys(doc):
 
 class Write:
     # function to add the catalog into the mongodb server
-    async def single_catalog(catalog: dict):
+    async def product(catalog: dict):
         mongo = current_app.mongo
         async with await mongo.cx.start_session() as connection:
           async with connection.start_transaction():
             try:
                 await mongo.db.product_attributes.insert_one(catalog)
-                return {"status": "ok"}
+                return {"error": None}
             except Exception as e:
                 connection.abort_transaction()
                 print(e)
                 return {"error": str(e)}
+            
+
+    # function to add the catalog into the mongodb server
+    async def bulk_product(products: list[dict[str, str| int| list| None]]) -> dict:
+        mongo = current_app.mongo
+        async with await mongo.cx.start_session() as connection:
+          async with connection.start_transaction():
+            try:
+                await mongo.db.product_attributes.insert_many(products)
+                return {"error": None}
+            except Exception as e:
+                connection.abort_transaction()
+                print(e)
+                return {"error": str(e)}
+            
             
     async def update_catalog(catalog: dict):
         mongo = current_app.mongo
