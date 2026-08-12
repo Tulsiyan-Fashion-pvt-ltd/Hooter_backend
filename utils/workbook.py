@@ -20,15 +20,11 @@ def create(attributes: list = None, fields: list| None = None, names: list| None
     sheet.title = "Product bulk upload"
     try:
         if not attributes:
-            if not (fields and attributes):
-                return {"error": "fields or attributes not provided"}
+            if not (fields and names):
+                return {"error": "fields or names row not provided"}
 
-            book = Workbook()
-            sheet = book.active
-            sheet.title = "Product bulk upload"
             sheet.append(fields)
-            sheet.append(names)
-            return 
+            sheet.append(names) 
 
         else:     
             rows = ["field", "name", "description"]
@@ -58,25 +54,30 @@ def create(attributes: list = None, fields: list| None = None, names: list| None
 
     
 
-def read(file: Workbook, index: int|None= None):
-    """Read the index or yield rows from generator\n index is row number e.i. starts from 1"""
+def read_generator(file: Workbook):
+    """Read the rows and yield them from generator"""
     wb = load_workbook(file)
     ws = wb.active
-
-    if index is not None:
-        cells = ws[row]
-        return [value for value in cells if cells]
     
     rows = ws.iter_rows(values_only=True)
     fields = next(rows)
     next(rows) # it's not getting in use
-
+    
     for row in rows:
         yield dict(zip(fields, row))
 
 
+def read_row(file: Workbook, index: int):
+    """READS SINGLE ROW FROM THE WORKBOOK"""
+    wb = load_workbook(file)
+    ws = wb.active
 
-def write(file: Workbook, row_object: dict, row: list| None = None):
+    cells = ws[index]
+    return [cell.value for cell in cells if cells]
+
+
+
+def write(file: Workbook, row_object: dict = None, row: list| None = None):
     wb = load_workbook(file)
     ws = wb.active
 
@@ -90,7 +91,7 @@ def write(file: Workbook, row_object: dict, row: list| None = None):
             ws.append(row)
         else:
             '''match the header with the dict and make a new list of values mathcing the list of headers'''
-            row = row_object.values()
+            row = list(row_object.values())
             ws.append(row)
 
         buffer = BytesIO()

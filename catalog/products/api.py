@@ -1,4 +1,4 @@
-from quart import Blueprint, session, request, jsonify, Response, current_app, abort, json
+from quart import Blueprint, session, request, jsonify, Response, current_app, abort, json, make_response
 from catalog.products import mariadb
 from brand.auth import mariadb as brand_sql
 from catalog.categories import mongodb as categories
@@ -13,6 +13,7 @@ import asyncio
 from catalog.providers.shopify import products as shopify_products
 from config import _platforms
 from . import services
+from utils.custom_response import make_multipart_response
 
 
 products = Blueprint("products", __name__, url_prefix = "/products")
@@ -125,20 +126,18 @@ async def upload_bulk_catalog():
                                                                                              categories.Fetch.Attributes.Category(type_id).mandatory())
     expected_mandatory_keys  = catalog_mandatory_keys + category_mandatory_keys
 
-    sheet = await asyncio.to_thread(workbook.read, xlsx_sheet)
+    """iterating over the document and pushing in the system after verification"""
+    sheet = await asyncio.to_thread(workbook.read_generator, xlsx_sheet)
 
     new_sheet = None # new sheet for the un-uploaded files
     brand_name = await brand_sql.Fetch.brand_name_by_id(session.get('brand'))
-
-    #values for bulk upload
-    sql_values = []
-    mongo_values = []
     for iteration, document in enumerate(sheet):
 
         '''only check once if headers are tempered or not'''
         if iteration == 0:
             document_header = document.keys()
-            if set(document_header).issubset(set(expected_mandatory_keys)): # if mandatory keys exists
+
+            if not set(expected_mandatory_keys).issubset(set(document_header)): # if mandatory keys exists
                 return jsonify({"status": "failed", "msg": "redownload the bulk upload file and re-upload"}), 422
 
         ''' in case user didn't give the vendor name then brand by default is the brand '''
@@ -163,32 +162,48 @@ async def upload_bulk_catalog():
             mongodb_catalog_data["usku_id"] = usku_id
 
             """Making bulk payload"""
-            sql_values.append(sql_catalog_data)
-            mongo_values.append(mongodb_catalog_data)
+            response = await mariadb.Write.product(sql_catalog_data)    
+
+            if not response.get("error"):
+                asyncio.create_task(mongodb.Write.product(mongodb_catalog_data))
+                # new_sheet = await asyncio.to_thread(workbook.remove_row, new_sheet, iteration+2) # iteration starts from 0 and gives first row so he have to add 1
+            else:
+                error = None
+                if new_sheet == None:
+                    fields = workbook.read_row(xlsx_sheet, index=1)
+                    names = workbook.read_row(xlsx_sheet, index=2)
+
+                    #creating new sheet with an extra error column
+                    new_sheet = workbook.create(fields=fields, names = ["Error"] +  names)
+                    if not new_sheet:
+                        return jsonify({"status": "failed", "message": "upload failed"}), 500
+
+                if response.get("error") == 1062:
+                    error = "duplicate sku id"
+                elif response.get("error") == 1048:
+                    error = "duplicate sku id"
+                else:
+                    error = "upload failed"       
+
+                row = workbook.read_row(xlsx_sheet, index=iteration+3) # value starts from row 3
+                new_sheet = workbook.write(new_sheet, row=[error] + row)
         else:
             """"""
             if new_sheet == None:
-                fields = workbook.read(xlsx_sheet, index=1)
-                names = workbook.read(xlsx_sheet, index=2)
+                fields = workbook.read_row(xlsx_sheet, index=1)
+                names = workbook.read_row(xlsx_sheet, index=2)
+                
+                new_sheet = workbook.create(fields=fields, names = ["Error"] + names)
+                if not new_sheet:
+                    return jsonify({"status": "failed", "message": "upload failed"}), 500
 
-                new_sheet = workbook.create(fields=fields, names = names)
-
-            new_sheet = new_sheet.append([document.get(key) for key in catalog_all_keys])
-
-    response = await mariadb.Write.bulk_product(sql_values)      
-    if not response.get("error"):
-        await mongodb.Write.bulk_product(mongo_values)
-        # new_sheet = await asyncio.to_thread(workbook.remove_row, new_sheet, iteration+2) # iteration starts from 0 and gives first row so he have to add 1
-    else:
-        if response.get("error") == 1062:
-            return jsonify({"status": "failed", "msg": f"duplicate Sku id at row {iteration+2}"}), 409
-        elif response.get("error") == 1048:
-            return jsonify({"status": "failed", "msg": "Mandatory columns can not be null"}), 400
-        else:
-            return jsonify({"status": "failed", "msg": "could not complete the upload"}), 500
+            row = workbook.read_row(xlsx_sheet, index=iteration+3) # value starts from row 3
+            new_sheet = workbook.write(new_sheet, row = ["mandatory fields can not be empty"] + row)
 
     '''return the sheet containing the data which could not be uploaded due to mandatory data not being available'''
+
     if new_sheet != None:
+        new_sheet = workbook.write(new_sheet, row=["Remove the Error column and this message while uploading again"]) # message for the new sheet
         return Response(new_sheet), 202
     
     return jsonify({"status": "ok"}), 200
@@ -205,7 +220,7 @@ async def show_product(usku_id: str):
                                         mongodb.Fetch.catalog_product(usku_id))
     
     if product_data[0].get("error") or product_data[1].get("error"):
-        return jsonify({"status": "failed", "msg": "request failed"}), 500
+        return jsonify({"status": "failed", "msg": "request failed"}), 400
     else:
         # print(product_data[1])
         product_data = product_data[0] | product_data[1]
