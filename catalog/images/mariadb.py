@@ -9,7 +9,7 @@ class Write:
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
-                    query = '''insert into images(usku_id, image_url, image_type, image_order)
+                    query = '''insert into product_images(usku_id, image_url, image_type, image_order)
                                 values(%s, %s, %s, %s)
                             '''
 
@@ -34,7 +34,7 @@ class Write:
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
-                    query = '''delete from images where usku_id=%s'''
+                    query = '''delete from product_images where usku_id=%s'''
                     values = (usku_id, )
 
                     await cursor.execute(query, values)
@@ -57,7 +57,7 @@ class Fetch:
                     values = ()
 
                     if type:
-                        query = '''select image_url from images where usku_id=%s and image_type=%s'''
+                        query = '''select image_url from product_images where usku_id=%s and image_type=%s'''
                         values = (usku_id, type)
                         await cursor.execute(query, values)
                         urls = await cursor.fetchone()
