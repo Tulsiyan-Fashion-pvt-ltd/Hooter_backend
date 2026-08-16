@@ -74,7 +74,6 @@ def delete_object(bucket: str, key: str):
     "ok" -> on success,
     "error" -> on error
     """
-
     try:
         _s3.delete_object(
             Bucket=bucket,

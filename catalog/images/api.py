@@ -69,6 +69,8 @@ async def upload_image():
 @login_required
 @brand_required
 async def get_image_url():
+    """Gets the image urls
+    """
     arguments = request.args
 
     usku_id = arguments.get("usku-id")
@@ -76,24 +78,24 @@ async def get_image_url():
 
     if usku_id == None:
         return jsonify({"status": "failed", "msg": "usku id is not provided"}), 409
-    # elif type == None:
-    #     return jsonify({"status": "failed", "msg": "image type is is not provided"}), 409
+    
 
     '''checking the usku_id'''
     if not await productdb.Fetch.is_usku_id_exists(usku_id):
         return jsonify({"status": "failed", "msg": "invalid usku-id"}), 409
 
-    image_url = await mariadb.Fetch.image(usku_id, type)
+    image_urls = await mariadb.Fetch.image(usku_id, type)
 
-    if image_url == "error":
+    if image_urls == "error":
         return jsonify({"status": "failed", "msg": "could not finish the request"}), 500
-    elif image_url == None:
+    elif image_urls == None:
         return jsonify({"status": "failed", "msg": "invalid image type"}), 409
 
     if type is None:
-        # print(image_urls)
-        image_urls = {value.get("image_type"): {"url": json.loads(value.get("image_url")), "order": value.get("image_order")} for index, value in enumerate(image_urls)}
+        print(image_urls)
+        image_urls = {value.get("image_type"): {"url": json.loads(value.get("image_url")), "order": value.get("image_order")} for  value in image_urls}
         return jsonify(image_urls)
+    
     return jsonify(image_urls)
 
 

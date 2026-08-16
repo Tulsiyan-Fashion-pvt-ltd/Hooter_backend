@@ -68,7 +68,7 @@ class Fetch:
                             return json.loads(urls.get("image_url"))
                         
                     else:
-                        query = '''select image_type, image_url, image_order from images where usku_id=%s'''
+                        query = '''select image_type, image_url, image_order from product_images where usku_id=%s'''
                         values = (usku_id, )
                         await cursor.execute(query, values)
                         urls = await cursor.fetchall()

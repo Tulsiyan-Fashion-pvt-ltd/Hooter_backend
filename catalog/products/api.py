@@ -1,5 +1,6 @@
 from quart import Blueprint, session, request, jsonify, Response, current_app, abort, json, make_response
 from catalog.products import mariadb
+from catalog.images import mariadb as imagesql
 from brand.auth import mariadb as brand_sql
 from catalog.categories import mongodb as categories
 from catalog.products import mongodb 
@@ -11,9 +12,9 @@ from utils import workbook
 from utils.helper import Payload
 import asyncio
 from catalog.providers.shopify import products as shopify_products
-from config import _platforms
+from config import _platforms, _product_image_bucket, _product_image_root_key
 from . import services
-from utils.custom_response import make_multipart_response
+import s3
 
 
 products = Blueprint("products", __name__, url_prefix = "/products")
@@ -256,7 +257,7 @@ async def delete_product(usku_id: str):
     if not usku_id:
         return jsonify({"status": "invalid request", "msg": "usku-id not provided"}), 400
     
-    images = await mariadb.Fetch.image(usku_id)
+    images = await imagesql.Fetch.image(usku_id) # image object keys for s3
     
     db_query = await asyncio.gather(mariadb.Write.delete_catalog(usku_id), 
                                     mongodb.Write.delete_catalog(usku_id)
@@ -277,18 +278,17 @@ async def delete_product(usku_id: str):
                 url_split = url.split("/")
                 filename = url_split[len(url_split) -1]
                 file_path = ''
-                root_path = current_app.root_path
 
                 if image_type == "webp_card":
-                    file_path = f"{root_path}/.product_images/.image_cards/{filename}"
+                    file_path = f"{_product_image_root_key}/web_/{filename}"
                 elif image_type == "original":
-                    file_path = f"{root_path}/.product_images/.original_images/{filename}"    
+                    file_path = f"{_product_image_root_key}/original_images/{filename}"    
                 elif image_type == "high_resol_webp":
-                    file_path = f"{root_path}/.product_images/.high_resol_images/{filename}"
+                    file_path = f"{_product_image_root_key}/high_resol_images/{filename}"
                 elif image_type == "low_resol_webp":
-                    file_path = f"{root_path}/.product_images/.low_resol_images/{filename}"
+                    file_path = f"{_product_image_root_key}/low_resol_images/{filename}"
 
-                # tasks.append(imageio.delete_image(file_path))                  
+                tasks.append(s3.delete_object(_product_image_bucket, ))                  
                 
         try:
             await asyncio.gather(*tasks)
