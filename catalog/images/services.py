@@ -55,8 +55,21 @@ async def image_variants_upload(image: bytes, url: dict) -> str:
 
 
 async def upload_unit(image_file: FileStorage, metadata: dict, usku_id: str, ):
-        print("uploading the image")
+        """Upload image object and image meta data to the databases
+        
+        Parameters:
+            image_file: FileStoage object containing the image bytes,
+            metadata: dict object containing the meta-data for the image
+                file_name{
+                    image_order: str,
+                    image_type: int
+                }
+            usku_id: str
 
+        Returns:
+            status: str,
+            message: str
+        """
         image_name = image_file.filename
         '''checking the file type'''
         check_image = image_name.endswith((".png", ".webp", ".jpeg", ".jpg"))
@@ -64,7 +77,6 @@ async def upload_unit(image_file: FileStorage, metadata: dict, usku_id: str, ):
         if check_image is False:
             return {"status": "failed", "message": "file type should be an image"}
 
-        print(image_name)
         '''CHECKING IF METADATA IS PROVIDED OR NOT'''
         if not metadata.get(image_name):
             return {"status": "failed", "message": f"{image_name} meta data for the image is not provided"}
@@ -110,3 +122,44 @@ async def upload_unit(image_file: FileStorage, metadata: dict, usku_id: str, ):
 
 
 
+async def delete_images(usku_id:str, image_type:str| None = None):
+    """Delete the images from the rdbms awa from the s3 like object storage service
+    
+    Parameters:
+        usku_id: univeral sku id of the product
+        image_type: (optional) type of the image e.g. front, back, zoomed etc
+
+    Returns:
+        dict containing error and message
+        
+        error:
+            failed | None
+        message:
+            descriptive message
+    """
+    urls = await mariadb.Fetch.image(usku_id, image_type)
+    if urls == "error":
+        return {"error": "failed", "message": "unable to fetch the urls for the product"}
+
+    if not image_type:
+        keys = [
+                image_url
+                for url in urls
+                for image_url in url.get("image_url", {}).values()
+            ] if urls else []
+    else:
+        keys = urls.values() if urls else []
+
+    print(keys)
+
+    s3_responses = await asyncio.to_thread(s3.delete_bulk_objects, _product_image_bucket, keys)
+
+    if "error" == s3_responses:
+        return {"error": "failed", "message": "unable to delete all the images"}
+
+    sql_response = await mariadb.Delete.image(usku_id, image_type) if image_type else await mariadb.Delete.all_image(usku_id)
+    if sql_response.get("error"):
+        return {"error": "failed", "message": "deleted the images but could not delete the records"}
+
+    return {"error": None, "message": "successfully deleted the images"}
+    

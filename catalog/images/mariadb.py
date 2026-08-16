@@ -28,22 +28,42 @@ class Write:
                 return {"error": e.args[0]}                          
             
 
+class Delete:
     @staticmethod
-    async def delete_image_all(usku_id: str):
+    async def image(usku_id: str, image_type: str) -> dict["error": str | None]:
         pool = current_app.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
-                    query = '''delete from product_images where usku_id=%s'''
-                    values = (usku_id, )
+                    query = f'''delete from product_images where usku_id=%s 
+                            and image_type = %s
+                            '''
+                    values = (usku_id, image_type)
 
                     await cursor.execute(query, values)
                     await connection.commit()
-                    return "ok"
+                    return {"error": None}
             except Exception as e:
                 print(f"error occured while deleting the images of {usku_id}\n{e}")
                 return {"error": e.args[0]}
 
+
+    @staticmethod
+    async def all_image(usku_id: str) -> dict[str, str]| dict[str, None]:
+        pool = current_app.pool
+        async with pool.acquire() as connection:
+            try:
+                async with connection.cursor(cursor=DictCursor) as cursor:
+                    query = f'''delete from product_images where usku_id=%s 
+                            '''
+                    values = (usku_id, )
+
+                    await cursor.execute(query, values)
+                    await connection.commit()
+                    return {"error": None}
+            except Exception as e:
+                print(f"error occured while deleting the images of {usku_id}\n{e}")
+                return {"error": e.args[0]}
 
 
 class Fetch:

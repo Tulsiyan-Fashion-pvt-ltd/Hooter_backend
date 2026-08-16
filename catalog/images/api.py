@@ -122,3 +122,18 @@ async def get_image(image_variant: str, usku_id: str, image: str):
         abort(404)
     
     return Response(image, mimetype=mimetype), 200
+
+
+
+@images.delete("/<usku_id>")
+@images.delete("/<usku_id>/<image_type>")
+async def delete(usku_id: str, image_type: str = None):
+    if not usku_id :
+        return jsonify({"status": "bad request", "message": "usku id is not provided"}), 400
+
+    response = await services.delete_images(usku_id, image_type)
+
+    if response.get("error"):
+        return jsonify(response), 500
+
+    return jsonify({"status": "successful", "message": "successfully deleted the images"}), 200

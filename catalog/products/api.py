@@ -275,20 +275,7 @@ async def delete_product(usku_id: str):
         tasks = []
         for image_details in images:
             for image_type, url in json.loads(image_details.get("image_url")).items():
-                url_split = url.split("/")
-                filename = url_split[len(url_split) -1]
-                file_path = ''
-
-                if image_type == "webp_card":
-                    file_path = f"{_product_image_root_key}/web_/{filename}"
-                elif image_type == "original":
-                    file_path = f"{_product_image_root_key}/original_images/{filename}"    
-                elif image_type == "high_resol_webp":
-                    file_path = f"{_product_image_root_key}/high_resol_images/{filename}"
-                elif image_type == "low_resol_webp":
-                    file_path = f"{_product_image_root_key}/low_resol_images/{filename}"
-
-                tasks.append(s3.delete_object(_product_image_bucket, ))                  
+                tasks.append(s3.delete_object(_product_image_bucket, url))                  
                 
         try:
             await asyncio.gather(*tasks)
