@@ -2,10 +2,15 @@ from quart import Blueprint, request, session, jsonify, abort, Response
 from utils.prerequirements import login_required, brand_required
 from . import mariadb
 from catalog.products import mariadb as productdb
-import asyncio
-from utils import imageio
 import json
-from config import _IMAGE_READ_BUFFER, _IMAGE_WRITE_BUFFER
+# from config import _IMAGE_READ_BUFFER, _IMAGE_WRITE_BUFFER
+from s3 import read_object
+from config import _product_image_bucket, _product_image_root_key
+from .schema import Get_image
+from . import services
+from werkzeug.datastructures import FileStorage
+import asyncio
+
 
 images = Blueprint("images", __name__, url_prefix = "/images")
 
@@ -43,72 +48,27 @@ async def upload_image():
     if not metadata:
         return jsonify({"status": "failed", "message": "metadata is not provided"}), 400
     
-    upload_error = []
+
+    """UPLOAD UNIT SO IT CAN BE RUN ASYNCHRONOUSLY ON THE IMAGE DATA"""
+
     try:
-        for image_file in image_files:
-            print("uploading the image")
-
-            image_name = image_file.filename
-            '''checking the file type'''
-            check_image = image_name.endswith((".png", ".webp", ".jpeg", ".jpg"))
-
-            if check_image is False:
-                upload_error.append({"status": "failed", "message": "file type should be an image"})
-                continue
-
-            print(image_name)
-            '''CHECKING IF METADATA IS PROVIDED OR NOT'''
-            if not metadata.get(image_name):
-                upload_error.append({"status": "failed", "message": f"{image_name} meta data for the image is not provided"})
-                continue
-
-            '''GET THE IMAGE METADATA'''
-            image_type = metadata.get(image_name).get("image_type")
-            image_order = metadata.get(image_name).get("image_order")
-
-            if not (image_type and image_order) or (type(image_type) != str or type(image_order) != int):
-                upload_error.append({"status": "request failed", "message": f"{image_name} invalid image_type or image_order"})
-                continue
-
-            '''GET FILE EXTENSION AND GENERATE FILENAME'''
-            image_extended_filename = image_name.split(".")
-            image_extension = image_extended_filename[len(image_extended_filename)-1]
-
-            original_image_name = f"{usku_id}/{image_type}.{image_extension}"
-            webp_image_name = f"{usku_id}/{image_type}.webp"
-
-            '''adding image entry into the databases'''
-            image_path_object = {
-                "usku_id": usku_id,
-                "url": {"original" :f"catalog/images/original_image/{original_image_name}",
-                        "high_resol_webp": f"catalog/images/high_resol_webp/{webp_image_name}",
-                        "low_resol_webp": f"catalog/images/low_resol_webp/{webp_image_name}",
-                        "webp_card": f"catalog/images/webp_card/{webp_image_name}",
-                        },
-                "type": image_type,
-                "order": image_order 
-            }
-
-            result = await asyncio.gather(imageio.write(image_file, image_path_object.get("url")), 
-                                        mariadb.Write.image(image_path_object))
-
-            if result[0] == "error" or result[1] != "ok":
-                upload_error.append({"status": "failed", "message": f"{image_name} issue occured while uploading the image"})
-                continue
-
+        upload_status = await asyncio.gather(
+            *(services.upload_unit(image_file, metadata, usku_id) for image_file in image_files)
+        )
     except Exception as e:
         print(f"error occured in upload_image api", e)
         return jsonify({"status": "failed", "message": "internal server error"}), 500
 
-    if len(upload_error) != 0:
-        return jsonify({"erros": upload_error}), 422
+    if all("failed" == upload.get("status") for upload in upload_status):
+        return jsonify({"erros": upload_status}), 422
     return jsonify({"status": "successful", "message": "image uploaded"}), 200
+
 
 
 @images.get("")
 @login_required
 @brand_required
-async def get_product_image():
+async def get_image_url():
     arguments = request.args
 
     usku_id = arguments.get("usku-id")
@@ -123,7 +83,7 @@ async def get_product_image():
     if not await productdb.Fetch.is_usku_id_exists(usku_id):
         return jsonify({"status": "failed", "msg": "invalid usku-id"}), 409
 
-    image_urls = await mariadb.Fetch.image(usku_id, type)
+    image_url = await mariadb.Fetch.image(usku_id, type)
 
     if image_url == "error":
         return jsonify({"status": "failed", "msg": "could not finish the request"}), 500
@@ -137,27 +97,24 @@ async def get_product_image():
     return jsonify(image_urls)
 
 
-@images.get("/<image_variant>/<filename>")
-async def image_url(image_variant: str, filename: str):
-    buffer_size = _IMAGE_READ_BUFFER
 
-    mimetype = "image/webp"
-    if image_variant == "webp_card":
-        filename = f"./.product_images/.image_cards/{filename}"
-    elif image_variant == "original":
-        split_name = filename.split(".")
+
+@images.get("/<image_variant>/<usku_id>/<image>")
+async def get_image(image_variant: str, usku_id: str, image: str):
+    key = f"{_product_image_root_key}/{image_variant}/{usku_id}/{image}"
+
+    try:
+        Get_image(image_type=image_variant, image_key = key)
+    except ValueError as e:
+        return jsonify({"status": "bad request", "message": "image type is not correct"}), 400
+
+    mimetype = "image/webp" # default it's webp 
+    if image_variant == "original":
+        split_name = image.split(".")
         extension = split_name[len(split_name)-1]
-        mimetype = f"image/{extension}"
-        filename = f"./.product_images/.original_images/{filename}"
-        
-    elif image_variant == "high_resol_webp":
-        filename = f"./.product_images/.high_resol_images/{filename}"
-    elif image_variant == "low_resol_webp":
-        filename = f"./.product_images/.low_resol_images/{filename}"
-    else:
-        abort(404)
+        mimetype = f"image/{extension}" # if the original image is requested then the mimetype is changed
 
-    image = imageio.read_image_card(filename, buffer_size)
+    image = read_object(_product_image_bucket, key)
     
     if image is None:
         abort(404)

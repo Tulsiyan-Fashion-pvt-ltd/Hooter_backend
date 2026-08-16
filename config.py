@@ -1,10 +1,12 @@
 _access = ["super_admin", "hooter_admin", "brand_admin", "super_user", "user"]
 _platforms = ["shopify"]
-_FILE_READ_BUFFER = 64 * 1024 # 64 KB 
-_FILE_WRITE_BUFFER = 64 * 1024 # 64 KB 
+_FILE_READ_BUFFER = 128 * 1024 # 128 KB 
+_FILE_WRITE_BUFFER = 128 * 1024 # 128 KB 
 
 # need to change the access specifer in the files
 
+
+'''S3 OBJECT STORAGE SERVICE CONFIG'''
 import os
 import boto3
 from botocore.config import Config
@@ -24,5 +26,8 @@ _s3 = boto3.client(
         }
     )
 )
-
 _product_image_bucket = "product-images"
+_product_image_root_key = "catalog/images"
+
+'''IMAGE CONFIGS'''
+_image_types = ["original", "high_resol_webp", "low_resol_webp", "webp_card"]

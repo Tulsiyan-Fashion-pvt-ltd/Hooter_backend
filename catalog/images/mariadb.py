@@ -4,7 +4,7 @@ import json
 
 class Write:
     @staticmethod
-    async def image(img_obj: dict):
+    async def image(img_obj: dict) -> dict:
         pool = current_app.pool
         async with pool.acquire() as connection:
             try:
@@ -20,7 +20,7 @@ class Write:
                     
                     await cursor.execute(query, (usku_id, image_url, image_type, image_order))
                     await connection.commit()
-                    return "ok"
+                    return {"response": "ok", "error": None}
 
             except Exception as e:
                 await connection.rollback()

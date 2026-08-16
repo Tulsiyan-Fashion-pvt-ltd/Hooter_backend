@@ -7,7 +7,7 @@ from catalog.products.utils.id import create_usku, create_variant_id
 from utils.prerequirements import login_required, brand_required
 from utils import helper
 from utils import workbook
-from utils import imageio
+# from utils import imageio delete image logic needs to be worked on
 from utils.helper import Payload
 import asyncio
 from catalog.providers.shopify import products as shopify_products
@@ -288,7 +288,7 @@ async def delete_product(usku_id: str):
                 elif image_type == "low_resol_webp":
                     file_path = f"{root_path}/.product_images/.low_resol_images/{filename}"
 
-                tasks.append(imageio.delete_image(file_path))                  
+                # tasks.append(imageio.delete_image(file_path))                  
                 
         try:
             await asyncio.gather(*tasks)

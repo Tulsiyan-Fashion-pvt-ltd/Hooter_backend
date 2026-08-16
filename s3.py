@@ -5,24 +5,24 @@ from io import BytesIO
 
 
 
-def upload_object(bucket: str, file_object: FileStorage, key: str)-> str:
+def upload_object(bucket: str, key: str, object: bytes = None, file: FileStorage = None)-> str:
     """
     :UPLOAD OBJECT FILE:
     Uploads object file to s3 server
 
     :Arguments:
-    bucket -> bucket name
-    file_object -> file storage
-    key -> object key
+    bucket -> bucket name,
+    object -> bytes,
+    key -> object key,
 
     :Returns:
     "ok" -> on success
     "error" -> on failure
     """
     try:
-        image = BytesIO(image.read()) #making copy of the image
+        file = BytesIO(object) if object else file  #making copy of the image
         _s3.upload_fileobj(
-            file_object,
+            file,
             bucket,
             key
         )
@@ -39,11 +39,11 @@ def read_object(bucket: str, key: str):
     Read object from amazon s3 or minio
     
     :Arguments:
-    bucket -> bucket name
+    bucket -> bucket name, 
     key -> object key (/product/key/object.jpg)
     
     :Returns:
-    generator  bytes -> on success
+    generator  bytes -> on success,
     "error" -> on error
     """
     try:
@@ -53,9 +53,8 @@ def read_object(bucket: str, key: str):
         )
 
         body = response.get("Body")
-        data = body.read(_FILE_READ_BUFFER)
-        while data:
-            yield data
+        data = body.read()
+        return data
     except Exception as e:
         print(f"error encountered while reading object {key} from bucket {bucket}\n{e}")
         return "error"
@@ -68,11 +67,11 @@ def delete_object(bucket: str, key: str):
     Delete object key from the bucket
 
     :Arguments:
-    bucket -> bucket name
+    bucket -> bucket name,
     key -> object key (/product/key/object.jpg)
     
     :Returns:
-    "ok" -> on success
+    "ok" -> on success,
     "error" -> on error
     """
 
