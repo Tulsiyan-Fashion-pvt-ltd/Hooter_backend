@@ -26,7 +26,8 @@ def create(attributes: list = None, fields: list| None = None, names: list| None
             sheet.append(fields)
             sheet.append(names) 
 
-        else:     
+        else:
+            '''CREATE SHEET WITH A DESCRIPTION'''
             rows = ["field", "name", "description"]
             for i, field in enumerate(rows): # because we wanna write hidden field, name and description
                 for j, attribute in enumerate(attributes):
@@ -55,24 +56,39 @@ def create(attributes: list = None, fields: list| None = None, names: list| None
     
 
 def read_generator(file: Workbook):
-    """Read the rows and yield them from generator"""
+    """Read the rows and yield them from generator
+    
+    Paramters:
+        file: xlsx file
+
+    Returns:
+        list of product attributes with field `name`, `field` and `value`
+        ``[
+            {
+                "name": str,
+                "field": str,
+                "value": str| int| None
+            }
+        ]``
+    """
     wb = load_workbook(file)
     ws = wb.active
     
     rows = ws.iter_rows(values_only=True)
     fields = next(rows)
-    next(rows) # it's not getting in use
+    names = next(rows) # it's not getting in use
+
     
     for row in rows:
-        yield dict(zip(fields, row))
+        yield [{"name": names[index], "field": fields[index], "value": value} for index, value in enumerate(row)]
 
 
-def read_row(file: Workbook, index: int):
+def read_row(file: Workbook, row: int):
     """READS SINGLE ROW FROM THE WORKBOOK"""
     wb = load_workbook(file)
     ws = wb.active
 
-    cells = ws[index]
+    cells = ws[row]
     return [cell.value for cell in cells if cells]
 
 

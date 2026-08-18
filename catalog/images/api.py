@@ -3,10 +3,8 @@ from utils.prerequirements import login_required, brand_required
 from . import mariadb
 from catalog.products import mariadb as productdb
 import json
-# from config import _IMAGE_READ_BUFFER, _IMAGE_WRITE_BUFFER
 from s3 import read_object
-from config import _product_image_bucket, _product_image_root_key
-from .schema import Get_image
+from config import _product_image_bucket, _product_image_root_key, _image_types
 from . import services
 from werkzeug.datastructures import FileStorage
 import asyncio
@@ -105,10 +103,8 @@ async def get_image_url():
 async def get_image(image_variant: str, usku_id: str, image: str):
     key = f"{_product_image_root_key}/{image_variant}/{usku_id}/{image}"
 
-    try:
-        Get_image(image_type=image_variant, image_key = key)
-    except ValueError as e:
-        return jsonify({"status": "bad request", "message": "image type is not correct"}), 400
+    if (image_variant not in _image_types) and (usku_id is None) and (image is None):
+        return jsonify({"status": "bad request", "message": "arguments not provided correctly"}), 400
 
     mimetype = "image/webp" # default it's webp 
     if image_variant == "original":

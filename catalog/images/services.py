@@ -55,70 +55,70 @@ async def image_variants_upload(image: bytes, url: dict) -> str:
 
 
 async def upload_unit(image_file: FileStorage, metadata: dict, usku_id: str, ):
-        """Upload image object and image meta data to the databases
-        
-        Parameters:
-            image_file: FileStoage object containing the image bytes,
-            metadata: dict object containing the meta-data for the image
-                file_name{
-                    image_order: str,
-                    image_type: int
-                }
-            usku_id: str
+    """Upload image object and image meta data to the databases
+    
+    Parameters:
+        image_file: FileStoage object containing the image bytes,
+        metadata: dict object containing the meta-data for the image
+            file_name{
+                image_order: str,
+                image_type: int
+            }
+        usku_id: str
 
-        Returns:
-            status: str,
-            message: str
-        """
-        image_name = image_file.filename
-        '''checking the file type'''
-        check_image = image_name.endswith((".png", ".webp", ".jpeg", ".jpg"))
+    Returns:
+        status: str,
+        message: str
+    """
+    image_name = image_file.filename
+    '''checking the file type'''
+    check_image = image_name.endswith((".png", ".webp", ".jpeg", ".jpg"))
 
-        if check_image is False:
-            return {"status": "failed", "message": "file type should be an image"}
+    if check_image is False:
+        return {"status": "failed", "message": "file type should be an image"}
 
-        '''CHECKING IF METADATA IS PROVIDED OR NOT'''
-        if not metadata.get(image_name):
-            return {"status": "failed", "message": f"{image_name} meta data for the image is not provided"}
-
-
-        '''GET THE IMAGE METADATA'''
-        image_type = metadata.get(image_name).get("image_type")
-        image_order = metadata.get(image_name).get("image_order")
-
-        if not (image_type and image_order) or (type(image_type) != str or type(image_order) != int):
-            return {"status": "request failed", "message": f"{image_name} invalid image_type or image_order"}
-
-        '''GET FILE EXTENSION AND GENERATE FILENAME'''
-        image_extended_filename = image_name.split(".")
-        image_extension = image_extended_filename[len(image_extended_filename)-1]
-
-        original_image_name = f"{usku_id}/{image_type}.{image_extension}"
-        webp_image_name = f"{usku_id}/{image_type}.webp"
-
-        '''adding image entry into the databases'''
-        image_path_object = {
-            "usku_id": usku_id,
-            "url": {"original" :f"{_product_image_root_key}/original_image/{original_image_name}",
-                    "high_resol_webp": f"{_product_image_root_key}/high_resol_webp/{webp_image_name}",
-                    "low_resol_webp": f"{_product_image_root_key}/low_resol_webp/{webp_image_name}",
-                    "webp_card": f"{_product_image_root_key}/webp_card/{webp_image_name}",
-                    },
-            "type": image_type,
-            "order": image_order 
-        }
-
-        image = image_file.read()
-
-        s3_response = await image_variants_upload(image, image_path_object.get("url"))
+    '''CHECKING IF METADATA IS PROVIDED OR NOT'''
+    if not metadata.get(image_name):
+        return {"status": "failed", "message": f"{image_name} meta data for the image is not provided"}
 
 
-        sql_response = await mariadb.Write.image(image_path_object) if "error" != s3_response else None
+    '''GET THE IMAGE METADATA'''
+    image_type = metadata.get(image_name).get("image_type")
+    image_order = metadata.get(image_name).get("image_order")
 
-        if "error" == s3_response or sql_response.get("error"):
-            return {"status": "failed", "message": f"{image_name} issue occured while uploading the image"}
+    if not (image_type and image_order) or (type(image_type) != str or type(image_order) != int):
+        return {"status": "request failed", "message": f"{image_name} invalid image_type or image_order"}
 
-        return {"status": "successful", "message": f"{image_name} uploaded to the minio s3 compatible server"}
+    '''GET FILE EXTENSION AND GENERATE FILENAME'''
+    image_extended_filename = image_name.split(".")
+    image_extension = image_extended_filename[len(image_extended_filename)-1]
+
+    original_image_name = f"{usku_id}/{image_type}.{image_extension}"
+    webp_image_name = f"{usku_id}/{image_type}.webp"
+
+    '''adding image entry into the databases'''
+    image_path_object = {
+        "usku_id": usku_id,
+        "url": {"original" :f"{_product_image_root_key}/original_image/{original_image_name}",
+                "high_resol_webp": f"{_product_image_root_key}/high_resol_webp/{webp_image_name}",
+                "low_resol_webp": f"{_product_image_root_key}/low_resol_webp/{webp_image_name}",
+                "webp_card": f"{_product_image_root_key}/webp_card/{webp_image_name}",
+                },
+        "type": image_type,
+        "order": image_order 
+    }
+
+    image = image_file.read()
+
+    s3_response = await image_variants_upload(image, image_path_object.get("url"))
+
+
+    sql_response = await mariadb.Write.image(image_path_object) if "error" != s3_response else None
+
+    if "error" == s3_response or sql_response.get("error"):
+        return {"status": "failed", "message": f"{image_name} issue occured while uploading the image"}
+
+    return {"status": "successful", "message": f"{image_name} uploaded to the minio s3 compatible server"}
 
 
 

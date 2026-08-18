@@ -56,6 +56,7 @@ python-dotenv==1.2.1
 Quart==0.20.0
 quart-cors==0.8.0
 quart-mongo==0.1.2
+redis==8.1.0
 requests==2.32.5
 s3transfer==0.14.0
 six==1.17.0

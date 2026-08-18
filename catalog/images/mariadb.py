@@ -68,7 +68,26 @@ class Delete:
 
 class Fetch:
     @staticmethod
-    async def image(usku_id: str, type: str = None):
+    async def image(usku_id: str, type: str = None) -> dict[str, str]| list[dict[str, str| int]]| str:
+        """Fetch image urls from for the given usku id that 
+        later can be use to download the images from the s3 server.
+
+        Arguments:
+            usku_id: universal sku id of the product:
+            type: image type of the url e.g. front | back| zoomed etc
+        
+        Returns:
+            dict["{image_resolution}", "{image_url}"]: 
+                if the the image `type` is provided then it returns a dict containing 
+                the image resolution as key and `image key` for s3 bucket
+
+            list[dict[str, str| int]]: 
+                if the image `type` is not provided then it returns a `list` containing a `dict`
+                of keys as `image_type -> str`, `image_url -> json.dumps(resol, s3-keys)`,
+                `image_order`
+
+            error: on failure
+        """
         pool = current_app.pool
         async with pool.acquire() as connection:
             try:
