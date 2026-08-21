@@ -73,19 +73,24 @@ async def create_product(listing_attributes: dict, category_attributes: dict, ca
     listing_attributes.update(sql_attributes_value)
     category_attributes.update(mongodb_attribute_value)
 
-    sql_response, mongo_response = await asyncio.gather(mariadb.Write.product(listing_attributes), 
-                                    mongodb.Write.product(category_attributes)) # db query
-    if sql_response.get("error") is not None:
-        if sql_response.get('error') == 1062:
-            return {"error": "Duplicate sku id", "code": 409}
-        
-        elif sql_response.get("error") == 1366:
-            return {"error": "Incorrect value for the listing_attributes fields", "code": 400}
-        
+    try:
+        sql_response, mongo_response = await asyncio.gather(mariadb.Write.product(listing_attributes), 
+                                        mongodb.Write.product(category_attributes)) # db query
+        if sql_response.get("error") is not None:
+            if sql_response.get('error') == 1062:
+                return {"error": "Duplicate sku id", "code": 409}
 
-    if mongo_response.get('error'):
-        return {"status": "successful", "message": "Product has listed but the product data could not be uploaded", "code": 202}
-    return {"status": "successful", "message": "product upload completed", "usku_id": usku_id, "code": 200}
+            elif sql_response.get("error") == 1366:
+                return {"error": "Incorrect value for the listing_attributes fields", "code": 400}
+
+
+        if mongo_response.get('error'):
+            return {"status": "successful", "message": "Product has listed but the product data could not be uploaded", "code": 202}
+        return {"status": "successful", "message": "product upload completed", "usku_id": usku_id, "code": 200}
+    except Exception as e:
+        print(e)
+        print_exc()
+        return {"status": "failed", "error": "Error occured while uploading the product", "code": 500}
 
 
 
