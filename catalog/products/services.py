@@ -1,5 +1,6 @@
 from werkzeug.datastructures import FileStorage
-from catalog.products import mongodb 
+from catalog.products import mongodb
+from catalog.categories import mongodb as categoriessql 
 from catalog.products import mariadb
 from catalog.products.utils.id import create_variant_id, create_usku
 from brand.auth import mariadb as brand_sql
@@ -12,6 +13,13 @@ from traceback import print_exc
 from utils import helper, workbook
 import s3
 from io import BytesIO
+from . import services
+
+
+'''tasks STORES THE OBJECT WITH KEYS job_id: {}, 
+WITH THEIR KEYS "status: pending| failed| completed", 
+"event: async.Event() supports .wait() and .set() and .clear()", "task: the task pointer from create_task()"'''
+tasks = {} # object to store the tasks
 
 
 async def create_variants(usku_id: str, variants: list) -> dict| str:
@@ -39,9 +47,10 @@ async def create_variants(usku_id: str, variants: list) -> dict| str:
 async def create_product(listing_attributes: dict, category_attributes: dict, category_id: str) -> dict| str:
     """
     RETURNS:\n
-    If the operation is successful then `{"status": "successful", "message": "product upload completed", "usku_id": usku_id, "code": 200}`\n
+    If the operation is successful then 
+        - `{"status": "successful", "message": "product upload completed", "usku_id": usku_id, "code": 200}`\n
     else\n
-    `{"error": "error message"}`
+        - `{"error": "error message"}`
     """
     
     usku_id = create_usku()
@@ -64,16 +73,15 @@ async def create_product(listing_attributes: dict, category_attributes: dict, ca
     listing_attributes.update(sql_attributes_value)
     category_attributes.update(mongodb_attribute_value)
 
-    response = await mariadb.Write.product(listing_attributes) # db query
-    if response.get("error") is not None:
-        if response.get('error') == 1062:
+    sql_response, mongo_response = await asyncio.gather(mariadb.Write.product(listing_attributes), 
+                                    mongodb.Write.product(category_attributes)) # db query
+    if sql_response.get("error") is not None:
+        if sql_response.get('error') == 1062:
             return {"error": "Duplicate sku id", "code": 409}
         
-        elif response.get("error") == 1366:
+        elif sql_response.get("error") == 1366:
             return {"error": "Incorrect value for the listing_attributes fields", "code": 400}
         
-    # add the details in the mongodb db
-    mongo_response = await mongodb.Write.single_catalog(category_attributes)
 
     if mongo_response.get('error'):
         return {"status": "successful", "message": "Product has listed but the product data could not be uploaded", "code": 202}
@@ -167,60 +175,123 @@ async def delete_product(usku_id: str) -> tuple[dict[str, str], int]:
 
 
 
-async def upload_xlsx(xlsx_sheet: FileStorage, category_id: str, all_listing_attributes: list, product_mandatory_attributes: list):
+async def upload_xlsx(xlsx_data: bytes, category_id: str) -> dict[str, str|int|BytesIO]:
     """Upload bulk products to the server and create a new xlsx sheet if the upload has any error in it.
     It checks the product payload if it the mendatory fields are provided and then lists the product on sql and 
     runs a fire-and-forget function to upload product data on mongodb
     
     Parameters:
-        xlsx_sheet:
-            upload sheet
+        xlsx_data:
+            upload sheet's BytesIO object so the references outlives the request
         category_id:
             category id from product categories taxonomy
-        all_listing_attributes:
-            list of listing attributes for sql
-        product_mandatory_attributes:
-            mandatory fields of product (rdbms and mongodb mandatory attributes combined)
 
     
     Returns:
+        dict:
+            on successful upload:
+            - `"status" : "successful"` 
+            - `"message": str` 
+            - `"code": 200`
+
+            on partial uploads:
+            - `"sheet": BytesIO(xlsx sheet)`
+            - `"code": 202`
+
     """    
+    try:
+        '''CHECKING ANY CORRUPTION IN HEADER VALUES'''
+        all_listing_attributes, listing_mandatory_keys, category_mandatory_keys = await asyncio.gather(categoriessql.Fetch.Attributes.Catalog.all(),
+                                                                                                categoriessql.Fetch.Attributes.Catalog.mandatory(), 
+                                                                                                 categoriessql.Fetch.Attributes.Category(category_id).mandatory())
+        product_mandatory_attributes  = listing_mandatory_keys + category_mandatory_keys
+    
+    
+        '''HEADER VERIFICATION'''
+        xlsx_sheet = BytesIO(xlsx_data)
+        document_header = await asyncio.to_thread(workbook.read_row, xlsx_sheet, row=1) # it's putting the pointer after the first row
+        if not set(product_mandatory_attributes).issubset(set(document_header)): # if mandatory keys exists
+            return {"status": "failed", "message": "redownload the bulk upload file and re-upload"}
 
-    sheet = await asyncio.to_thread(workbook.read_generator, xlsx_sheet)
-    fields, names = await asyncio.gather(asyncio.to_thread(workbook.read_row(xlsx_sheet, row=1)),
-                                             asyncio.to_thread(workbook.read_row(xlsx_sheet, row=2)))
+        fields = await asyncio.to_thread(workbook.read_row, xlsx_sheet, row=1)
+        names = await asyncio.to_thread(workbook.read_row, xlsx_sheet, row=2)
 
-    error_sheet = None
-    tasks = []
-    fields, names = [], []
-    for attributes in await asyncio.to_thread(workbook.read_generator(sheet)):
-        '''VALIDATING PRODUCT ATTRIBUTES'''
-        values = [] # getting the values of each products
-        listing_attributes, category_attributes = {}, {}
+        error_sheet = None
+        fields, names = [], []
 
-        #creating fields, names sql and mongodb attribute objects list out of attributes collection of attribute object
-        for attribute in attributes:
-            fields.append(attribute.get("field")) if len(fields) <= len(attributes) else None #logic if the len of fields is equal to lens of attributes which means any next append is duplicate
-            names.append(attributes.get("name")) if len(names) <= len(attributes) else None
+        '''Iterating over sheet rows'''
+        for attributes in await asyncio.to_thread(workbook.read_generator, BytesIO(xlsx_data)): # creating the fresh sheet to void any pointer conflicts
+            '''VALIDATING PRODUCT ATTRIBUTES'''
+            values = [] # getting the values of each products
+            listing_attributes_object, category_attributes_object = {}, {}
 
-            '''POPULATING LISTING AND CATEGORY ATTRIBUTES FOR PRODUCT CREATION'''
-            if attribute.get("field") in all_listing_attributes:
-                listing_attributes[attribute.getattribute.get("field")] = attribute.getattribute.get("value") 
+            #creating sql and mongodb attribute objects list out of attributes collection of attribute object
+            for attribute in attributes:
+                fields.append(attribute.get("field")) if len(fields) <= len(attributes) else None #logic if the len of fields is equal to lens of attributes which means any next append is duplicate
+                names.append(attribute.get("name")) if len(names) <= len(attributes) else None
+                values.append(attribute.get("value")) # values is defined inside the loop so it's getting cleared
+
+                '''POPULATING LISTING AND CATEGORY ATTRIBUTES FOR PRODUCT CREATION'''
+                if attribute.get("field") in all_listing_attributes:
+                    listing_attributes_object[attribute.get("field")] = attribute.get("value") 
+                else:
+                    category_attributes_object[attribute.get("field")] = attribute.get("value") 
+
+            # print(values)
+            '''IF ANY OF THE MANDATORY ATTRIBUTE VALUE IS NULL'''
+            if not (helper.Payload.check_required_payload(listing_attributes_object, listing_mandatory_keys)
+                and helper.Payload.check_required_payload(category_attributes_object, category_mandatory_keys)):
+
+                try:
+                    if error_sheet is None:
+                        error_sheet = await asyncio.to_thread(workbook.create, fields=['error']+ fields, names=["Error"]+names)
+
+                    error_sheet = await asyncio.to_thread(workbook.write, error_sheet, row=["Mandatory fields can not be empty"]+values)
+ 
+                except Exception as e:
+                    print(e)
+                    print_exc()
+                    return {"error": "unable to create error sheet"}
+
             else:
-                category_attributes[attribute.getattribute.get("field")] = attribute.getattribute.get("value") 
+                '''UPLOAD THE DATA'''
+                try:
+                    response = await create_product(listing_attributes_object, category_attributes_object, category_id)
+                    if response.get('error'):
+                        if error_sheet is None:
+                            error_sheet = await asyncio.to_thread(workbook.create, fields=['error']+ fields, names=["Error"]+names)
+
+                        error_sheet = await asyncio.to_thread(workbook.write, error_sheet, row=[response.get('error')]+values)
+                except Exception as e:
+                    print(e)
+                    print_exc()
+                    return {"status": "failed", "error": "unable to upload product or create error sheet"}
+        print("finished")
+        if not error_sheet:
+            return {"status": "successful", "message": "Uploaded the products", "code": 200}
+        else: 
+            error_sheet = await asyncio.to_thread(workbook.write, error_sheet, row=["Remove the error column entirely before uploading this file after correction"])
+            return {"sheet": error_sheet, "code": 202}
+    except Exception as e:
+        print(e)
+        print_exc()
+        return {"error": "could finish uploading products"}
 
 
-        # the error message will go the new xlsx sheet with error column in the beginnining
-        if not set(product_mandatory_attributes).issubset(set(fields)):
-            if error_sheet is None:
-                error_sheet = await asyncio.to_thread(workbook.create(fields=fields, names=["Error"]+names))
 
-            await asyncio.to_thread(workbook.write(error_sheet, row=["Mandatory fields can not be empty"]+values))
 
-        '''UPLOAD THE DATA'''
-        response = await create_product(listing_attributes, category_attributes, category_id)
-        if response.get('error'):
-            if error_sheet is None:
-                error_sheet = await asyncio.to_thread(workbook.create(fields=fields, names=["Error"]+names))
+def on_task_complete(task):
+    job_id = task.job_id
 
-            await asyncio.to_thread(workbook.write(error_sheet, row=[response.get('error')]+values))
+    if not job_id:
+        raise Exception("no job_id assigned to the task object")
+
+    if task.exception():
+        status = "failed"
+    else:
+        status = "completed"
+
+    if job_id in tasks:
+        tasks[job_id]["status"] = status
+        tasks[job_id]["event"].set() # set the event flag as True
+        # this will release the sse

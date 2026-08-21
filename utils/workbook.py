@@ -2,6 +2,7 @@ import asyncio
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import PatternFill, Font, Alignment
 from io import BytesIO
+from zipfile import is_zipfile
 
 def snake_to_text(text):
     return text.replace('_', ' ').replace('-', ' ').capitalize()
@@ -71,6 +72,7 @@ def read_generator(file: Workbook):
             }
         ]``
     """
+    file.seek(0)
     wb = load_workbook(file)
     ws = wb.active
     
@@ -83,24 +85,35 @@ def read_generator(file: Workbook):
         yield [{"name": names[index], "field": fields[index], "value": value} for index, value in enumerate(row)]
 
 
-def read_row(file: Workbook, row: int):
-    """READS SINGLE ROW FROM THE WORKBOOK"""
-    wb = load_workbook(file)
+def read_row(file: Workbook, row: int)-> list[str]:
+    """Reads single row from the Workbook and resets the pointer back to 0
+    Returns:
+        list of cell values of the given row
+    """
+    # print("read_row", file)
+    file.seek(0)
+
+    # print("closed:", file.closed)
+    # print("size:", len(file.getbuffer()))
+    # print("is_zip:", is_zipfile(file))
+    # print(file.read())
+    wb = load_workbook(file, read_only=True)
     ws = wb.active
 
     cells = ws[row]
+    file.seek(0)
     return [cell.value for cell in cells if cells]
 
 
 
 def write(file: Workbook, row_object: dict = None, row: list| None = None):
+    file.seek(0)
     wb = load_workbook(file)
     ws = wb.active
 
     '''we have to consider that the worksheet that has been uploaded is the correct worksheet for the typeid
         and contains the necessary headers
     '''
-
     try:
 
         if row:
@@ -119,6 +132,7 @@ def write(file: Workbook, row_object: dict = None, row: list| None = None):
 
 
 def remove_row(file: Workbook, index: int):
+    file.seek(0)
     wb = load_workbook(file)
     ws = wb.active
 

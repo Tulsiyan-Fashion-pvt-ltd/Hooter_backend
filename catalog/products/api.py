@@ -1,4 +1,4 @@
-from quart import Blueprint, session, request, jsonify, Response, abort, json
+from quart import Blueprint, session, request, jsonify, Response, abort, url_for
 from catalog.products import mariadb
 from brand.auth import mariadb as brand_sql
 from catalog.categories import mongodb as categories
@@ -12,11 +12,15 @@ import asyncio
 from catalog.providers.shopify import products as shopify_products
 from config import _platforms, _product_image_bucket, _product_image_root_key
 from . import services
-import s3
 from traceback import print_exc
+from uuid import uuid4
+import json
+from .sse import product_sse
+from io import BytesIO
 
 
 products = Blueprint("products", __name__, url_prefix = "/products")
+products.register_blueprint(product_sse)
 
 
 # check if the user has even added a single catalog or not.
@@ -97,16 +101,14 @@ async def upload_single_catalog():
 @brand_required
 async def upload_bulk_catalog():
     """
-    UPLOAD BULK PRODUCT USING XLSX EXCEL FILE
+    Recieves the bulk product xlsx sheet and runs a job to upload them one by one and returns a 
+    server side event(sse) url if the background job runs successfully without any error
     """
-    file_payload = await request.files
-
-    xlsx_sheet = file_payload.get("sheet")
     type_id = request.args.get("type-id", type=str)
+    file_payload = await request.files
+    xlsx_sheet = file_payload.get("sheet")
 
-    '''
-        checking the payload and files
-    '''
+    '''checking the payload and files'''
     if type_id is None or xlsx_sheet is None:
         return jsonify({"status": "invalid form data"}), 400
     
@@ -115,39 +117,54 @@ async def upload_bulk_catalog():
         return jsonify({"status": "invalid sheet", "error": "file should have .xlsx extension"}), 415
     
 
-    ''' after verifying everything is correct '''
+    '''RUNNING JOB TO UPLOAD THE PRODUCTS INTO THE SYSTEM'''
+    try:
+        job_id = str(uuid4().hex)
+        xlsx_sheet.seek(0)
+        sheet_data = xlsx_sheet.stream.read()
 
-    ''' read the file and see if the necessary data is provided
-        if not then exit the function 
-    '''
+        upload_task = asyncio.create_task(services.upload_xlsx(sheet_data, type_id), name=job_id)
+        upload_task.job_id = job_id
 
-    catalog_all_keys, catalog_mandatory_keys, category_mandatory_keys = await asyncio.gather(categories.Fetch.Attributes.Catalog.all(),
-                                                                                            categories.Fetch.Attributes.Catalog.mandatory(), 
-                                                                                             categories.Fetch.Attributes.Category(type_id).mandatory())
-    expected_mandatory_keys  = catalog_mandatory_keys + category_mandatory_keys
+        services.tasks[job_id] = {"status": "pending", "event": asyncio.Event(), "task": upload_task}
+
+        upload_task.add_done_callback(services.on_task_complete)
+        return jsonify({"status": "successful", "message": "XLSX sheet receieved to upload the products", 
+                        "sse_url": url_for("catalog.products.product_sse.xlsx_upload_stream", job_id=job_id)}), 200
+
+    except Exception as e:
+        print(e)
+        print_exc()
+        print(f"error occuired while scheduling the tasks for xlsx products upload")
+        return jsonify({"status": "failed", "message": "error occured while scheduling product uploads from the file"}), 500
 
 
-    '''HEADER VERIFICATION'''
-    document_header = await asyncio.to_thread(workbook.read_row, xlsx_sheet, row=1)
-    if not set(expected_mandatory_keys).issubset(set(document_header)): # if mandatory keys exists
-        return jsonify({"status": "failed", "message": "redownload the bulk upload file and re-upload"}), 422
 
+@products.get('/error_sheet/<job_id>')
+@login_required
+@brand_required
+async def send_error_sheet(job_id):
+    """
+    Downloads the xlsx error sheet for the given job id
+    """
+    if job_id not in services.tasks:
+        return abort(404)
 
-    """iterating over the document and pushing in the system after verification"""
+    if services.tasks.get(job_id).get("status") != "completed":
+        return jsonify({"status": "pending", "message": "job has not finished yet"}), 202
 
+    returned_result = services.tasks.get(job_id).get("task").result()
+    if returned_result.get("code") == 200:
+        return jsonify({"message": returned_result.get("message"), "status": returned_result.get("status")}), 200
     
-    services.upload_xlsx(xlsx_sheet, type_id, catalog_all_keys, expected_mandatory_keys)
-
-    new_sheet = None # new sheet for the un-uploaded files
-
-
-
-
-    if new_sheet != None:
-        new_sheet = workbook.write(new_sheet, row=["Remove the Error column and this message while uploading again"]) # message for the new sheet
-        return Response(new_sheet), 202
-    
-    return jsonify({"status": "ok"}), 200
+    elif returned_result.get("code") == 202:
+        '''READ THE SHEET AND SEND IN BYTES'''
+        returned_result.get("sheet").seek(0)
+        sheet = returned_result.get("sheet").read()
+        services.tasks.pop(job_id)
+        return Response(sheet)
+    else:
+        return jsonify({"status": "pending", "message": "job has not finished yet"}), 202
 
 
 

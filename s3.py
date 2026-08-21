@@ -121,6 +121,15 @@ def delete_bulk_objects(bucket: str, keys: list) -> str:
         return "error"
 
 
+
+
+
+
+
+
+
+
+
 if __name__ == "__main__":
     response = _s3.list_buckets()
 

@@ -98,7 +98,7 @@ class Fetch:
         
             # fetch only mandatory schema keys of any niche
             async def mandatory(self):
-                doc = await Fetch.listing_schema()
+                doc = await Fetch.category_schema(self.type_id)
                 if not doc:
                   return None
 

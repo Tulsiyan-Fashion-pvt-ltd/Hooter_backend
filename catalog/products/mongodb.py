@@ -11,6 +11,17 @@ def get_keys(doc):
 class Write:
     # function to add the catalog into the mongodb server
     async def product(catalog: dict):
+        """Uploads category specific single product data in the mongodb
+
+        Arguments:
+            - catalog(dict): dict containg the attribute `field: str` and attribute `value: str| int| list| None`
+
+        Returns:
+            dict[str, str| None]:
+                - error: None -> on success
+                - error: str -> on failure
+
+        """
         mongo = current_app.mongo
         async with await mongo.cx.start_session() as connection:
           async with connection.start_transaction():

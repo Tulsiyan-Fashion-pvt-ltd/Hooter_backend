@@ -14,7 +14,6 @@ from quart_mongo import Mongo
 import asyncio
 import aiofiles
 import json
-from pathlib import Path
 
 
 load_dotenv()  # Load environment variables from .env file
@@ -46,7 +45,7 @@ app.config['MYSQL_PORT'] = int(os.environ.get('HOOTER_DB_PORT', '3306'))
 app.config['MONGO_URI'] = os.environ.get('MONGO_HOST')
 app.mongo = Mongo(app)
 
-app.root_path = Path(__file__).resolve() # root path for the main directory
+# app.root_path = Path(__file__).resolve() # root path for the main directory
 
 app.register_blueprint(page)
 app.register_blueprint(brand)

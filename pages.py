@@ -1,6 +1,6 @@
-from quart import Blueprint, render_template, request
+from quart import Blueprint, render_template
 
-page = Blueprint('page', __name__)
+page = Blueprint('page', __name__,template_folder="templates")
 
 @page.route('/')
 async def index():
