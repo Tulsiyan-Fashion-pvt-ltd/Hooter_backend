@@ -1,4 +1,4 @@
-from quart import Blueprint, session, request, jsonify
+from quart import Blueprint, session, request, jsonify, Response
 from users.authentication import mariadb
 from utils.helper import Payload, Brand
 from users.helper import hash_password, create_userid
@@ -12,7 +12,10 @@ auth = Blueprint('auth', __name__)
 @auth.route('/register', methods=['POST'])
 @login_required
 @super_admin_required
-async def register_entity():
+async def register_entity() -> Response:
+    """Registers a new brand. If `poc.self` is `true`, 
+    the authenticated user becomes the Point of Contact. Otherwise, 
+    a new POC account is created as per the given poc details"""
     response = await request.get_json()    
     '''
         checking the payload for brand
@@ -97,8 +100,8 @@ async def register_entity():
                 
         return jsonify({
             'status': 'ok',
-            'message': 'registered the brand successfully'
-        }), 201
+            'message': 'brand registered successfully'
+        }), 200
 
     except Exception as e:
         print(f'error encountered while registering the brand\n{e}')
@@ -110,27 +113,40 @@ async def register_entity():
 @auth.get('/connect')
 @auth.get('/connect/<brand_id>')
 @login_required
-async def connect_brand(brand_id=None):
+async def connect_brand(brand_id=None) -> Response:
     '''
-        check the brand access of the user from the database, whether there is any or many or none
+        Connects the brand with the user session.
+        Check the brand access of the user from the database, whether there is any or many or none.
+        If the brand_id is provided to connect, then the function will add the brand_id into the user session
+        as `session["brand"]=brand_id` and if the brand id is not provided then it will return the list of brands 
+        or None depending upon the brand registered for the logged in user.
+
+        Parameters:
+            - brand_id: str
+            Brand id provided among the lists of brands provided by the same function
+
+        Returns:
+            Returns:
+                dict: Serialized response containing the request status and,
+                    when applicable, brand information.
     '''
 
     if brand_id is not None:
         if await mariadb.Fetch.check_brand_id(brand_id) == "available":
             session['brand'] = brand_id
             session.permanent = False
-            return jsonify({"Status": {"request": "successful", "status": "brand_registered successfully"}})
+            return jsonify({"status": "successful", "message": "brand registered successfully"}), 200
         else:
-            return jsonify({"Status": {"request": "unsuccessful", "status": "invalid brand id"}}), 400
+            return jsonify({"status": "failed", "message": "invalid brand_id"}), 400
 
     user_id = session.get('user')
     brand_access = await mariadb.Fetch.brand_access(user_id)
 
     if brand_access is None:
-        return jsonify({'Status': {"request": "successful", "brands": None, "status": "not connected", "redirect": "/register-brand"}})
+        return jsonify({"status": "successful", "brands": None, "connection": "not connected", "message": "no brand is registered"}), 201
     elif len(brand_access) == 1:
         session['brand'] = brand_access[0].get('brand_id')
         print(f"{session.get('brand')} accessed by {session.get('user')}")
-        return jsonify({"Status": {"request": "successful", "brands": "single brand", "status": "connected", "redirect": "/"}})
+        return jsonify({"status": "successful", "brands": "single brand", "connection": "connected", "message": "brand connected successfully"}), 200
     else:
-        return jsonify({"Status": {"request": "successful", "bands": brand_access, "status": "not connected", "issue": "a brand needs to be selected", "redirect": '/select-panel'}})
+        return jsonify({"status": "successful", "bands": brand_access, "connection": "not connected", "message": "a brand needs to be selected"}), 201

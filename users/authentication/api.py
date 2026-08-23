@@ -9,7 +9,7 @@ from brand.auth.api import connect_brand
 auth = Blueprint("auth", __name__)
 
 
-@auth.route('/signup', methods=['POST'])
+@auth.post('/signup')
 async def signup():
     data = await request.get_json()
     name=data.get('name')
@@ -36,7 +36,7 @@ async def signup():
 
         if response and response.get('status') != 'ok':
             if response.get('message') == 'user_already_registered':
-                return jsonify({'status': 'already_registered'}), 409
+                return jsonify({'status': 'conflict', "mesasge": "user already registered"}), 409
         print('registered the user')
     else:
         return jsonify({'status': 'Bad Request', 'message': 'all required field not provided'}), 400
@@ -45,7 +45,7 @@ async def signup():
 
 
 
-@auth.route('/login', methods=['POST'])
+@auth.post('/login')
 async def login():
     data = await request.get_json()
     email = data.get('email')
@@ -60,7 +60,7 @@ async def login():
 
         # if the userid is null then return then do not log in
         if userid == None:
-            return jsonify({'status': 'error', 'message': 'user not found with this email'}), 401
+            return jsonify({'status': 'unauthorized', 'message': 'user not found with this email'}), 401
 
         hashed_password = await mariadb.Fetch.user_password(userid)
         login_check = verify_hashed_password(password, hashed_password.get("user_password"))
@@ -69,20 +69,20 @@ async def login():
             session.clear()
             session['user'] = userid
             session.permanent = False
-            # print(session.get('user'))
             
             # a brand needs to link to the user
             # if no brand is linnked to the user then redirect to register
             brand_access = await connect_brand()
-            return jsonify({"login": {'status': 'ok', 'message': 'login successfull'}, "brand_connection": await Response.get_json(brand_access)}), 200
+            return jsonify({"login": {'status': 'ok', 'message': 'login successfull'}, "brand_connection": await brand_access.get_json(brand_access)}), 200
         else:
-            return jsonify({'status': 'unauthorised', 'message': 'incorrect password'}), 401
+            return jsonify({'status': 'unauthorized', 'message': 'incorrect password'}), 401
     else:
-        return jsonify({'status': 'bad request', 'message': 'invalid email'}), 400
+        return jsonify({'status': 'bad request', 'message': 'invalid email'}), 401
+
 
 
 # request to fetch user session
-@auth.route('/session', methods=['GET'])
+@auth.get('/session')
 async def check_session():
     # print(request.cookies)
     user = session.get('user')
@@ -93,10 +93,8 @@ async def check_session():
         return jsonify({'login': 'deny'}), 401
     
 
-@auth.route('/logout', methods=['POST'])
+@auth.post('/logout')
 @login_required
 async def logout():
-    # print(session.get('user'))
     session.clear()
-    # print(session.get('user'))
     return jsonify({'status': 'ok', 'message': 'user logout'}), 200

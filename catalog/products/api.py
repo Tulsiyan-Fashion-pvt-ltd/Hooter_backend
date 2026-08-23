@@ -113,6 +113,9 @@ async def upload_bulk_catalog():
         return jsonify({"status": "invalid form data"}), 400
     
     # checking the filename should be .xlsx file
+    if not xlsx_sheet :
+        return jsonify({"status": "invalid request", "message": "no sheet provided"}), 400
+    
     if not xlsx_sheet.filename.endswith(".xlsx"):
         return jsonify({"status": "invalid sheet", "error": "file should have .xlsx extension"}), 415
     

@@ -5,7 +5,7 @@ import os
 from inventory.routes import inventory 
 from catalog.routes import catalog  
 from brand.routes import brand
-from users.routes import user
+from users.routes import users
 from platforms import shopify
 from dotenv import load_dotenv
 import asyncmy
@@ -14,6 +14,7 @@ from quart_mongo import Mongo
 import asyncio
 import aiofiles
 import json
+from swagger_ui import api_doc
 
 
 load_dotenv()  # Load environment variables from .env file
@@ -51,7 +52,7 @@ app.register_blueprint(page)
 app.register_blueprint(brand)
 app.register_blueprint(catalog)
 app.register_blueprint(inventory)
-app.register_blueprint(user)
+app.register_blueprint(users)
 app.register_blueprint(shopify.shopify)
 # need to convert the programs and methods as per asgi
 # app.register_blueprint(products)
@@ -109,5 +110,15 @@ async def list_taxonomy():
 
 
 if __name__ == "__main__":
+    """OPENAPI DOCS"""
+    api_doc(
+        app,
+        config_path="openapi.yaml",
+        url_prefix="/docs",
+        title="Hooter internal APIs",
+        paths="./login.yaml",
+        editor=True
+    )
+    
     print('''>>>\nuse @login_required when the login is required and use\nfrom utils.prerequirements import login_required''')
     app.run(debug=True, host='0.0.0.0', port=8800)

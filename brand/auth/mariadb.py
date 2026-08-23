@@ -74,8 +74,11 @@ class Fetch:
         async with pool.acquire() as connection:
             async with connection.cursor(cursor=DictCursor) as cursor:
                 try:
-                    query = '''SELECT brand_id FROM brand_access
-                                Where user_id = %s'''
+                    query = '''SELECT brand.brand_name, access.brand_id 
+                                FROM brand_access as access
+                                inner join brand as brand
+                                on brand.brand_id = access.brand_id
+                                Where access.user_id = %s'''
                     
                     await cursor.execute(query, (user_id, ))
 

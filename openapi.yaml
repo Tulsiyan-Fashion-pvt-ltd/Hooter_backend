@@ -1,0 +1,748 @@
+openapi: 3.1.0
+info:
+  title: Hooter Backend API
+  version: '1.0.0'
+  description: Inter API for Hooter backend
+
+servers:
+  - url: http://localhost:8800
+    description: Local development server
+
+tags:
+  - name: Authentication
+    description: User signup and authentication
+
+  - name: Users
+    description: User management APIs
+
+  - name: Brand
+    description: Brand management APIs
+  
+  - name: Catalog
+    description: Catalog management APIs
+
+  - name: Inventory
+    description: Inventory management APIs
+    
+
+paths:
+  /users/signup:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new user
+      description: Creates a new user account using name, phone number, email, password, and designation
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - number
+                - email
+                - password
+              properties:
+                name:
+                  type: string
+                  example: Farhan Ahmad
+
+                number:
+                  type: string
+                  example: "9876543210"
+
+                email:
+                  type: string
+                  format: email
+                  example: farhan@example.com
+
+                password:
+                  type: string
+                  format: password
+                  example: MySecure@123
+
+                designation:
+                  type: string
+                  default: Owner
+                  example: Owner
+
+      responses:
+        "200":
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+        "401":
+          description: User registeration unseccessful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: deny
+
+        "500":
+          $ref: "#/components/responses/500"
+
+  /users/login:
+    post:
+      tags:
+        - Authentication
+
+      summary: Upload user credentials for login, to use the apis which requires user session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  example: "ab@gmail.com"
+                password:
+                  type: string
+                  example: "myPass123"
+
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - login
+                  - brand_connection
+
+                properties:
+                  login:
+                    type: object
+                    required:
+                      - status
+                      - message
+
+                    properties:
+                      status:
+                        type: string
+                        example: ok
+                      message:
+                        type: string
+                        example: login successfull
+                  brand_connection:
+                    oneOf:                            
+                      # No brands registered
+                      - type: object
+                        required:
+                          - connection
+                          - brands
+                          - status
+                          - message
+                        properties:
+                          status:
+                            type: string
+                            example: successful
+                          brands:
+                            type: "null"
+                            example: null
+                          connection:
+                            type: string
+                            example: not connected
+                          message:
+                            type: string
+                            example: no brand is registered
+                      # Only one brand
+                      - type: object
+                        required:
+                          - connection
+                          - brands
+                          - status
+                        properties:
+                          status:
+                            type: string
+                            example: successful
+                          brands:
+                            type: string
+                            example: single brand
+                          connection:
+                            type: string
+                            example: connected
+                      # Multiple brands
+                      - type: object
+                        required:
+                          - connection
+                          - brands
+                          - status
+                          - m
+                        properties:
+                          status:
+                            type: string
+                            example: successful
+                          brands:
+                            type: array
+                            items:
+                              type: object
+                              required:
+                                - brand_id
+                                - brand_name
+                              properties:
+                                brand_id:
+                                  type: string
+                                  example: "123456"
+                                brand_name:
+                                  type: string
+                                  example: Nike
+                          connection:
+                            type: string
+                            example: not connected
+                          message:
+                            type: string
+                            example: a brand needs to be selected
+              examples:
+                single_brand:
+                  summary: Single brand
+                  value:
+                    login:
+                      status: ok
+                      message: login successfull
+                    brand_connection:
+                      status: successful
+                      brands: single brand
+                      connection: connected
+
+                no_brands:
+                  summary: No brands registered
+                  value:
+                    login:
+                      status: ok
+                      message: login successfull
+                    brand_connection:
+                      status: successful
+                      brands: null
+                      connection: not connected
+                      
+                multiple_brands:
+                  summary: Multiple brands
+                  value:
+                    login:
+                      status: ok
+                      message: login successfull
+                    brand_connection:
+                      status: successful
+                      brands:
+                        - brand_id: "123456"
+                          brand_name: Nike
+                        - brand_id: "789012"
+                          brand_name: Adidas
+                      connection: not connected
+                      message: a brand needs to be selected
+
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: object
+
+                required:
+                  - status
+                  - message
+
+                properties:
+                  status:
+                    type: string
+
+                  message:
+                    type: string
+
+              examples:
+                email_password_not_provided:
+                  summary:  Email or Password is not provided
+                  value:
+                    status: "invalid request"
+                    message: "email or password not provided"
+
+        "401":
+          description: Unauthorized access
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    required: true
+                  
+                  message:
+                    type: string
+                    required: true
+
+              examples:
+                  user_not_found:
+                    summary:  User not found
+                    value:
+                      status: "unauthorized"
+                      message: "user not found with this email"
+
+                  incorrect_password:
+                    summary: Incorrect user password
+                    value:
+                      status: "unauthorized"
+                      message: "Incorrect password"
+
+                  invalid_email:
+                    summary: "Invalid email"
+                    value:
+                      status: "bad reqeust"
+                      message:  "Invalid email"
+
+        "500":
+          $ref: "#/components/responses/500"
+
+  /users/session:
+    get:
+      tags:
+        - Authentication
+      summary: Check current session
+      description: Returns whether the current user is authenticated.
+      security:
+        - login_required: []
+
+      responses:
+        "200":
+          description: User is authenticated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  login:
+                    type: string
+                    enum: [ok]
+                    example: ok
+
+        "401":
+          description: No valid session found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  login:
+                    type: string
+                    enum: [deny]
+                    example: deny
+
+        "500":
+          $ref: "#/components/responses/500"
+
+  /users/logout:
+    post:
+      tags:
+        - Authentication
+      summary: Logout user
+      description: Ends the current authenticated session.
+      security:
+        - login_required: []
+      responses:
+        "200":
+          description: User logged out successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - message
+                properties:
+                  status:
+                    type: string
+                    enum: [ok]
+                    example: ok
+                  message:
+                    type: string
+                    example: user logout
+
+  /users/profile:
+    get:
+      tags: 
+        - Users
+      summary: Fetch logged in user profile data
+      description: Sends the logged in user credentials
+      security:
+        - login_required: []
+
+      responses:
+        "200":
+          description: Current authenticated user
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - user_data
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  user_data:
+                    type: object
+                    required:
+                      - name
+                      - number
+                      - email
+                      - designation
+                      - access
+                    properties:
+                      name:
+                        type: string
+                        example: Farhan Ahmad
+                      number:
+                        type: string
+                        example: "9876543210"
+                      email:
+                        type: string
+                        format: email
+                        example: farhan@example.com
+                      designation:
+                        type: string
+                        example: Software Engineer
+                      access:
+                        type: string
+                        example: admin
+              examples:
+                authenticated:
+                  value:
+                    status: ok
+                    user_data:
+                      name: Farhan Ahmad
+                      number: "9876543210"
+                      email: farhan@example.com
+                      designation: Software Engineer
+                      access: admin
+
+        "500":
+          $ref: "#/components/responses/500"
+
+  /brand/register:
+    post:
+      tags:
+        - Brand
+
+      summary: Register a new brand
+
+      description: Registers a new brand. If `poc.self` is `true`, the authenticated user becomes the Point of Contact. 
+        Otherwise, a new POC account is created as per the given poc details.
+
+      security:
+        - login_required: []
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - brand
+                - poc
+              properties:
+                brand:
+                  type: object
+                  required:
+                    - entity_name
+                    - brand_name
+                    - plan
+                    - address
+                    - pincode
+                    - estyear
+                  properties:
+                    entity_name:
+                      type: string
+                      example: ABC Pvt Ltd
+                    brand_name:
+                      type: string
+                      example: ABC Fashion
+                    gstin:
+                      type: string
+                      example: 29ABCDE1234F1Z5
+                    plan:
+                      type: string
+                      example: premium
+                    address:
+                      type: string
+                      example: 221B Baker Street
+                    pincode:
+                      type: string
+                      example: "110025"
+                    estyear:
+                      type: integer
+                      example: 2023
+
+                poc:
+                  type: object
+                  required:
+                    - self
+                  properties:
+                    self:
+                      type: boolean
+                      example: true
+                    name:
+                      type: string
+                    number:
+                      type: string
+                    email:
+                      type: string
+                      format: email
+                    designation:
+                      type: string
+                    access:
+                      type: string
+                      enum: [admin, manager, staff]
+                    password:
+                      type: string
+                      format: password
+
+            examples:
+              self_poc:
+                summary: Current user is POC
+                value:
+                  brand:
+                    entity_name: ABC Pvt Ltd
+                    brand_name: ABC Fashion
+                    gstin: 29ABCDE1234F1Z5
+                    plan: premium
+                    address: 221B Baker Street
+                    pincode: "110025"
+                    estyear: 2023
+                  poc:
+                    self: true
+
+              new_poc:
+                summary: Create a new POC
+                value:
+                  brand:
+                    entity_name: ABC Pvt Ltd
+                    brand_name: ABC Fashion
+                    plan: premium
+                    address: 221B Baker Street
+                    pincode: "110025"
+                    estyear: 2023
+                  poc:
+                    self: false
+                    name: John Doe
+                    number: "9876543210"
+                    email: john@example.com
+                    designation: Manager
+                    access: manager
+                    password: secret123
+
+      responses:
+        "200":
+          description: Brand registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  message:
+                    type: string
+                    example: brand registered successfully
+        "default":
+          $ref: "#/components/responses/default"
+  
+  /brand/connect:
+    get:
+      summary: Connects the brand with the user session
+      description: If the brand is available for the user then it connects the brand with the login user session
+        else it returns the not connected response with registered brand status
+      tags:
+        - Brand
+      security:
+        - login_required: []
+      
+      responses:
+        "200":
+          description: Brand connection status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  brands:
+                    type: string
+                  connection: 
+                    type: string
+                  message:
+                    type: string
+              examples:
+                successfulRequest:
+                  summary: Successful
+                  value:
+                    status: successful
+                    brands: single brand
+                    connection: connected
+                    message: brand connected successfully
+                
+
+        "201":
+          description: Brand connection status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  brands:
+                    onOf:
+                      - type: string
+                      - type: 
+                  connection: 
+                    type: string
+                  message:
+                    type: string
+              examples:
+                no_brand:
+                  summary: No brand to connect
+                  value:
+                    status: successful
+                    brands: Null
+                    connection: not connected
+                    message: no brand is registered
+                multiple_brands:
+                  summary: Multiple brands to connect
+                  value:
+                    status: successful
+                    brands: 
+                      - brand_id: 13423
+                        brand_name: xyz
+                      - brand_id: 321234
+                        brand_name: abc
+                    connection: not connected
+                    message: a brand needs to be selected
+
+        "500": 
+          $ref: "#/components/responses/500"
+
+  /brand/connect/{brand_id}:
+    get:
+      summary: Connects given brand
+      description: Connects brand according to brand id provided
+      security:
+        - login_required: []
+      parameters:
+        - $ref: "#/components/parameters/brandIdRequired"
+      tags:
+        - Brand
+      
+      responses:
+        "200":
+          description: Connected the given brand by brand id to the logged in user session
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: successful
+                  message:
+                    type: string
+                    example: brand registered successfully
+        "400":
+          description: Failed to connect given brand by brand id
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: failed
+                  message:
+                    type: string
+                    example: invalid brand_id
+        "500": 
+          $ref: "#/components/responses/500"
+
+
+
+
+components:
+  securitySchemes:
+    login_required:
+      type: apiKey
+      in: cookie
+      name: login
+    brand_required:
+      type: apiKey
+      in: cookie
+      name: brand
+  
+  responses:
+    "500":
+      description: Internal server error
+      content:
+        text/html:
+          schema:
+            type: string
+          example: |
+            <!doctype html>
+            <html lang="en">
+            <head><title>500 Internal Server Error</title></head>
+            <body>
+              <h1>Internal Server Error</h1>
+              <p>The server encountered an internal error and was unable to complete your request.</p>
+            </body>
+            </html>
+    "default":
+      description: Default response
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - status
+              - message
+            properties:
+              status:
+                type: string
+              message:
+                type: string
+  
+  parameters:
+    brandIdNotRequired:
+      in: path
+      name: brand_id
+      schema:
+        type: string
+      required: false
+      description: unique id for the registered brand
+    brandIdRequired:
+      name: brand_id
+      in: path
+      schema:
+        type: string
+      required: true
+      description: unique id for the registered brand
+
+    
+
+  "requestBody":

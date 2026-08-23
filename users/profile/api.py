@@ -13,7 +13,6 @@ async def fetch_user_creds():
         return jsonify({'status': 'unauthorised access', 'message': 'no loged in user found'}), 401
     _ = await mariadb.Fetch.user_details(user)
 
-    print(_)
     user_data = {
                 'name': _.get('user_name'),
                 'number': _.get('phone_number'),
