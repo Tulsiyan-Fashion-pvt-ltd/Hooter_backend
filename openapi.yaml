@@ -8,6 +8,9 @@ servers:
   - url: http://localhost:8800
     description: Local development server
 
+  - url: https://hooter_staging.h0oter.com
+    descrioption: Staging server
+
 tags:
   - name: Authentication
     description: User signup and authentication
