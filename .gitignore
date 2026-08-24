@@ -1,4 +1,5 @@
 .env
+./venv
 __pycache__
 .product_images/.original_images/*
 .product_images/.low_resol_images/*
