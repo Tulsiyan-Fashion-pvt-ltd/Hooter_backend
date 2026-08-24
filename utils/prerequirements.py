@@ -8,7 +8,7 @@ def login_required(func):
     @wraps(func)
     async def wrapper(*args, **kwargs):
         if session.get('user') is None:
-            return jsonify({'status': "user is not logged in"}), 401
+            return jsonify({"status": "restricted",'message': "user is not logged in"}), 401
         else:
             return await func(*args, **kwargs)
     
@@ -18,7 +18,7 @@ def brand_required(func):
     @wraps(func)
     async def wrapper(*args, **kwargs):
         if session.get('brand') is None:
-            return jsonify({'status': "no brand found for this user"})
+            return jsonify({'status': 'restricted', 'message': "no brand found for this user"}), 403
         else:
             return await func(*args, **kwargs)
     
@@ -30,7 +30,7 @@ def super_admin_required(func):
     async def wrapper(*args, **kwargs):
         user_access = await Fetch.user_access(session.get('user'))
         if (user_access == None or user_access != 'super_admin'):
-            return jsonify({'status': 'access denied', 'message': 'you do not have the access kindly contact Hooter super admins'}), 401
+            return jsonify({'status': 'access denied', 'message': 'you do not have the access kindly contact Hooter super admins'}), 405
         else:
             return await func(*args, **kwargs)
     

@@ -19,7 +19,10 @@ tags:
     description: Brand management APIs
   
   - name: Catalog
-    description: Catalog management APIs
+    description: Catalog product categorisation APIs
+
+  - name: Products
+    description: Catalog product management APIs
 
   - name: Inventory
     description: Inventory management APIs
@@ -305,6 +308,12 @@ paths:
                     value:
                       status: "bad reqeust"
                       message:  "Invalid email"
+                  
+                  login_required:
+                    $ref: "#/components/examples/login_required"
+
+        "403":
+          $ref: "#/components/responses/brand_required"
 
         "500":
           $ref: "#/components/responses/500"
@@ -316,7 +325,7 @@ paths:
       summary: Check current session
       description: Returns whether the current user is authenticated.
       security:
-        - login_required: []
+        - cookieAuth: []
 
       responses:
         "200":
@@ -336,15 +345,23 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  login:
-                    type: string
-                    enum: [deny]
-                    example: deny
+                oneOf:
+                  - type: object
+                    properties:
+                      login:
+                        type: string
+                        enum: [deny]
+                        example: deny
+                  - $ref: "#/components/schema/default"
+                      
+              examples:
+
 
         "500":
           $ref: "#/components/responses/500"
+
+        "default":
+          $ref: "#/components/responses/default"
 
   /users/logout:
     post:
@@ -372,6 +389,8 @@ paths:
                   message:
                     type: string
                     example: user logout
+        "default":
+          $ref: "#/components/responses/default"
 
   /users/profile:
     get:
@@ -434,6 +453,9 @@ paths:
 
         "500":
           $ref: "#/components/responses/500"
+        
+        "default":
+          $ref: "#/components/responses/default"
 
   /brand/register:
     post:
@@ -564,7 +586,7 @@ paths:
                     example: brand registered successfully
         "default":
           $ref: "#/components/responses/default"
-  
+
   /brand/connect:
     get:
       summary: Connects the brand with the user session
@@ -640,6 +662,9 @@ paths:
 
         "500": 
           $ref: "#/components/responses/500"
+        
+        "default":
+          $ref: "#/components/responses/default"
 
   /brand/connect/{brand_id}:
     get:
@@ -681,22 +706,539 @@ paths:
                     example: invalid brand_id
         "500": 
           $ref: "#/components/responses/500"
+        
+        "default":
+          $ref: "#/components/responses/default"
 
+  /catalog/categories/top:
+    get:
+      tags:
+        - Catalog
 
+      summary: Get top level categories
+
+      description: Returns all level 0 (top level) Shopify taxonomy categories.
+
+      security:
+        - login_required: []
+        - brand_required: []
+
+      responses:
+        "200":
+          description: Top level categories fetched successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - level0
+                properties:
+                  level0:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - full_name
+                        - id
+                        - name
+                        - vertical
+                      properties:
+                        full_name:
+                          type: string
+                          example: Apparel & Accessories
+                        id:
+                          type: string
+                          example: gid://shopify/TaxonomyCategory/aa
+                        name:
+                          type: string
+                          example: Apparel & Accessories
+                        vertical:
+                          type: integer
+                          example: 1
+
+              examples:
+                success:
+                  summary: Successful request
+                  value:
+                    level0:
+                      - full_name: Animals & Pet Supplies
+                        id: gid://shopify/TaxonomyCategory/ap
+                        name: Animals & Pet Supplies
+                        vertical: 0
+                      - full_name: Apparel & Accessories
+                        id: gid://shopify/TaxonomyCategory/aa
+                        name: Apparel & Accessories
+                        vertical: 1
+                      - full_name: Electronics
+                        id: gid://shopify/TaxonomyCategory/el
+                        name: Electronics
+                        vertical: 7
+                      - full_name: Home & Garden
+                        id: gid://shopify/TaxonomyCategory/hg
+                        name: Home & Garden
+                        vertical: 13
+
+        "500":
+          description: Could not complete the request
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                  - msg
+                properties:
+                  error:
+                    type: string
+                    example: failed
+                  msg:
+                    type: string
+                    example: could not complete the request
+              examples:
+                failed:
+                  value:
+                    error: failed
+                    msg: could not complete the request
+        "default":
+          $ref: "#/components/responses/default"
+
+  /catalog/categories/next?id=value&vertical=value:
+    get:
+      tags:
+        - Catalog
+      summary: Get next level categories
+      description: Returns the child categories of the selected taxonomy category.
+
+      security:
+        - cookieAuth: []
+
+      parameters:
+        - name: id
+          in: query
+          required: true
+          description: Shopify taxonomy category ID.
+          schema:
+            type: string
+            example: gid://shopify/TaxonomyCategory/ap
+
+        - name: vertical
+          in: query
+          required: true
+          description: Vertical index returned by the top categories endpoint.
+          schema:
+            type: integer
+            example: 0
+
+      responses:
+        "200":
+          description: Successfully returned the next level categories.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - next
+                properties:
+                  next:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - full_name
+                        - id
+                        - level
+                        - name
+                      properties:
+                        full_name:
+                          type: string
+                          example: Apparel & Accessories > Clothing
+
+                        id:
+                          type: string
+                          example: gid://shopify/TaxonomyCategory/aa-1
+
+                        level:
+                          type: integer
+                          example: 1
+
+                        name:
+                          type: string
+                          example: Clothing
+
+              example:
+                next:
+                  - full_name: Apparel & Accessories > Clothing
+                    id: gid://shopify/TaxonomyCategory/aa-1
+                    level: 1
+                    name: Clothing
+
+                  - full_name: Apparel & Accessories > Clothing Accessories
+                    id: gid://shopify/TaxonomyCategory/aa-2
+                    level: 1
+                    name: Clothing Accessories
+
+                  - full_name: Apparel & Accessories > Costumes & Accessories
+                    id: gid://shopify/TaxonomyCategory/aa-3
+                    level: 1
+                    name: Costumes & Accessories
+        "400":
+          description: Missing or invalid query parameters.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: failed
+                  message:
+                    type: string
+                    example: vertical(index) and category id is not provided
+        "401":
+          $ref: "#/components/responses/401"
+        "403":
+          $ref: "#/components/responses/403"
+        "default":
+          $ref: "#/components/responses/default"
+
+  /catalog/categories/attributes?type-id=value&vertical=value:
+    get:
+      tags:
+        - Catalog
+
+      summary: Get category attributes
+
+      description: |
+        Returns the listing, category, and image attributes for the specified taxonomy category.
+
+      security:
+        - cookieAuth: []
+
+      parameters:
+        - name: type-id
+          in: query
+          required: true
+          description: Shopify taxonomy category ID.
+          schema:
+            type: string
+            example: gid://shopify/TaxonomyCategory/aa-1-23-2-1
+
+        - name: vertical
+          in: query
+          required: true
+          description: Vertical index returned by the category endpoints.
+          schema:
+            type: integer
+            example: 1
+
+      responses:
+        "200":
+          description: Category attributes returned successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - listing_attributes
+                  - category_attributes
+                  - image_attributes
+
+                properties:
+                  listing_attributes:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AttributeField"
+
+                  category_attributes:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AttributeField"
+
+                  image_attributes:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ImageAttribute"
+
+              example:
+                listing_attributes:
+                  - field: product_title
+                    handle: product-title
+                    name: Product Title
+                    description: The title or name of the product.
+                    type: string
+                    max_length: 200
+                    required: true
+
+                  - field: price
+                    handle: price
+                    name: Price
+                    description: The selling price of the product.
+                    type: decimal
+                    required: true
+
+                category_attributes:
+                  - field: product_description
+                    handle: product-description
+                    name: Product Description
+                    description: A detailed description of the product.
+                    type: string
+                    max_length: 5000
+                    required: true
+
+                  - field: fabric
+                    handle: fabric
+                    name: Fabric
+                    description: The primary fabric or material used.
+                    type: string
+                    max_length: 100
+                    required: true
+
+                image_attributes:
+                  - field: front
+                    handle: front
+                    name: Front
+                    description: Front view image of the product.
+                    order: 0
+                    required: true
+
+                  - field: back
+                    handle: back
+                    name: Back
+                    description: Back view image of the product.
+                    order: 1
+                    required: false
+        "default":
+          $ref: "#/components/responses/default"
+
+  /catalog/categories/bulk-excel-sheet?type-id=value&vertical=value:
+    get:
+      tags:
+        - Catalog
+
+      summary: Download bulk upload Excel template
+
+      description: |
+        Generates and downloads an XLSX template for bulk product uploads.
+        The worksheet contains all listing and category-specific fields for the selected taxonomy category.
+
+      security:
+        - cookieAuth: []
+
+      parameters:
+        - name: type-id
+          in: query
+          required: true
+          description: Shopify taxonomy category ID.
+          schema:
+            type: string
+            example: gid://shopify/TaxonomyCategory/aa-1-23-2-1
+
+        - name: vertical
+          in: query
+          required: true
+          description: Vertical index returned by the category endpoints.
+          schema:
+            type: integer
+            example: 1
+
+      responses:
+        "200":
+          description: Excel template generated successfully.
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+
+        "default":
+          $ref: "#/components/responses/default"
+
+  /catalog/products/exists:
+    get:
+      tags:
+        - Catalog
+
+      summary: Check catalog availability
+
+      description: |
+        Returns whether the current brand has at least one catalog product.
+        This endpoint is intended for determining whether to show the dashboard
+        or prompt the user to create their first catalog.
+
+      security:
+        - cookieAuth: []
+
+      responses:
+        "200":
+          description: Catalog availability status.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - catalog
+                properties:
+                  catalog:
+                    type: string
+                    enum:
+                      - available
+                      - unavailable
+
+              examples:
+                catalog_available:
+                  summary: Brand has catalog
+                  value:
+                    catalog: available
+
+                catalog_unavailable:
+                  summary: Brand has no catalog
+                  value:
+                    catalog: unavailable
+
+        "default":
+          $ref: "#/components/responses/default"
 
 
 components:
+  schemas:
+    AttributeField:
+      type: object
+      required:
+        - description
+        - field
+        - handle
+        - name
+        - required
+        - type
+
+      properties:
+        description:
+          type: string
+
+        field:
+          type: string
+
+        handle:
+          type: string
+
+        name:
+          type: string
+
+        type:
+          type: string
+          enum:
+            - string
+            - integer
+            - decimal
+            - boolean
+
+        max_length:
+          type: integer
+          description: Maximum allowed length for string fields.
+
+        required:
+          type: boolean
+
+    ImageAttribute:
+      type: object
+      required:
+        - description
+        - field
+        - handle
+        - name
+        - order
+        - required
+
+      properties:
+        description:
+          type: string
+
+        field:
+          type: string
+
+        handle:
+          type: string
+
+        name:
+          type: string
+
+        order:
+          type: integer
+          description: Display order of the image field.
+
+        required:
+          type: boolean
+
+    ErrorResponse:
+      type: object
+      required:
+        - status
+        - message
+
+      properties:
+        status:
+          type: string
+          example: invalid request
+
+        message:
+          type: string
+          example: type-id or vertical not provided
+
+components:
   securitySchemes:
-    login_required:
+    cookieAuth:
       type: apiKey
       in: cookie
-      name: login
-    brand_required:
-      type: apiKey
-      in: cookie
-      name: brand
+      name: session
+
+  schema:
+    default:
+      type: object
+      properties:
+        status:
+          type: string
+        message:
+          type: string
   
+  examples:
+    login_required:
+      summary: Login session required
+      value:
+        status: restricted
+        message: user is not logged in
+    brand_required:
+      summary: Brand in Login session required
+      value:
+        status: restricted
+        message: no brand found for this user
+
   responses:
+    login_required:
+        description: Login session required
+        content: 
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  example: restricted
+                message:
+                  type: string
+                  example: "user is not logged in"
+    brand_required:
+        description: Brand session required
+        content: 
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  example: restricted
+                message:
+                  type: string
+                  example: no brand found for this user
     "500":
       description: Internal server error
       content:
