@@ -21,7 +21,7 @@ load_dotenv()  # Load environment variables from .env file
 
 app = Quart(__name__)
 app = cors(app, allow_credentials=True,
-    allow_origin=os.getenv(DASHBOARD_DOMAIN),
+    allow_origin=os.getenv("DASHBOARD_DOMAIN"),
     # send_origin_wildcard=False,
     max_age=timedelta(days=1))
 
