@@ -20,7 +20,7 @@ from swagger_ui import api_doc
 load_dotenv()  # Load environment variables from .env file
 
 app = Quart(__name__)
-app = cors(app, allow_credentials=True,
+app = cors(app, allow_credentials=True if os.getenv("DASHBOARD_DOMAIN") != "*" else False,
     allow_origin=os.getenv("DASHBOARD_DOMAIN"),
     # send_origin_wildcard=False,
     max_age=timedelta(days=1))
