@@ -44,7 +44,7 @@ async def list_next_level_categories():
         CHECKING THE REQUIREMENTS
     """
     if None in (vertical, id):
-        return jsonify({"status": "request failed", "msg": "vertical(index) and category id is not provided"}), 400
+        return jsonify({"status": "failed", "message": "vertical(index) and category id is not provided"}), 400
 
         
     next_level = []
@@ -64,7 +64,7 @@ async def list_next_level_categories():
                 "level": level + 1
             })
     
-    return jsonify({"next": next_level})
+    return jsonify({"next": next_level}), 200
 
 
 # some data are category specific soo for the front end to show them, it has to fetch it first
@@ -82,7 +82,7 @@ async def get_attribute_fields():
     # print(category_id)
     #sanitising the arguments
     if category_id is None:
-        return jsonify({'status': "invalid argument", "msg": "no niche field available, it should be ?type-id=<id>"}), 400
+        return jsonify({'status': "invalid argument", "message": "no niche field available, it should be ?type-id=<id>"}), 400
 
     
     product_attributes = await asyncio.gather(mongodb.Fetch.listing_schema(), mongodb.Fetch.category_schema(category_id),
@@ -94,14 +94,14 @@ async def get_attribute_fields():
     image_attributes = product_attributes[2]
 
     if catalog_schema.get('error') is not None:
-        return jsonify({"status": "interrupted", "msg": "attributes are not available for this product"}), 500
+        return jsonify({"status": "interrupted", "message": "attributes are not available for this product"}), 500
 
     
     return jsonify({
         "listing_attributes": catalog_schema.get("attributes"),
         "category_attributes": category_schema.get("attributes") if category_schema.get("attributes") != None else await utils.Attributes.get(vertical, category_id),
         "image_attributes": image_attributes.get("attributes")
-    })
+    }), 200
 
 
 # get the xlsx sheet for bulk upload
