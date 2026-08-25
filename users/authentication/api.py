@@ -73,7 +73,7 @@ async def login():
             # a brand needs to link to the user
             # if no brand is linnked to the user then redirect to register
             brand_access = await connect_brand()
-            return jsonify({"login": {'status': 'ok', 'message': 'login successfull'}, "brand_connection": await brand_access.get_json(brand_access)}), 200
+            return jsonify({"login": {'status': 'ok', 'message': 'login successfull'}, "brand_connection": await brand_access[0].get_json(brand_access)}), 200
         else:
             return jsonify({'status': 'unauthorized', 'message': 'incorrect password'}), 401
     else:
