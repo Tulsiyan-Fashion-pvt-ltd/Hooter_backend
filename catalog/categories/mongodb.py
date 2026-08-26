@@ -1,4 +1,5 @@
 from quart import current_app
+from traceback import print_exc
 # returns the only niche specific keys without the type_id
 def get_keys(doc):
     doc.pop("type_id") # taking out the type_id field from the attributes
@@ -24,7 +25,30 @@ class Write:
 
 
 class Fetch:
-    # fetch catalog attributes
+    async def exists_category_schema(type_id: str) -> bool:
+        '''Checks if a type_id exists in the category schema or not
+        Arguments:
+            type_id:
+                category id from shopify taxonomy
+        
+        Returns:
+            True:
+                if category attribute schema exists by type id
+            False:
+                if category attribute schema doesn't exists by provided type id
+            `error`:
+                if faced any error while checking the type id
+        '''
+        try:
+            mongo = current_app.mongo
+            exists = await mongo.db.product_info_schema.find_one({"type_id": type_id}, {"_id": 1}) is not None  
+            return exists
+        except Exception as e:
+            print(e)
+            print_exc()
+            return "error"
+
+
     async def category_schema(type_id: str) -> dict:
         """
         SCHEMA IMPORTANT FOR PRODUCT CATEGORY SPECIFIC\n

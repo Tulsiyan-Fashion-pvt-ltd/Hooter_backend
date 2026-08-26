@@ -5,11 +5,11 @@ info:
   description: Inter API for Hooter backend
 
 servers:
-  - url: http://localhost:8800
-    description: Local development server
-
   - url: https://hooter_staging.h0oter.com
-    descrioption: Staging server
+    description: Staging server
+
+  - url: http://localhost:8888
+    description: Local development server
 
 tags:
   - name: Authentication
@@ -23,9 +23,6 @@ tags:
   
   - name: Catalog
     description: Catalog product categorisation APIs
-
-  - name: Products
-    description: Catalog product management APIs
 
   - name: Inventory
     description: Inventory management APIs
@@ -144,105 +141,40 @@ paths:
                         example: ok
                       message:
                         type: string
-                        example: login successfull
+                        example: login successful
                   brand_connection:
-                    oneOf:                            
-                      # No brands registered
-                      - type: object
-                        required:
-                          - connection
-                          - brands
-                          - status
-                          - message
-                        properties:
-                          status:
-                            type: string
-                            example: successful
-                          brands:
-                            type: "null"
-                            example: null
-                          connection:
-                            type: string
-                            example: not connected
-                          message:
-                            type: string
-                            example: no brand is registered
-                      # Only one brand
-                      - type: object
-                        required:
-                          - connection
-                          - brands
-                          - status
-                        properties:
-                          status:
-                            type: string
-                            example: successful
-                          brands:
-                            type: string
-                            example: single brand
-                          connection:
-                            type: string
-                            example: connected
-                      # Multiple brands
-                      - type: object
-                        required:
-                          - connection
-                          - brands
-                          - status
-                          - m
-                        properties:
-                          status:
-                            type: string
-                            example: successful
-                          brands:
-                            type: array
-                            items:
-                              type: object
-                              required:
-                                - brand_id
-                                - brand_name
-                              properties:
-                                brand_id:
-                                  type: string
-                                  example: "123456"
-                                brand_name:
-                                  type: string
-                                  example: Nike
-                          connection:
-                            type: string
-                            example: not connected
-                          message:
-                            type: string
-                            example: a brand needs to be selected
+                    $ref: "#/components/schema/brandConnection"
               examples:
                 single_brand:
                   summary: Single brand
                   value:
                     login:
                       status: ok
-                      message: login successfull
+                      message: login successful
                     brand_connection:
                       status: successful
                       brands: single brand
                       connection: connected
+                      message: brand connected successfully
 
                 no_brands:
                   summary: No brands registered
                   value:
                     login:
                       status: ok
-                      message: login successfull
+                      message: login successful
                     brand_connection:
                       status: successful
                       brands: null
                       connection: not connected
+                      message: no brand is registered
                       
                 multiple_brands:
                   summary: Multiple brands
                   value:
                     login:
                       status: ok
-                      message: login successfull
+                      message: login successful
                     brand_connection:
                       status: successful
                       brands:
@@ -327,8 +259,6 @@ paths:
         - Authentication
       summary: Check current session
       description: Returns whether the current user is authenticated.
-      security:
-        - cookieAuth: []
 
       responses:
         "200":
@@ -356,9 +286,6 @@ paths:
                         enum: [deny]
                         example: deny
                   - $ref: "#/components/schema/default"
-                      
-              examples:
-
 
         "500":
           $ref: "#/components/responses/500"
@@ -587,6 +514,10 @@ paths:
                   message:
                     type: string
                     example: brand registered successfully
+        "401":
+          $ref: "#/components/responses/login_required"
+        "403":
+          $ref: "#/components/responses/brand_required"
         "default":
           $ref: "#/components/responses/default"
 
@@ -662,10 +593,12 @@ paths:
                         brand_name: abc
                     connection: not connected
                     message: a brand needs to be selected
-
+        "401":
+          $ref: "#/components/responses/login_required"
+        "403":
+          $ref: "#/components/responses/brand_required"
         "500": 
           $ref: "#/components/responses/500"
-        
         "default":
           $ref: "#/components/responses/default"
 
@@ -707,9 +640,12 @@ paths:
                   message:
                     type: string
                     example: invalid brand_id
+        "401":
+          $ref: "#/components/responses/login_required"
+        "403":
+          $ref: "#/components/responses/brand_required"
         "500": 
           $ref: "#/components/responses/500"
-        
         "default":
           $ref: "#/components/responses/default"
 
@@ -780,7 +716,10 @@ paths:
                         id: gid://shopify/TaxonomyCategory/hg
                         name: Home & Garden
                         vertical: 13
-
+        "401":
+          $ref: "#/components/responses/login_required"
+        "403":
+          $ref: "#/components/responses/brand_required"
         "500":
           description: Could not complete the request
           content:
@@ -898,9 +837,9 @@ paths:
                     type: string
                     example: vertical(index) and category id is not provided
         "401":
-          $ref: "#/components/responses/401"
+          $ref: "#/components/responses/login_required"
         "403":
-          $ref: "#/components/responses/403"
+          $ref: "#/components/responses/brand_required"
         "default":
           $ref: "#/components/responses/default"
 
@@ -1010,6 +949,10 @@ paths:
                     description: Back view image of the product.
                     order: 1
                     required: false
+        "401":
+          $ref: "#/components/responses/login_required"
+        "403":
+          $ref: "#/components/responses/brand_required"
         "default":
           $ref: "#/components/responses/default"
 
@@ -1052,7 +995,10 @@ paths:
               schema:
                 type: string
                 format: binary
-
+        "401":
+          $ref: "#/components/responses/login_required"
+        "403":
+          $ref: "#/components/responses/brand_required"
         "default":
           $ref: "#/components/responses/default"
 
@@ -1097,13 +1043,140 @@ paths:
                   summary: Brand has no catalog
                   value:
                     catalog: unavailable
-
+        "401":
+          $ref: "#/components/responses/login_required"
+        "403":
+          $ref: "#/components/responses/brand_required"
         "default":
           $ref: "#/components/responses/default"
 
+  /catalog/products/single?type-id=value:
+    post:
+      tags:
+        - Catalog
+      summary: Upload a single catalog
+      description: Uploads a single catalog to the Hooter backend server.
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/categoryID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schema/SingleCatalogPayload"
+
+      responses:
+        "200":
+          description: Successfully added a product into the catalog
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: successful
+                  message:
+                    type: string
+                    example:  added the single catalog
+                  usku_id:
+                    type: string
+                    example:  8a985fd1c8704998b82eb8458577d42b
+        "401":
+          $ref: "#/components/responses/login_required"
+        "403":
+          $ref: "#/components/responses/brand_required"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schema/default"
+              examples:
+                invalid_listing:
+                  summary: Invalid lsiting attribute
+                  value:
+                    status: bad request
+                    message: invalid listing attributes
+                invalid_category:
+                  summary: Invalid category attribute
+                  value:
+                    status: bad request
+                    message: invalid category attributes
+        "default":
+          $ref: "#/components/responses/default"
+
+  /catalog/products/bulk?type-id=value:
+    post:
+      summary:  Upload bulk product
+      description:  Upload bulk catalog product sheet as per the category and run a get an SSE link to 
+        fetch whether products finished uploading.
+      tags:
+        - Catalog
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/categoryID"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - sheet
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Excel (.xlsx) file
+      responses:
+        "200":
+          description: Sheet received to upload products
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: successful
+                  message:
+                    type: string
+                    example: XLSX sheet receieved to upload the products
+                  sse_url:
+                    type: string
+                    example: /catalog/products/events/2xxxxdfffffff
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: successful
+                  message:
+                    type: string
+                    example: XLSX sheet receieved to upload the products
+                  sse_url:
+                    type: string
+                    example: /catalog/products/events/2xxxxdfffffff
+
+
+
 
 components:
-  schemas:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: session
+
+  schema:
     AttributeField:
       type: object
       required:
@@ -1113,20 +1186,15 @@ components:
         - name
         - required
         - type
-
       properties:
         description:
           type: string
-
         field:
           type: string
-
         handle:
           type: string
-
         name:
           type: string
-
         type:
           type: string
           enum:
@@ -1134,11 +1202,9 @@ components:
             - integer
             - decimal
             - boolean
-
         max_length:
           type: integer
           description: Maximum allowed length for string fields.
-
         required:
           type: boolean
 
@@ -1151,50 +1217,118 @@ components:
         - name
         - order
         - required
-
       properties:
         description:
           type: string
-
         field:
           type: string
-
         handle:
           type: string
-
         name:
           type: string
-
         order:
           type: integer
           description: Display order of the image field.
-
         required:
           type: boolean
 
-    ErrorResponse:
+    SingleCatalogPayload:
       type: object
       required:
-        - status
-        - message
-
+        - listing_attributes
+        - category_attributes
       properties:
-        status:
+        listing_attributes:
+          $ref: "#/components/schema/ListingAttributes"
+
+        category_attributes:
+          type: object
+          description: >
+            Category-specific attributes. Mandatory fields are obtained from the
+            category attributes API. Additional custom attributes are allowed.
+          additionalProperties: true
+          properties:
+            blouse_fabric:
+              type: string
+            blouse_length:
+              type: string
+            blouse_piece_included:
+              type: string
+            border_type:
+              type: string
+            brand_color:
+              type: string
+            care:
+              type: string
+            color:
+              type: string
+            fabric:
+              type: string
+            key_points:
+              type: array
+              items:
+                type: string
+            occasion:
+              type: string
+            other_info:
+              type: string
+            pallu_type:
+              type: string
+            pattern:
+              type: string
+            product_description:
+              type: string
+            saree_length_m:
+              type: string
+            stitch:
+              type: string
+            style:
+              type: string
+            uid:
+              type: string
+            work:
+              type: string
+
+    ListingAttributes:
+      type: object
+      required:
+        - sku_id
+        - title
+        - price
+      properties:
+        sku_id:
           type: string
-          example: invalid request
-
-        message:
+        title:
           type: string
-          example: type-id or vertical not provided
+        price:
+          type: number
+        compared_price:
+          type: number
+          nullable: true
+        purchasing_cost:
+          type: number
+          nullable: true
+        vendor:
+          type: string
+          nullable: true
+        ean:
+          type: string
+          nullable: true
+        hsn:
+          type: string
+          nullable: true
+        net_weight:
+          type: number
+          nullable: true
+        dead_weight:
+          type: number
+          nullable: true
+        volumetric_weight:
+          type: number
+          nullable: true
+        brand_name:
+          type: string
 
-components:
-  securitySchemes:
-    cookieAuth:
-      type: apiKey
-      in: cookie
-      name: session
-
-  schema:
     default:
       type: object
       properties:
@@ -1202,6 +1336,38 @@ components:
           type: string
         message:
           type: string
+
+    brandConnection:
+      type: object
+      properties:
+        status:
+          type: string
+        brands:
+          type: string
+        connection:
+          type: string
+        message:
+          type: string
+
+    loginRequried:
+      type: object
+      properties:
+        status:
+          type: string
+          example: restricted
+        message:
+          type: string
+          example: "user is not logged in"
+
+    brandRequired:
+      type: object
+      properties:
+        status:
+          type: string
+          example: restricted
+        message:
+          type: string
+          example: no brand found for this user
   
   examples:
     login_required:
@@ -1213,7 +1379,8 @@ components:
       summary: Brand in Login session required
       value:
         status: restricted
-        message: no brand found for this user
+        message: no brand found for this user 
+
 
   responses:
     login_required:
@@ -1221,27 +1388,13 @@ components:
         content: 
           application/json:
             schema:
-              type: object
-              properties:
-                status:
-                  type: string
-                  example: restricted
-                message:
-                  type: string
-                  example: "user is not logged in"
+              $ref : "#/components/schema/loginRequried"
     brand_required:
         description: Brand session required
         content: 
           application/json:
             schema:
-              type: object
-              properties:
-                status:
-                  type: string
-                  example: restricted
-                message:
-                  type: string
-                  example: no brand found for this user
+              $ref : "#/components/schema/brandRequired"
     "500":
       description: Internal server error
       content:
@@ -1271,6 +1424,7 @@ components:
                 type: string
               message:
                 type: string
+      
   
   parameters:
     brandIdNotRequired:
@@ -1287,7 +1441,13 @@ components:
         type: string
       required: true
       description: unique id for the registered brand
-
+    categoryID:
+      name: type-id
+      in: query
+      required: true
+      schema:
+        type: string
+      description: Shopify taxonomy category ID
     
 
   "requestBody":

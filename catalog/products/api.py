@@ -62,11 +62,11 @@ async def upload_single_catalog():
 
     if not (Payload.check_accepted_payload(listing_attributes, catalog_accepted_keys) and 
             Payload.check_required_payload(listing_attributes, catalog_mandatory_keys)):
-        return jsonify({"status": "bad request", "message": "Invalid listing attributes"}), 400
+        return jsonify({"status": "bad request", "message": "invalid listing attributes"}), 400
 
     if category_mandatory_keys != [] and Payload.check_required_payload(product_attributes, category_mandatory_keys):
         # we're not checking the accepted once because there could be custom attributes
-        return jsonify({"status": "bad request", "message": "Invalid product attributes"}), 400
+        return jsonify({"status": "bad request", "message": "invalid category attributes"}), 400
 
     """creating product in the system"""
     response = await services.create_product(listing_attributes = listing_attributes,
@@ -109,8 +109,8 @@ async def upload_bulk_catalog():
     xlsx_sheet = file_payload.get("sheet")
 
     '''checking the payload and files'''
-    if type_id is None or xlsx_sheet is None:
-        return jsonify({"status": "invalid form data"}), 400
+    if type_id is None:
+        return jsonify({"status": "invalid request", "message": "type id not provided"}), 400
     
     # checking the filename should be .xlsx file
     if not xlsx_sheet :
