@@ -10,14 +10,14 @@ def get_keys(doc):
 
 class Write:
     @staticmethod
-    async def category_schema(id, attributes: dict) -> dict:
+    async def category_schema(id: str, name: str, attributes: dict) -> dict:
         """WRITES THE CATETGORY SCHEMA INTO THE MONGODB\n
         It used when the category schema is not available and need to search from taxonomy file.
         After reading from the file the data gets stored in the db.
         """
         mongo = current_app.mongo
         try:
-            doc = await mongo.db.product_info_schema.insert_one({"type_id": id, "attributes": attributes})
+            doc = await mongo.db.product_info_schema.insert_one({"type_id": id, "name": name, "attributes": attributes})
             return {"error": None, "status": "ok"}
         except Exception as e:
             print(f"error encountered while writing the category attributes\n{e}")
@@ -61,7 +61,6 @@ class Fetch:
 
                 if not doc:
                     return {"error": "Not found"}
-
                 return doc
         except Exception as e:
                 print(e)
@@ -76,7 +75,7 @@ class Fetch:
         mongo = current_app.mongo
 
         try:
-              doc = await mongo.db.universal_catalog_schema.find_one({}, {"_id": 0, "type_id": 0})  
+              doc = await mongo.db.universal_catalog_schema.find_one({}, {"_id": 0})
               if not doc:
                   return {"error": "Not found"}
 

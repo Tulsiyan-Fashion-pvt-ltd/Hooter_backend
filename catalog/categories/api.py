@@ -14,7 +14,7 @@ categories = Blueprint("categories", __name__, url_prefix = "/categories")
 @categories.get("/top") 
 @login_required
 @brand_required
-@alru_cache(maxsize=32)
+@alru_cache(maxsize=128)
 async def list_top_level_categories():
     taxonomy = current_app.taxonomy
 
@@ -31,13 +31,13 @@ async def list_top_level_categories():
     return jsonify({"level0": top_level})
 
 
-@categories.get("/next")
+@categories.get("/next/<path:id>")
 @login_required
 @brand_required
-@alru_cache(maxsize=32)
-async def list_next_level_categories():
+@alru_cache(maxsize=128)
+async def list_next_level_categories(id):
     vertical = request.args.get("vertical", type=int)
-    id = request.args.get("id")
+    # id = request.args.get("id")
     taxonomy = current_app.taxonomy
 
     """
@@ -69,15 +69,15 @@ async def list_next_level_categories():
 
 # some data are category specific soo for the front end to show them, it has to fetch it first
 # this route will provide the data fields which for category specific attributes
-@categories.get('/attributes')
+@categories.get('/attributes/<path:id>')
 @login_required
 @brand_required
 @alru_cache(maxsize=128)
-async def get_attribute_fields():
+async def get_attribute_fields(id):
     """
     RETURNS THE PRODUCT ATTRIBUTE
     """
-    category_id = request.args.get("type-id", type=str)
+    category_id = id
     vertical = request.args.get("vertical", type=int)
     # print(category_id)
     #sanitising the arguments
@@ -105,15 +105,15 @@ async def get_attribute_fields():
 
 
 # get the xlsx sheet for bulk upload
-@categories.get('/bulk-excel-sheet')
+@categories.get('/bulk-excel-sheet/<path:id>')
 @login_required
 @brand_required
-@alru_cache(maxsize=128)
-async def get_bulk_upload_sheet():
+@alru_cache(maxsize=64)
+async def get_bulk_upload_sheet(id):
     """
     DOWNLOAD FUNCTION FOR THE XLSX EXCEL SHEET
     """
-    type_id = request.args.get('type-id', type=str)
+    type_id = id
     vertical = request.args.get("vertical", type=int)
 
     attributes = await asyncio.gather(mongodb.Fetch.listing_schema(), 
@@ -121,4 +121,8 @@ async def get_bulk_upload_sheet():
     attributes = attributes[0].get("attributes") + (attributes[1].get("attributes") if attributes[1].get("attributes") is not None else utils.Attributes.get(vertical, type_id))
 
     new_workbook = await asyncio.to_thread(workbook.create, attributes)
-    return  Response(new_workbook)
+    return  Response(new_workbook, 
+                     mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                     headers={
+                        "Content-Disposition": f"attachment; filename=categories_{type_id}.xlsx"
+                })

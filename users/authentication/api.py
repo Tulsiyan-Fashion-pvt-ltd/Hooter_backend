@@ -29,14 +29,16 @@ async def signup():
             'number': number,
             'email': email,
             'hashed_password': hash_password(password),
-            'designation': designation
+            'designation': designation,
             }
 
         response = await mariadb.Write.signup_user(user_creds)
 
-        if response and response.get('status') != 'ok':
-            if response.get('message') == 'user_already_registered':
-                return jsonify({'status': 'conflict', "mesasge": "user already registered"}), 409
+        if response != 'ok':
+            if response == 1062:
+                return jsonify({'status': 'failed', "mesasge": "user already registered"}), 409
+            else:
+                return jsonify({'status': 'failed', "mesasge": "could not signed up the user"}), 500
         print('registered the user')
     else:
         return jsonify({'status': 'Bad Request', 'message': 'all required field not provided'}), 400

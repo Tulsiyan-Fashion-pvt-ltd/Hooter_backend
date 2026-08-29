@@ -300,7 +300,7 @@ paths:
       summary: Logout user
       description: Ends the current authenticated session.
       security:
-        - login_required: []
+        - cookieAuth: []
       responses:
         "200":
           description: User logged out successfully
@@ -329,7 +329,7 @@ paths:
       summary: Fetch logged in user profile data
       description: Sends the logged in user credentials
       security:
-        - login_required: []
+        - cookieAuth: []
 
       responses:
         "200":
@@ -398,7 +398,7 @@ paths:
         Otherwise, a new POC account is created as per the given poc details.
 
       security:
-        - login_required: []
+        - cookieAuth: []
 
       requestBody:
         required: true
@@ -417,6 +417,8 @@ paths:
                     - brand_name
                     - plan
                     - address
+                    - city
+                    - state
                     - pincode
                     - estyear
                   properties:
@@ -431,10 +433,16 @@ paths:
                       example: 29ABCDE1234F1Z5
                     plan:
                       type: string
-                      example: premium
+                      enum: [lite, pro, enterprise]
                     address:
                       type: string
                       example: 221B Baker Street
+                    city:
+                      type: string
+                      example: New delhi
+                    state:
+                      type: string
+                      example: Delhi
                     pincode:
                       type: string
                       example: "110025"
@@ -461,7 +469,7 @@ paths:
                       type: string
                     access:
                       type: string
-                      enum: [admin, manager, staff]
+                      enum: [brand_admin, brand_member]
                     password:
                       type: string
                       format: password
@@ -474,8 +482,10 @@ paths:
                     entity_name: ABC Pvt Ltd
                     brand_name: ABC Fashion
                     gstin: 29ABCDE1234F1Z5
-                    plan: premium
+                    plan: lite
                     address: 221B Baker Street
+                    city: New Delhi
+                    state: Delhi
                     pincode: "110025"
                     estyear: 2023
                   poc:
@@ -487,8 +497,10 @@ paths:
                   brand:
                     entity_name: ABC Pvt Ltd
                     brand_name: ABC Fashion
-                    plan: premium
+                    plan: lite
                     address: 221B Baker Street
+                    city: New Delhi
+                    state: Delhi
                     pincode: "110025"
                     estyear: 2023
                   poc:
@@ -497,7 +509,7 @@ paths:
                     number: "9876543210"
                     email: john@example.com
                     designation: Manager
-                    access: manager
+                    access: brand_member
                     password: secret123
 
       responses:
@@ -529,7 +541,7 @@ paths:
       tags:
         - Brand
       security:
-        - login_required: []
+        - cookieAuth: []
       
       responses:
         "200":
@@ -607,7 +619,7 @@ paths:
       summary: Connects given brand
       description: Connects brand according to brand id provided
       security:
-        - login_required: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/brandIdRequired"
       tags:
@@ -659,8 +671,7 @@ paths:
       description: Returns all level 0 (top level) Shopify taxonomy categories.
 
       security:
-        - login_required: []
-        - brand_required: []
+        - cookieAuth: []
 
       responses:
         "200":
@@ -744,7 +755,7 @@ paths:
         "default":
           $ref: "#/components/responses/default"
 
-  /catalog/categories/next?id=value&vertical=value:
+  /catalog/categories/next/{id}:
     get:
       tags:
         - Catalog
@@ -756,7 +767,7 @@ paths:
 
       parameters:
         - name: id
-          in: query
+          in: path
           required: true
           description: Shopify taxonomy category ID.
           schema:
@@ -843,22 +854,21 @@ paths:
         "default":
           $ref: "#/components/responses/default"
 
-  /catalog/categories/attributes?type-id=value&vertical=value:
+  /catalog/categories/attributes/{id}:
     get:
       tags:
         - Catalog
 
       summary: Get category attributes
 
-      description: |
-        Returns the listing, category, and image attributes for the specified taxonomy category.
+      description: Returns the listing, category, and image attributes for the specified taxonomy category.
 
       security:
         - cookieAuth: []
 
       parameters:
-        - name: type-id
-          in: query
+        - name: id
+          in: path
           required: true
           description: Shopify taxonomy category ID.
           schema:
@@ -889,17 +899,17 @@ paths:
                   listing_attributes:
                     type: array
                     items:
-                      $ref: "#/components/schemas/AttributeField"
+                      $ref: "#/components/schema/AttributeField"
 
                   category_attributes:
                     type: array
                     items:
-                      $ref: "#/components/schemas/AttributeField"
+                      $ref: "#/components/schema/AttributeField"
 
                   image_attributes:
                     type: array
                     items:
-                      $ref: "#/components/schemas/ImageAttribute"
+                      $ref: "#/components/schema/ImageAttribute"
 
               example:
                 listing_attributes:
@@ -956,7 +966,7 @@ paths:
         "default":
           $ref: "#/components/responses/default"
 
-  /catalog/categories/bulk-excel-sheet?type-id=value&vertical=value:
+  /catalog/categories/bulk-excel-sheet/{id}:
     get:
       tags:
         - Catalog
@@ -971,8 +981,8 @@ paths:
         - cookieAuth: []
 
       parameters:
-        - name: type-id
-          in: query
+        - name: id
+          in: path
           required: true
           description: Shopify taxonomy category ID.
           schema:
@@ -1108,7 +1118,7 @@ paths:
         "default":
           $ref: "#/components/responses/default"
 
-  /catalog/products/bulk?type-id=value:
+  /catalog/products/bulk:
     post:
       summary:  Upload bulk product
       description:  Upload bulk catalog product sheet as per the category and run a get an SSE link to 
@@ -1128,7 +1138,7 @@ paths:
               required:
                 - sheet
               properties:
-                file:
+                sheet:
                   type: string
                   format: binary
                   description: Excel (.xlsx) file
@@ -1166,6 +1176,47 @@ paths:
                     type: string
                     example: /catalog/products/events/2xxxxdfffffff
 
+  /catalog/products/error_sheet/{job_id}:
+    get:
+      summary:  Download the xlsx sheet error sheet
+      description:  Download the xlsx error sheet if there is any error sheet created for the job id for the 
+        product upload event created from the uploaded excel sheet for bulk product upload
+      secutiry:
+        - cookieAuth: []
+      tags:
+        - Catalog
+      parameters:
+        - in: path
+          required: true
+          $ref: "#/components/parameters/path/jobIdRequired"
+      responses:
+        "200":
+          description: HTTP file download response for error sheet
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                formate: binary
+
+        "202":
+          description: Bulk product upload has not completed yet
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: pending
+                  message:
+                    type: string
+                    example: hob has not finsihed yet
+        "404":
+          description:  resource not found
+
+  /catalog/products/{usku_id}:
+    get:
+      summary:  
 
 
 
@@ -1383,13 +1434,13 @@ components:
 
 
   responses:
-    login_required:
+    login_required: # 401
         description: Login session required
         content: 
           application/json:
             schema:
               $ref : "#/components/schema/loginRequried"
-    brand_required:
+    brand_required: # 403
         description: Brand session required
         content: 
           application/json:
@@ -1448,6 +1499,13 @@ components:
       schema:
         type: string
       description: Shopify taxonomy category ID
-    
+    path:
+      jobIdRequired:
+        in: path
+        name: job_id
+        schema:
+          type: string
+        descrioption: Job id for server side events
+        required: true
 
   "requestBody":

@@ -9,3 +9,7 @@ __pycache__
 !.product_images/.high_resol_images/.gitkeep
 !.product_images/.low_resol_images/.gitkeep
 !.product_images/.image_cards/.gitkeep
+./minio-server/*
+./minio-server
+./data/*
+data/

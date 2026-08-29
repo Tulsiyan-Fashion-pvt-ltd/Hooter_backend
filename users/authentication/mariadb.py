@@ -1,6 +1,7 @@
 from quart import current_app
 from datetime import datetime
 from asyncmy.cursors import DictCursor
+from traceback import print_exc
 
 class Write:
     @staticmethod
@@ -31,13 +32,12 @@ class Write:
                             user_name,
                             phone_number,
                             user_email,
-                            user_access,
                             user_designation,
                             created_at
                         )
-                        VALUES(%s, %s, %s, %s, %s, %s, CURDATE())
+                        VALUES(%s, %s, %s, %s, %s, CURDATE())
                         ''',
-                        (userid, name, number, email, 'super_user', designation)
+                        (userid, name, number, email, designation)
                     )
 
                     await conn.commit()
@@ -45,22 +45,11 @@ class Write:
                 except Exception as e:
                     await conn.rollback()
                     print(f'Error encountered while signing up user: {e}')
+                    print_exc()
+                    return e.args[0]
+        return 'ok'
 
-                    if hasattr(e, "args") and e.args and e.args[0] == 1062:
-                        return {
-                            'status': 'error',
-                            'message': 'user_already_registered'
-                        }
-
-                    return {
-                        'status': 'error',
-                        'message': 'unable_to_register_user'
-                    }
-
-        return {
-            'status': 'ok',
-            'message': 'user_registration_successful'
-        }
+    
 class Fetch:
     @staticmethod
     async def userid_by_email(email):

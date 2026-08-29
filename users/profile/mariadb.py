@@ -15,8 +15,7 @@ class Fetch:
                         SELECT user_name,
                                phone_number,
                                user_email,
-                               user_designation,
-                               user_access
+                               user_designation
                         FROM user_creds
                         WHERE user_id=%s
                         ''',

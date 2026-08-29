@@ -1,12 +1,14 @@
 from datetime import datetime
 from quart import current_app
 from asyncmy.cursors import DictCursor
+from traceback import print_exc
 
 # handling the database quiries related to brands to handle brands
 
 class Write:
     @staticmethod
-    async def insert_brand(brand_id, user_id, brand_data):
+    async def insert_brand(brand_data: dict, user_id: str, access: str) -> str| int:
+        """Adds new brand to the database"""
         pool = current_app.pool
         async with pool.acquire() as connection:
             async with connection.cursor(cursor=DictCursor) as cursor:
@@ -18,53 +20,59 @@ class Write:
                             brand_name,
                             gstin,
                             hooter_plan,
-                            registered_address,
+                            address,
+                            city,
+                            state,
                             pincode,
                             established_year,
-                            poc,
-                        ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                            poc
+                        ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s, %s, %s)
                     """
 
                     values = (
-                        brand_id,
+                        brand_data.get('brand_id'),
                         brand_data.get('entity_name'),
                         brand_data.get('brand_name'),
                         brand_data.get('gstin'),
                         brand_data.get('plan'),
                         brand_data.get('address'),
+                        brand_data.get('city'),
+                        brand_data.get('state'),
                         brand_data.get('pincode'),
                         brand_data.get('estyear'),
                         user_id
                     )
 
                     await cursor.execute(query, values)
-
-                    await cursor.execute('''INSERT INTO brand_access (brand_id, user_id)
-                        VALUES(%s, %s)''', (brand_id, user_id))
+                    await cursor.execute('''INSERT INTO brand_access (brand_id, user_id, user_access)
+                        VALUES(%s, %s, %s)''', (brand_data.get('brand_id'), user_id, access))
+                    
                     await connection.commit()
+                    return 'ok'
                 except Exception as e:
                     print(f'error occured while registering brand as \n{e}')
+                    print_exc()
                     await connection.rollback()
                     return e.args[0]
-                return 'ok'
 
 
     @staticmethod
-    async def map_user_brand(user_id, brand_id):
+    async def map_user_brand(brand_id, user_id, access: str) -> bool:
         pool = current_app.pool
         async with pool.acquire() as connection:
             async with connection.cursor(cursor=DictCursor) as cursor:
                 try:
                     query = """
-                        INSERT INTO brand_access (brand_id, user_id)
-                        VALUES (%s,%s)
+                        INSERT INTO brand_access (brand_id, user_id, user_access)
+                        VALUES (%s, %s, %s)
                     """
-                    await cursor.execute(query, (brand_id, user_id))
+                    await cursor.execute(query, (brand_id, user_id, access))
                     await connection.commit()
+                    return 'ok'
                 except Exception as e:
                     print(f'error occured while mapping user to the brand as \n {e}')
                     await connection.rollback()
-                    raise
+                    return e.args[0]
 
 class Fetch:
     

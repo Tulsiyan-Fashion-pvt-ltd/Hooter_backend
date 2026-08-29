@@ -17,7 +17,6 @@ async def fetch_user_creds():
                 'name': _.get('user_name'),
                 'number': _.get('phone_number'),
                 'email': _.get('user_email'),
-                'designation': _.get('user_designation'),
-                'access': _.get('user_access')
+                'designation': _.get('user_designation')
                 }
     return jsonify({'status': 'ok', 'user_data': user_data}), 200

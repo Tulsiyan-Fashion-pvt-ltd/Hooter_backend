@@ -40,7 +40,8 @@ app.config['MYSQL_DB'] = os.environ.get('HOOTER_DB')
 app.config['MYSQL_PORT'] = int(os.environ.get('HOOTER_DB_PORT', '3306'))
 
 # mongo db connection
-app.config['MONGO_URI'] = os.environ.get('MONGO_HOST')
+app.config['MONGO_URI'] = os.environ.get('MONGO_ROUTE')
+print(os.environ.get('MONGO_ROUTE'))
 app.mongo = Mongo(app)
 
 # app.root_path = Path(__file__).resolve() # root path for the main directory

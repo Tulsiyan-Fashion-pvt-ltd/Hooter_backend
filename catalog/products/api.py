@@ -1,23 +1,18 @@
 from quart import Blueprint, session, request, jsonify, Response, abort, url_for
 from catalog.products import mariadb
-from brand.auth import mariadb as brand_sql
 from catalog.categories import mongodb as categories
 from catalog.products import mongodb 
 from catalog.products.utils.id import create_usku, create_variant_id
 from utils.prerequirements import login_required, brand_required
 from utils import helper
-from utils import workbook
 from utils.helper import Payload
 import asyncio
 from catalog.providers.shopify import products as shopify_products
-from config import _platforms, _product_image_bucket, _product_image_root_key
+from config import _platforms
 from . import services
 from traceback import print_exc
 from uuid import uuid4
-import json
 from .sse import product_sse
-from io import BytesIO
-
 
 products = Blueprint("products", __name__, url_prefix = "/products")
 products.register_blueprint(product_sse)
@@ -92,8 +87,6 @@ async def upload_single_catalog():
 #         return jsonify({"status": "failed", "message": db.get("error")}), 400
 
 #     return jsonify({"status": "successful", "message": db.get("message")}), 200
-    
-
 
 
 @products.post('/bulk')
@@ -158,16 +151,16 @@ async def send_error_sheet(job_id):
 
     returned_result = services.tasks.get(job_id).get("task").result()
     if returned_result.get("code") == 200:
-        return jsonify({"message": returned_result.get("message"), "status": returned_result.get("status")}), 200
+        return abort(404)
     
     elif returned_result.get("code") == 202:
         '''READ THE SHEET AND SEND IN BYTES'''
         returned_result.get("sheet").seek(0)
         sheet = returned_result.get("sheet").read()
         services.tasks.pop(job_id)
-        return Response(sheet)
+        return Response(sheet, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     else:
-        return jsonify({"status": "pending", "message": "job has not finished yet"}), 202
+        return jsonify({"status": "failed", "message": "unexpected error occured in the server"}), 500
 
 
 
