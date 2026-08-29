@@ -158,7 +158,8 @@ async def send_error_sheet(job_id):
         returned_result.get("sheet").seek(0)
         sheet = returned_result.get("sheet").read()
         services.tasks.pop(job_id)
-        return Response(sheet, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        return Response(sheet, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        headers={"Content-Disposition": "attachment; filename=error_sheet.xlsx"})
     else:
         return jsonify({"status": "failed", "message": "unexpected error occured in the server"}), 500
 

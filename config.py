@@ -15,7 +15,7 @@ load_dotenv()
 
 _s3 = boto3.client(
     "s3",
-    endpoint_url=os.environ.get("HOOTERS3_ENPOINT_URL"),  # MinIO
+    endpoint_url=os.environ.get("HOOTERS3_ENDPOINT_URL"),  # MinIO
     aws_access_key_id=os.environ.get("HOOTERS3_ACCESS_KEY_ID"),
     aws_secret_access_key=os.environ.get("HOOTERS3_SECRET_ACCESS_KEY"),
     region_name="us-east-1",

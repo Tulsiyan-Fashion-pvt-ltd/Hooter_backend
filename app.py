@@ -41,7 +41,6 @@ app.config['MYSQL_PORT'] = int(os.environ.get('HOOTER_DB_PORT', '3306'))
 
 # mongo db connection
 app.config['MONGO_URI'] = os.environ.get('MONGO_ROUTE')
-print(os.environ.get('MONGO_ROUTE'))
 app.mongo = Mongo(app)
 
 # app.root_path = Path(__file__).resolve() # root path for the main directory
@@ -119,4 +118,4 @@ if __name__ == "__main__":
     )
     
     print('''>>>\nuse @login_required when the login is required and use\nfrom utils.prerequirements import login_required''')
-    app.run(debug=True, host='0.0.0.0', port=8888)
+    app.run(debug=True, host='0.0.0.0', port=os.getenv('HOOTER_APPLICATION_PORT'))
