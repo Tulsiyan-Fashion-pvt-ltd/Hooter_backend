@@ -1,0 +1,166 @@
+[{
+  "_id": {
+    "$oid": "69c8c9d5e625c78df6e864b0"
+  },
+  "attributes": [
+    {
+      "name": "SKU ID",
+      "handle": "sku-id",
+      "field": "sku_id",
+      "description": "The merchant's internal Stock Keeping Unit (SKU) used for inventory management.",
+      "type": "string",
+      "required": true,
+      "max_length": 100
+    },
+    {
+      "name": "Product Title",
+      "handle": "product-title",
+      "field": "product_title",
+      "description": "The title or name of the product.",
+      "type": "string",
+      "required": true,
+      "max_length": 200
+    },
+    {
+      "name": "Product Description",
+      "handle": "product-desc",
+      "field": "product_desc",
+      "description": "A detailed description of the product, including its features and specifications.",
+      "type": "string",
+      "required": true,
+      "max_length": 5000
+    },
+    {
+      "name": "Vendor",
+      "handle": "vendor",
+      "field": "vendor",
+      "description": "The supplier or vendor of the product.",
+      "type": "string",
+      "required": false,
+      "max_length": 255
+    },
+    {
+      "name": "Brand Name",
+      "handle": "brand-name",
+      "field": "brand_name",
+      "description": "The brand or manufacturer associated with the product.",
+      "type": "string",
+      "required": false,
+      "max_length": 255
+    },
+    {
+      "name": "Collections",
+      "handle": "collections",
+      "field": "collection_id",
+      "description": "The collections this product belongs to.",
+      "type": [
+        "int",
+        "string"
+      ],
+      "required": false,
+      "max_length": 255
+    },
+    {
+      "name": "Tags",
+      "handle": "tags",
+      "field": "tags",
+      "description": "A comma-separated list of keywords or labels used to organize, search, and filter products.",
+      "type": "string",
+      "required": false,
+      "max_length": 500
+    },
+    {
+      "name": "Price",
+      "handle": "price",
+      "field": "price",
+      "description": "The selling price of the product.",
+      "type": "decimal",
+      "required": true
+    },
+    {
+      "name": "Compared Price",
+      "handle": "compared-price",
+      "field": "compared_price",
+      "description": "The original or compare-at price used to show discounts.",
+      "type": "decimal",
+      "required": true
+    },
+    {
+      "name": "Purchasing Cost",
+      "handle": "purchasing-cost",
+      "field": "purchasing_cost",
+      "description": "The cost incurred to purchase or manufacture the product.",
+      "type": "decimal",
+      "required": false
+    },
+    {
+      "name": "UPC",
+      "handle": "upc",
+      "field": "upc",
+      "description": "The Universal Product Code (UPC), a 12-digit global product identifier primarily used in the United States and Canada.",
+      "type": "string",
+      "required": false,
+      "max_length": 12
+    },
+    {
+      "name": "EAN",
+      "handle": "ean",
+      "field": "ean",
+      "description": "The European Article Number (EAN), a 13-digit global product identifier used internationally.",
+      "type": "string",
+      "required": false,
+      "max_length": 13
+    },
+    {
+      "name": "GTIN",
+      "handle": "gtin",
+      "field": "gtin",
+      "description": "The Global Trade Item Number (GTIN), which includes GTIN-8, GTIN-12 (UPC), GTIN-13 (EAN), and GTIN-14.",
+      "type": "string",
+      "required": false,
+      "max_length": 14
+    },
+    {
+      "name": "ISBN",
+      "handle": "isbn",
+      "field": "isbn",
+      "description": "The International Standard Book Number (ISBN) assigned to books.",
+      "type": "string",
+      "required": false,
+      "max_length": 13
+    },
+    {
+      "name": "HSN Code",
+      "handle": "hsn-code",
+      "field": "hsn_code",
+      "description": "The Harmonized System of Nomenclature (HSN) code used for tax classification.",
+      "type": "string",
+      "required": false,
+      "max_length": 8
+    },
+    {
+      "name": "Net Weight",
+      "handle": "net-weight-kg",
+      "field": "net_weight_kg",
+      "description": "The net weight of the product excluding packaging, measured in kilograms.",
+      "type": "decimal",
+      "required": false
+    },
+    {
+      "name": "Dead Weight",
+      "handle": "dead-weight-kg",
+      "field": "dead_weight_kg",
+      "description": "The actual physical weight of the product in kilograms.",
+      "type": "decimal",
+      "required": false
+    },
+    {
+      "name": "Volumetric Weight",
+      "handle": "volumetric-weight-kg",
+      "field": "volumetric_weight_kg",
+      "description": "The volumetric or dimensional weight of the product in kilograms, used for shipping calculations.",
+      "type": "decimal",
+      "required": false
+    }
+  ]
+}]

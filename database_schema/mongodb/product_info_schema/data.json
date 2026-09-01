@@ -1,0 +1,464 @@
+[{
+  "_id": {
+    "$oid": "69ca838575e5b4bd1d30cb68"
+  },
+  "type_id": "gid://shopify/TaxonomyCategory/aa-1-23-2-1",
+  "name": "Saris",
+  "attributes": [
+    {
+      "name": "Fabric",
+      "handle": "fabric",
+      "field": "fabric",
+      "description": "The primary fabric or material used in the saree.",
+      "type": "string",
+      "required": true,
+      "max_length": 100
+    },
+    {
+      "name": "Work",
+      "handle": "work",
+      "field": "work",
+      "description": "The decorative work or embellishment on the saree, such as embroidery or zari.",
+      "type": "string",
+      "required": false,
+      "max_length": 100
+    },
+    {
+      "name": "Style",
+      "handle": "style",
+      "field": "style",
+      "description": "The overall style or design of the saree.",
+      "type": "string",
+      "required": false,
+      "max_length": 100
+    },
+    {
+      "name": "Pattern",
+      "handle": "pattern",
+      "field": "pattern",
+      "description": "The pattern or print featured on the saree.",
+      "type": "string",
+      "required": false,
+      "max_length": 100
+    },
+    {
+      "name": "Border Type",
+      "handle": "border-type",
+      "field": "border_type",
+      "description": "The style or construction of the saree border.",
+      "type": "string",
+      "required": false,
+      "max_length": 100
+    },
+    {
+      "name": "Pallu Type",
+      "handle": "pallu-type",
+      "field": "pallu_type",
+      "description": "The style or design of the saree pallu.",
+      "type": "string",
+      "required": false,
+      "max_length": 100
+    },
+    {
+      "name": "Color",
+      "handle": "color",
+      "field": "color",
+      "description": "The primary color of the saree.",
+      "type": "string",
+      "required": true,
+      "max_length": 50
+    },
+    {
+      "name": "Brand Color",
+      "handle": "brand-color",
+      "field": "brand_color",
+      "description": "The color name assigned by the brand.",
+      "type": "string",
+      "required": false,
+      "max_length": 50
+    },
+    {
+      "name": "Age group",
+      "handle": "age-group",
+      "field": "age_group",
+      "description": "Defines the target age range for a product, such as adults or kids",
+      "type": "string",
+      "required": false,
+      "max_length": 50
+    },
+    {
+      "name": "Saree Length",
+      "handle": "saree-length-meters",
+      "field": "saree_length_meters",
+      "description": "The length of the saree in meters.",
+      "type": "decimal",
+      "required": true
+    },
+    {
+      "name": "Blouse Piece Included",
+      "handle": "blouse-piece-included",
+      "field": "blouse_piece_included",
+      "description": "Indicates whether a blouse piece is included with the saree.",
+      "type": "enum",
+      "required": true,
+      "options": [
+        "included",
+        "not included"
+      ]
+    },
+    {
+      "name": "Blouse Length",
+      "handle": "blouse-length-meters",
+      "field": "blouse_length_meters",
+      "description": "The length of the blouse piece in meters.",
+      "type": "decimal",
+      "required": true
+    },
+    {
+      "name": "Blouse Fabric",
+      "handle": "blouse-fabric",
+      "field": "blouse_fabric",
+      "description": "The fabric used for the blouse piece.",
+      "type": "string",
+      "required": false,
+      "max_length": 100
+    },
+    {
+      "name": "Stitch",
+      "handle": "stitch",
+      "field": "stitch",
+      "description": "Indicates whether the blouse is stitched or unstitched.",
+      "type": "enum",
+      "required": true,
+      "options": [
+        "stitched",
+        "unstitched"
+      ]
+    },
+    {
+      "name": "Occasion",
+      "handle": "occasion",
+      "field": "occasion",
+      "description": "The occasion or event for which the saree is suitable.",
+      "type": "string",
+      "required": true,
+      "max_length": 100
+    },
+    {
+      "name": "Care Instructions",
+      "handle": "care-instructions",
+      "field": "care",
+      "description": "Instructions for washing and maintaining the saree.",
+      "type": "string",
+      "required": false,
+      "max_length": 500
+    },
+    {
+      "name": "Set items included",
+      "handle": "set-items-included",
+      "field": "set_items_included",
+      "description": "Specifies the garments or accessories included in the set, such as saree fabric, dupatta, or belt.",
+      "type": "list",
+      "required": false
+    }
+  ]
+},
+{
+  "_id": {
+    "$oid": "6a7ab30321b3d07ec2af1886"
+  },
+  "type_id": "gid://shopify/TaxonomyCategory/aa-1-23-2-2",
+  "name": "Lehengas",
+  "attributes": [
+    {
+      "name": "Age group",
+      "handle": "age-group",
+      "description": "Defines the target age range for a product, such as adults or kids",
+      "field": "age_group"
+    },
+    {
+      "name": "Color",
+      "handle": "color",
+      "description": "Defines the primary color or pattern, such as blue or striped",
+      "field": "color"
+    },
+    {
+      "name": "Embellishment technique",
+      "handle": "embellishment-technique",
+      "description": "Details the primary decorative or surface work applied to the garment, such as embroidery, print, or beadwork.",
+      "field": "embellishment_technique"
+    },
+    {
+      "name": "Fabric",
+      "handle": "fabric",
+      "description": "Identifies the type of fabric used in a product, for example, cotton or denim",
+      "field": "fabric"
+    },
+    {
+      "name": "Pattern",
+      "handle": "pattern",
+      "description": "Describes the design or motif of a product, such as floral or striped",
+      "field": "pattern"
+    },
+    {
+      "name": "Set items included",
+      "handle": "set-items-included",
+      "description": "Specifies the garments or accessories included in the set, such as saree fabric, dupatta, or belt.",
+      "field": "set_items_included"
+    },
+    {
+      "name": "Size",
+      "handle": "size",
+      "description": "Used to specify the size of a product, such as 0-3 months or Extra large (XL)",
+      "field": "size"
+    },
+    {
+      "name": "Target gender",
+      "handle": "target-gender",
+      "description": "Identifies the intended gender for a product, such as female, male or unisex",
+      "field": "target_gender"
+    }
+  ]
+},
+{
+  "_id": {
+    "$oid": "6a7ab47b231b3ccdb6621b74"
+  },
+  "type_id": "gid://shopify/TaxonomyCategory/ap-2-4-16-8",
+  "name": "Live Food",
+  "attributes": [
+    {
+      "name": "Fish type",
+      "handle": "fish-type",
+      "description": "Helps match to specific fish species, such as tropical or cold water",
+      "field": "fish_type"
+    },
+    {
+      "name": "Package type",
+      "handle": "package-type",
+      "description": "Defines the type of packaging for a product, e.g. jar, pump",
+      "field": "package_type"
+    },
+    {
+      "name": "Pet food flavor",
+      "handle": "pet-food-flavor",
+      "description": "Specifies the taste profile of pet food products, e.g. banana, turkey",
+      "field": "pet_food_flavor"
+    },
+    {
+      "name": "Suitable for fish type",
+      "handle": "suitable-for-fish-type",
+      "description": "Specifies the type of fish a product is intended for, e.g. pond fish, tropical fish",
+      "field": "suitable_for_fish_type"
+    }
+  ]
+},
+{
+  "_id": {
+    "$oid": "6a93d00651fed69606b496ba"
+  },
+  "type_id": "gid://shopify/TaxonomyCategory/ap-1",
+  "name": "Live Animals",
+  "attributes": []
+},
+{
+  "_id": {
+    "$oid": "6a93d9de40755773ad6c7862"
+  },
+  "type_id": "gid://shopify/TaxonomyCategory/aa-1-1-1-2",
+  "name": "Leggings",
+  "attributes": [
+    {
+      "name": "Activewear clothing features",
+      "handle": "activewear-clothing-features",
+      "description": "Identifies unique characteristics of activewear, such as four-way stretch or breathable design",
+      "field": "activewear_clothing_features"
+    },
+    {
+      "name": "Activity",
+      "handle": "activity",
+      "description": "Specifies the sport or activity the product is designed for, such as tennis or pilates",
+      "field": "activity"
+    },
+    {
+      "name": "Age group",
+      "handle": "age-group",
+      "description": "Defines the target age range for a product, such as adults or kids",
+      "field": "age_group"
+    },
+    {
+      "name": "Color",
+      "handle": "color",
+      "description": "Defines the primary color or pattern, such as blue or striped",
+      "field": "color"
+    },
+    {
+      "name": "Fabric",
+      "handle": "fabric",
+      "description": "Identifies the type of fabric used in a product, for example, cotton or denim",
+      "field": "fabric"
+    },
+    {
+      "name": "Fit",
+      "handle": "fit",
+      "description": "Describes the fit of a garment, typically pant shape; e.g. skinny leg, wide",
+      "field": "fit"
+    },
+    {
+      "name": "Leggings waistband style",
+      "handle": "leggings-waistband-style",
+      "description": "Specifies the structural design of the leggings’ waistband, influencing comfort, support, and aesthetic.",
+      "field": "leggings_waistband_style"
+    },
+    {
+      "name": "Pants length type",
+      "handle": "pants-length-type",
+      "description": "Used to defines the length of pants, such as cropped or long",
+      "field": "pants_length_type"
+    },
+    {
+      "name": "Pattern",
+      "handle": "pattern",
+      "description": "Describes the design or motif of a product, such as floral or striped",
+      "field": "pattern"
+    },
+    {
+      "name": "Pocket type",
+      "handle": "pocket-type",
+      "description": "Identifies the style or presence of pockets on the garment.",
+      "field": "pocket_type"
+    },
+    {
+      "name": "Size",
+      "handle": "size",
+      "description": "Used to specify the size of a product, such as 0-3 months or Extra large (XL)",
+      "field": "size"
+    },
+    {
+      "name": "Target gender",
+      "handle": "target-gender",
+      "description": "Identifies the intended gender for a product, such as female, male or unisex",
+      "field": "target_gender"
+    },
+    {
+      "name": "Waist rise",
+      "handle": "waist-rise",
+      "description": "Indicates where on the waist a garment sits, like low, medium or high",
+      "field": "waist_rise"
+    }
+  ]
+},
+{
+  "_id": {
+    "$oid": "6a93e13969e39a282d7a69f1"
+  },
+  "type_id": "gid://shopify/TaxonomyCategory/el-2-1-1-2",
+  "name": "Bluetooth Adapters",
+  "attributes": [
+    {
+      "name": "Adapter operating modes",
+      "handle": "adapter-operating-modes",
+      "description": "Specifies whether the adapter functions as a Bluetooth receiver, transmitter, or both",
+      "field": "adapter_operating_modes"
+    },
+    {
+      "name": "Audio codecs/formats supported",
+      "handle": "audio-codecs-formats-supported",
+      "description": "Specifies the audio file types a product can play, such as WAVE or MP3",
+      "field": "audio_codecs_formats_supported"
+    },
+    {
+      "name": "Battery size",
+      "handle": "battery-size",
+      "description": "Indicates the battery compatibility for the product, such as AAA or 9V",
+      "field": "battery_size"
+    },
+    {
+      "name": "Battery type",
+      "handle": "battery-type",
+      "description": "Distinguishes between types of batteries, such as disposable or rechargeable ",
+      "field": "battery_type"
+    },
+    {
+      "name": "Color",
+      "handle": "color",
+      "description": "Defines the primary color or pattern, such as blue or striped",
+      "field": "color"
+    },
+    {
+      "name": "Compatible device",
+      "handle": "compatible-device",
+      "description": "Specifies which devices work with an electronic, such as smartwatch or wireless earbud",
+      "field": "compatible_device"
+    },
+    {
+      "name": "Connectivity technology",
+      "handle": "connectivity-technology",
+      "description": "Defines the method of data transfer in a product, e.g. Bluetooth, USB",
+      "field": "connectivity_technology"
+    },
+    {
+      "name": "Material",
+      "handle": "material",
+      "description": "Defines a product's primary material, such as cotton or wool",
+      "field": "material"
+    },
+    {
+      "name": "Mounting type",
+      "handle": "mounting-type",
+      "description": "Specifies how a product is installed or attached, such as clip-on or suction cup",
+      "field": "mounting_type"
+    },
+    {
+      "name": "Pattern",
+      "handle": "pattern",
+      "description": "Describes the design or motif of a product, such as floral or striped",
+      "field": "pattern"
+    },
+    {
+      "name": "Power source",
+      "handle": "power-source",
+      "description": "Specifies the power source a product uses to operate, such as solar or batteries",
+      "field": "power_source"
+    },
+    {
+      "name": "USB connector type",
+      "handle": "usb-connector-type",
+      "description": "Identifies the physical USB connector(s) provided on the device for data and/or power.",
+      "field": "usb_connector_type"
+    },
+    {
+      "name": "USB standard",
+      "handle": "usb-standard",
+      "description": "Specifies the USB version for electronic devices, such as USB 2.0 or USB 3.1 Gen 1",
+      "field": "usb_standard"
+    }
+  ]
+},
+{
+  "_id": {
+    "$oid": "6a968e2864b2d752687a44b7"
+  },
+  "type_id": "gid://shopify/TaxonomyCategory/ap-2-1-1-1",
+  "name": "Bird Cage Bird Baths",
+  "attributes": [
+    {
+      "name": "Color",
+      "handle": "color",
+      "description": "Defines the primary color or pattern, such as blue or striped",
+      "field": "color"
+    },
+    {
+      "name": "Material",
+      "handle": "material",
+      "description": "Defines a product's primary material, such as cotton or wool",
+      "field": "material"
+    },
+    {
+      "name": "Pattern",
+      "handle": "pattern",
+      "description": "Describes the design or motif of a product, such as floral or striped",
+      "field": "pattern"
+    }
+  ]
+}]
