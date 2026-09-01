@@ -1,8 +1,8 @@
-FROM fedora:44
+FROM python:3.14-alpine3.24
 
 WORKDIR /app
 
-RUN dnf install -y python3.14 python3.14-pip python3-devel gcc mariadb-connector-c-devel
+RUN apk add --no-cache linux-headers gcc musl-dev mariadb-dev
 
 COPY requirements.txt .
 
