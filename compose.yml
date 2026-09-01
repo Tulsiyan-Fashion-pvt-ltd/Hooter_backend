@@ -51,7 +51,7 @@ services:
 
 
   mongodb:
-    image: mongo:8
+    image: mongo:8.2
     container_name: hooter-mongo
     ports:
       - "27000:27017"
