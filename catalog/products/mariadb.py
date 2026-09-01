@@ -10,15 +10,18 @@ class Write:
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
+                    '''usku_record query'''
                     usku_query = '''insert into usku_record
-                                (usku_id, brand_id, sku_id, type_id)
+                                (usku_id, brand_id, sku_id, type_id, type_name)
                                 values
-                                (%s, %s, %s, %s)
+                                (%s, %s, %s, %s, %s)
                             '''
                     usku_values = (product.get('usku_id'), product.get('brand_id'), product.get('sku_id')
-                                   , product.get("type_id"))
+                                   , product.get("type_id"), product.get('type_name'))
                     
                     await cursor.execute(usku_query, usku_values)
+
+                    '''catalog query'''
                     catalog_query = '''insert into catalog
                                         (usku_id, product_title, product_desc, price,
                                         compared_price, purchasing_cost, vendor, ean, hsn, gtin, upc, isbn, 
@@ -165,12 +168,14 @@ class Write:
                             u.sku_id = %s,
                             u.status = %s,
                             c.product_title = %s,
+                            c.product_desc=%s,
                             c.price = %s,
                             c.compared_price = %s,
                             c.purchasing_cost = %s,
                             c.vendor = %s,
                             c.ean = %s,
                             c.hsn = %s,
+                            c.gtin = %s
                             c.net_weight_kg = %s,
                             c.dead_weight_kg = %s,
                             c.volumetric_weight_kg = %s,
@@ -310,14 +315,12 @@ class Fetch:
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor = DictCursor) as cursor:
-                    query = '''select COALESCE(JSON_VALUE(img.image_url, "$.webp_card"), '') as image_url, s.usku_id, s.sku_id, 
-                    niche.product_name as product_type, niche.type_id,
+                    query = '''select COALESCE(JSON_VALUE(img.image_url, "$.webp_card"), '') as image_url, s.usku_id, s.sku_id,
                     c.product_title, c.compared_price, c.price, c.purchasing_cost, s.status
                     from usku_record as s
                     inner join catalog as c on s.usku_id = c.usku_id
-                    left join images img on img.usku_id = s.usku_id and
+                    left join product_images img on img.usku_id = s.usku_id and
                     img.image_type="front"
-                    inner join niche_products as niche on s.type_id = niche.type_id
                     where
                     s.brand_id = %s
                     '''
@@ -332,14 +335,29 @@ class Fetch:
             
 
     @staticmethod
-    async def catalog_upload_count(brand_id: str):
+    async def catalog_upload_count(brand_id: str) -> dict| str:
+        """Show the count of uploaded products in the catalog in 
+        `pending`, `completed` status and `total` product upload for the brand
+
+        Parameters:
+            - brand_id (str) -> brand id
+
+        Returns:
+            On Success:
+                dict[str, int]:
+                    `total`: int
+                    `completed`: int
+                    `pending`: int    
+            On failure:
+                - str: `"error"`
+        """
         pool = current_app.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor = DictCursor) as cursor:
                     query = '''
-                    select sum(case when status="pending" then 1 else 0 end) as pending,
-                    sum(case when status="completed" then 1 else 0 end) as completed,
+                    select CAST(COALESCE(SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END), 0) AS SIGNED) AS pending,
+                    CAST(COALESCE(SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END), 0) AS SIGNED) AS completed,
                     count(usku_id) as total
                     from usku_record
                     where brand_id = %s

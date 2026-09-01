@@ -67,6 +67,8 @@ services:
   hooter:
     build: .
     container_name: hooter-backend
+    volumes:
+      - .:/app
     depends_on:
       - mongodb
       - mariadb

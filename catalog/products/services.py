@@ -2,6 +2,7 @@ from werkzeug.datastructures import FileStorage
 from catalog.products import mongodb
 from catalog.categories import mongodb as categoriessql 
 from catalog.products import mariadb
+from catalog.categories import mongodb as category_mongodb
 from catalog.products.utils.id import create_variant_id, create_usku
 from brand.auth import mariadb as brand_sql
 from catalog.images import mariadb as imagesql
@@ -52,17 +53,23 @@ async def create_product(listing_attributes: dict, category_attributes: dict, ca
     else\n
         - `{"error": "error message"}`
     """
+    '''CHECKIGN CATEGORY ID'''
+    category_mongo_request = await category_mongodb.Fetch.category_name(category_id)
+    type_name = category_mongo_request.get('name')
+    if not type_name:
+        return {"error": "invalid request", "message": "type id is incorrect", "code": 400}
     
     usku_id = create_usku()
     brand_name = await brand_sql.Fetch.brand_name_by_id(session.get("brand"))
 
-    ## ADDING THE THE DATA IN THE SQL
+    '''ADDING THE THE DATA IN THE DB AFTER FORMATTING IT'''
     sql_attributes_value = {
     "brand_id": session.get("brand"),
     "usku_id": usku_id,                     
     "type_id": category_id,
     "vendor": listing_attributes.get("vendor", brand_name),          
     "brand_name": listing_attributes.get("brand_name", brand_name),
+    "type_name": type_name
     }
 
     mongodb_attribute_value = {
@@ -161,7 +168,7 @@ async def delete_product(usku_id: str) -> tuple[dict[str, str], int]:
             and send to the image delete function from imageio
         '''
         tasks = []
-        for image_details in images:
+        for image_details in images if images else []:
             '''we have deleted the image records from the dbms so we are calling the s3 bucket 
             rather the delete image service from the catalog.images'''
             tasks.append(asyncio.to_thread(s3.delete_bulk_objects, _product_image_bucket, keys=json.loads(image_details.get("image_url")).values()))

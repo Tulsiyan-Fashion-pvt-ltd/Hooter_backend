@@ -187,7 +187,7 @@ async def show_product(usku_id: str):
 @brand_required
 async def list_products():
     """
-    SERVING THE LISTS OF UPLOADED CATALOG IF USKU_ID IS PROVIDED
+    SERVING THE LISTS OF UPLOADED CATALOG
     """
     brand_id = session.get("brand")
 
@@ -195,9 +195,9 @@ async def list_products():
                           mariadb.Fetch.catalog_list(brand_id))
     
     if catalog_data[0] == "error" or catalog_data[1] == "error":
-        return jsonify({"status": "request failed", "message": "could not fetch the catalog data"}), 500
+        return jsonify({"status": "failed", "message": "could not fetch the catalog data"}), 500
     
-    return jsonify({"count": catalog_data[0], "catalog-list": catalog_data[1]}), 200
+    return jsonify({"count": catalog_data[0], "catalog_list": catalog_data[1]}), 200
 
 
 
@@ -218,36 +218,39 @@ async def delete_product(usku_id: str):
 
 
 '''THIS FUNCTION REQUIRE SOME CORRECTION'''
-@products.put("/<usku_id>")
-@login_required
-@brand_required
-async def update_catalog_data(usku_id):
-    """
-    UPDATES THE CATALOG PRODUCT DATA
-    """
-    payload = await request.get_json()
+# @products.put("/<usku_id>")
+# @login_required
+# @brand_required
+# async def update_catalog_data(usku_id):
+#     """
+#     UPDATES THE CATALOG PRODUCT DATA
+#     """
+#     payload = await request.get_json()
 
-    type_id = request.args.get("id")
-    data = payload.get("data")
+#     type_id = request.args.get("id")
+#     data = payload.get("data")
 
-    if type_id == None or data == None:
-        return jsonify({"status": "failed", "message": "invalid payload"}), 400
+#     if type_id == None or data == None:
+#         return jsonify({"status": "failed", "message": "invalid payload"}), 400
 
-    '''checking the payload'''
-    payload_list = await asyncio.gather(categories.Fetch.attributes(type_id).all(),
-                                  categories.Fetch.attributes(type_id).mandatory())
+#     '''checking the payload'''
+#     payload_list = await asyncio.gather(categories.Fetch.Attributes.Catalog.all(),
+#                                   categories.Fetch.Attributes.Catalog.mandatory(),
+#                                   categories.Fetch.Attributes.Category(type_id).mandatory())
     
-    accepted_payload = payload_list[0]
-    mandatory_payload = payload_list[1]
+#     accepted_listing_keys = payload_list[0]
+#     mandatory_listing_keys = payload_list[1]
+#     mandatory_category_keys = payload_list[2]
 
     
-    accepted_payload.append("discount")
+#     accepted_payload.append("discount")
 
-    if not helper.Helper.check_required_payload(data, accepted_payload, mandatory_payload):
-        return jsonify({"status": "failed", "message": "invalid payload"}), 400
+#     if not helper.Helper.check_required_payload(data, accepted_payload, mandatory_payload):
+#         return jsonify({"status": "failed", "message": "invalid payload"}), 400
 
-    response = await services.update_product(usku_id, data, type_id)
-    return jsonify(response[0]), response[1]
+#     response = await services.update_product(usku_id, data, type_id)
+#     return jsonify(response[0]), response[1]
+
 
 
 # mark the catalog upload as completed

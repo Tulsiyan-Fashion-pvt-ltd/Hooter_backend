@@ -25,24 +25,25 @@ class Write:
 
 
 class Fetch:
-    async def exists_category_schema(type_id: str) -> bool:
+    async def category_name(type_id: str) -> dict[str, str]:
         '''Checks if a type_id exists in the category schema or not
         Arguments:
             type_id:
                 category id from shopify taxonomy
         
         Returns:
-            True:
-                if category attribute schema exists by type id
-            False:
-                if category attribute schema doesn't exists by provided type id
-            `error`:
-                if faced any error while checking the type id
+            On success:
+                dict[str, str]:
+                    "error": "invalid type id"
+
+            On failure:
+                dict[str, str]:
+                    "name": `str`
         '''
         try:
             mongo = current_app.mongo
-            exists = await mongo.db.product_info_schema.find_one({"type_id": type_id}, {"_id": 1}) is not None  
-            return exists
+            doc = await mongo.db.product_info_schema.find_one({"type_id": type_id}, {"_id": 1, "name": 1})
+            return {"error": "invalid type id"} if not doc else doc
         except Exception as e:
             print(e)
             print_exc()
@@ -146,9 +147,8 @@ class Fetch:
             """
             Catalog specific attribute
             """
-
-            # fetch only mandatory schema keys of any niche
             async def mandatory():
+                """fetch only mandatory attribute keys for catalog listing"""
                 doc = await Fetch.listing_schema()
                 if not doc:
                   return None
@@ -156,10 +156,10 @@ class Fetch:
                 attributes = doc.get("attributes")
                 universal_mandatory_keys = [attribute.get("field") for attribute in attributes if attribute.get("required") == True]
                 return universal_mandatory_keys
-            # to fetch all the attribute schema any niche id
             
 
             async def all():
+                """to fetch all the attribute schema for catalog listing"""
                 doc = await Fetch.listing_schema()
                 if not doc:
                   return None

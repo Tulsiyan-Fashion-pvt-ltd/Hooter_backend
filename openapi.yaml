@@ -1181,7 +1181,7 @@ paths:
       summary:  Download the xlsx sheet error sheet
       description:  Download the xlsx error sheet if there is any error sheet created for the job id for the 
         product upload event created from the uploaded excel sheet for bulk product upload
-      secutiry:
+      security:
         - cookieAuth: []
       tags:
         - Catalog
@@ -1214,9 +1214,290 @@ paths:
         "404":
           description:  resource not found
 
+        "401":
+          $ref: "#/components/responses/login_required"
+        "403":
+          $ref: "#/components/responses/brand_required"
+
   /catalog/products/{usku_id}:
     get:
-      summary:  
+      summary:  Fetch product data
+      description: Fetch product listing and category
+      security:
+        - cookieAuth:
+      parameters:
+        - name: usku_id
+          in: path
+          required: true
+          description: product unique usku_id
+          schema:
+            type: string
+            example: usku_xxxx_xxx_xxxxxxxx
+      tags:
+        - Catalog
+      responses:
+        "200":
+          description: Successful request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sku_id:
+                    type: string
+                  product_title:
+                    type: string
+                  product_price:
+                    type:string
+                  product_desc:
+                    type: string
+              example:
+                sku_id: "#sku01"
+                product_title:  Blue shirt
+                product_description:  Blue shirt with black strips on the right side size(XL)
+                product_price:  500.00
+        "400":
+          description:  Request failed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+              example:
+                status: failed
+                message:  request failed
+        "401":
+          $ref: "#/components/responses/login_required"
+        "403":
+          $ref: "#/components/responses/brand_required"
+
+  /catalog/products:
+    get:
+      summary:  Fetches the uploaded catalog
+      description:  Get product lists uploaded in the catalog and the count of uploaded products according
+        to the status
+      security:
+        - cookieAuth: []
+      tags:
+        - Catalog
+      responses:
+        "200":
+          description:  Successful request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      completed:
+                        type: integer
+                      pending:
+                        type: integer
+                  catalog_list:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        usku_id:
+                          type: string
+                        sku_id:
+                          type: string
+                        image_url:
+                          type: string
+                        product_title:
+                          type: string
+                        product_price:
+                          type: integer
+                        compared_price:
+                          type: integer
+                        purchasing_cost:
+                          type: integer
+                        status:
+                          type: string
+                          enum: ['completed', 'pending']
+                        product_type:
+                          type: string
+                        type_id:
+                          type: string
+              example:
+                count:
+                  total: 2
+                  completed: 2
+                  pending: 0
+                catalog_list:
+                  - usku_id: USKU-1001
+                    sku_id: SKU-RED-001
+                    image_url: /images/red-shirt.jpg
+                    product_title: Premium Red T-Shirt
+                    product_price: 999
+                    compared_price: 1299
+                    purchasing_cost: 550
+                    status: completed
+                    product_type: apparel
+                    type_id: TSHIRT001      
+
+                  - usku_id: USKU-1002
+                    sku_id: SKU-BLK-042
+                    image_url: /images/black-hoodie.jpg
+                    product_title: Classic Black Hoodie
+                    product_price: 1899
+                    compared_price: 2499
+                    purchasing_cost: 1100
+                    status: completed
+                    product_type: apparel
+                    type_id: HOODIE042
+        "500":
+          description:
+            Error fetching the catalog
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: failed
+                  message:
+                    type: string
+                    example:  could not fetch the catalog data
+        "default":
+          $ref: "#/components/responses/default"
+
+    delete:
+      tags:
+        - Catalog
+      summary: Delete a product
+      description: Deletes a product using its unique USKU ID.
+
+      security:
+        - cookieAuth: []
+
+      parameters:
+        - name: usku_id
+          in: path
+          required: true
+          description: Unique SKU ID of the product to delete.
+          schema:
+            type: string
+
+      responses:
+        "200":
+          description: Product deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+              example:
+                status: success
+                message: Product deleted successfully
+
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: invalid request
+                message: usku-id not provided
+
+        "401":
+          $ref: "#/components/responses/login_required"
+
+        "403":
+          $ref: "#/components/responses/brand_required"
+
+        "default":
+          $ref: '#/components/responses/default'
+
+    put:
+      summary:  Update catalog product
+      description:  Update catalog product listing and category attributes data
+      security:
+        - cookieAuth: []
+      tags:
+        - Catalog
+      parameters:
+        - name: usku_id
+          in: path
+          description:  Universal SKU ID of the product
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: query
+          description:  Category ID for the product
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        description:  Product attribute field and value payload
+        content: 
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: object
+                  properties:
+                    usku_id:
+                      type: string
+                    sku_id:
+                      type: string
+                    image_url:
+                      type: string
+                    product_title:
+                      type: string
+                    product_price:
+                      type: integer
+                    compared_price:
+                      type: integer
+                    purchasing_cost:
+                      type: integer
+                    status:
+                      type: string
+                      enum: ['completed', 'pending']
+                    product_type:
+                      type: string
+                    type_id:
+                      type: string
+                    fabric:
+                      type: string
+                    color:
+                      type: string
+            example:
+              data:
+                usku_id: USKU-1001
+                sku_id: SKU-RED-001
+                image_url: /images/red-shirt.jpg
+                product_title: Premium Red T-Shirt
+                product_price: 999
+                compared_price: 1299
+                purchasing_cost: 550
+                status: completed
+                product_type: apparel
+                type_id: TSHIRT001
+                fabric: Silk
+                color:  Teal
+      responses:
+        "200":
+          description:  Successfully updated the product values from the database
+          
+
 
 
 
@@ -1379,6 +1660,8 @@ components:
           nullable: true
         brand_name:
           type: string
+
+    
 
     default:
       type: object
