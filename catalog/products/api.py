@@ -253,7 +253,7 @@ async def update_catalog_data(usku_id):
     if not set(listing_attributes.keys()).issubset(accepted_listing_keys):
         return jsonify({'status': "failed", "message": "Invalid value listing attribute"}), 422
 
-    if not (all([listing_attributes.get(key) for key in mandatory_listing_keys ]) or 
+    if not (all([listing_attributes.get(key) for key in mandatory_listing_keys ]) and 
             all([category_attributes.get(key) for key in mandatory_category_keys])):
         return jsonify({'status': "failed", "message": "Mandatory attribute can not be null"}), 422
 
