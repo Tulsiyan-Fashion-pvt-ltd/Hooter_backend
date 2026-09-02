@@ -6,6 +6,9 @@ from brand.auth import mariadb
 from utils.prerequirements import login_required, super_admin_required
 import config
 from traceback import print_exc
+from .authorize import brand_api_access_required
+
+
 
 auth = Blueprint('auth', __name__)
 
@@ -123,6 +126,7 @@ async def register_entity() -> Response:
 @auth.get('/connect')
 @auth.get('/connect/<brand_id>')
 @login_required
+@brand_api_access_required
 async def connect_brand(brand_id=None) -> Response:
     '''
         Connects the brand with the user session.

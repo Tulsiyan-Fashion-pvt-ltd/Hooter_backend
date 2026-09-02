@@ -102,41 +102,15 @@ async def create_product(listing_attributes: dict, category_attributes: dict, ca
 
 
 
-async def update_product(usku_id: str, data: dict, type_id: str) -> tuple[dict[str, str], int]:
-    brand_name = await mariadb.Fetch.brand_name_by_id(session.get('brand'))
-
-    # data for sql
-    catalog = {
-        "brand_id": session.get('brand'),
-        "usku_id": usku_id,
-        "sku_id": data.get("sku_id"),                          # TEMP FIX: was "sku-id"
-        "type_id": type_id,
-        "title": data.get('product_title'),
-        "price": data.get("price"),
-        "compared_price": data.get("compared_price"),          # TEMP FIX: was "compared-price" (key + get)
-        "purchasing_cost": data.get("purchasing_cost"),        # TEMP FIX: was "purchasing-cost"
-        "vendor": data.get("vendor") if data.get("vendor") else brand_name,
-        "ean": data.get('ean'),
-        "hsn": data.get("hsn"),
-        "net_weight": data.get("net_weight_kg"),                  # TEMP FIX: was "net-weight"
-        "dead_weight": data.get("dead_weight_kg"),                # TEMP FIX: was "dead-weight"
-        "volumetric_weight": data.get("volumetric_weight_kg"),    # TEMP FIX: was "volumentric_weight" + "volumetric-weight" (typo + hyphen)
-        "brand_name": data.get("brand_name") if data.get("brand_name") else brand_name  # TEMP FIX: was "brand-name"
-    }
-
-    #data for mongodbdb
-    mongodb_catalog = {key: value for key, value in data.items() 
-                    if (key not in catalog)}
-
-    mongodb["usku_id"] = usku_id
-
-    response = await asyncio.gather(mariadb.Write.update_catalog(catalog), 
-                                    mongodb.Write.update_catalog(mongodb_catalog))
+async def update_product(usku_id: str, listing_attributes: dict, category_attributes: dict) -> tuple[dict[str, str], int]:
+    response = await asyncio.gather(mariadb.Write.update_catalog(usku_id, listing_attributes), 
+                                    mongodb.Write.update_catalog(usku_id, category_attributes))
     
     if response[0] != "ok" or response[1] != "ok": 
         return {"status": "failed", "message": "error occured while updating the catalog"}, 500
 
     return {"status": "successful", "message": "successfully updated the catalog product"}, 200
+
 
 
 
@@ -148,8 +122,8 @@ async def delete_product(usku_id: str) -> tuple[dict[str, str], int]:
 
     Returns:
         returns the `tuple()` with 
-        dict:
-            at 
+        - dict:
+        - api status
 
     """
     images = await imagesql.Fetch.image(usku_id) # image object keys for s3

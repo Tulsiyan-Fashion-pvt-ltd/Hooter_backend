@@ -38,18 +38,18 @@ async def collection_access(collection_id: int, brand_id: str) -> bool:
         except Exception as e:
             print(e)
             print_exc()
-            return {"error": "internal error", "message": "unexpected error occured"}
+            return "error"
 
 
 
 
-def colletion_db_brand_access(func):
+def colletion_access_required(func):
     """Checks the access required for collection functions
     takes `collection_id` in first positional arguments
     """
     @wraps(func)
     async def wrapper(*args, **kwargs):
-        authorize = await collection_access(args[0])
+        authorize = await collection_access(args[0], session.get('brand'))
         if not authorize:
             return False
         else:
@@ -60,14 +60,13 @@ def colletion_db_brand_access(func):
 
 
 
-def collection_api_brand_access_required(func):
+def collection_api_access_required(func):
     """Checks the access required for collection APIs
     takes `collection_id` in as keyword argument
     """
     @wraps(func)
     async def wrapper(*args, **kwargs):
         try:
-            print("-> ",session.get('brand'))
             authorize = await collection_access(kwargs.get("collection_id"), session.get("brand")) # args[0] expects collection_id
         except Exception as e:
             if e.args[0] == "pool":

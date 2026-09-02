@@ -13,6 +13,10 @@ from . import services
 from traceback import print_exc
 from uuid import uuid4
 from .sse import product_sse
+from .authorize import product_api_access_required
+
+
+
 
 products = Blueprint("products", __name__, url_prefix = "/products")
 products.register_blueprint(product_sse)
@@ -164,24 +168,6 @@ async def send_error_sheet(job_id):
         return jsonify({"status": "failed", "message": "unexpected error occured in the server"}), 500
 
 
-
-# get the uploaded catalog products and status
-@products.get("/<usku_id>")
-@login_required
-@brand_required
-async def show_product(usku_id: str):
-    
-    product_data = await asyncio.gather(mariadb.Fetch.catalog_product(usku_id),
-                                        mongodb.Fetch.catalog_product(usku_id))
-    
-    if product_data[0].get("error") or product_data[1].get("error"):
-        return jsonify({"status": "failed", "message": "request failed"}), 400
-    else:
-        # print(product_data[1])
-        product_data = product_data[0] | product_data[1]
-        return jsonify(product_data), 200
-
-
 @products.get("")
 @login_required
 @brand_required
@@ -201,13 +187,30 @@ async def list_products():
 
 
 
-'''
-    this route serves the resource to delete a product from the catalog
-'''
+@products.get("/<usku_id>")
+@login_required
+@brand_required
+@product_api_access_required
+async def show_product(usku_id: str):
+    '''get the uploaded catalog products and status'''
+    product_data = await asyncio.gather(mariadb.Fetch.catalog_product(usku_id),
+                                        mongodb.Fetch.catalog_product(usku_id))
+    
+    if product_data[0].get("error") or product_data[1].get("error"):
+        return jsonify({"status": "failed", "message": "request failed"}), 400
+    else:
+        # print(product_data[1])
+        product_data = product_data[0] | product_data[1]
+        return jsonify(product_data), 200
+
+
+
 @products.delete("/<usku_id>")
 @login_required
 @brand_required
+@product_api_access_required
 async def delete_product(usku_id: str):
+    '''Deletes the specified usku id9'''
     # print(usku_id)
     if not usku_id:
         return jsonify({"status": "invalid request", "message": "usku-id not provided"}), 400
@@ -218,38 +221,47 @@ async def delete_product(usku_id: str):
 
 
 '''THIS FUNCTION REQUIRE SOME CORRECTION'''
-# @products.put("/<usku_id>")
-# @login_required
-# @brand_required
-# async def update_catalog_data(usku_id):
-#     """
-#     UPDATES THE CATALOG PRODUCT DATA
-#     """
-#     payload = await request.get_json()
+@products.put("/<usku_id>")
+@login_required
+@brand_required
+@product_api_access_required
+async def update_catalog_data(usku_id):
+    """
+    UPDATES THE CATALOG PRODUCT DATA
+    """
+    payload = await request.get_json()
 
-#     type_id = request.args.get("id")
-#     data = payload.get("data")
+    type_id = request.args.get("type-id")
+    listing_attributes = payload.get("listing_attributes")
+    category_attributes = payload.get("category_attributes")
 
-#     if type_id == None or data == None:
-#         return jsonify({"status": "failed", "message": "invalid payload"}), 400
+    if type_id == None:
+        return jsonify({"status": "failed", "message": "invalid payload"}), 400
 
-#     '''checking the payload'''
-#     payload_list = await asyncio.gather(categories.Fetch.Attributes.Catalog.all(),
-#                                   categories.Fetch.Attributes.Catalog.mandatory(),
-#                                   categories.Fetch.Attributes.Category(type_id).mandatory())
+    '''Need to check if the altered data is a mandatory field and the value is none.
+    If so then the operation can not happen
+    '''
+    payload_list = await asyncio.gather(categories.Fetch.Attributes.Catalog.all(),
+                                  categories.Fetch.Attributes.Catalog.mandatory(),
+                                  categories.Fetch.Attributes.Category(type_id).mandatory())
     
-#     accepted_listing_keys = payload_list[0]
-#     mandatory_listing_keys = payload_list[1]
-#     mandatory_category_keys = payload_list[2]
+    accepted_listing_keys = payload_list[0]
+    mandatory_listing_keys = payload_list[1]
+    mandatory_category_keys = payload_list[2]
+
+    '''Checking if there any unknown attribute for listing'''
+    if not set(listing_attributes.keys()).issubset(accepted_listing_keys):
+        return jsonify({'status': "failed", "message": "Invalid value listing attribute"}), 422
+
+    if not (all([listing_attributes.get(key) for key in mandatory_listing_keys ]) or 
+            all([category_attributes.get(key) for key in mandatory_category_keys])):
+        return jsonify({'status': "failed", "message": "Mandatory attribute can not be null"}), 422
+
 
     
-#     accepted_payload.append("discount")
-
-#     if not helper.Helper.check_required_payload(data, accepted_payload, mandatory_payload):
-#         return jsonify({"status": "failed", "message": "invalid payload"}), 400
-
-#     response = await services.update_product(usku_id, data, type_id)
-#     return jsonify(response[0]), response[1]
+    
+    response = await services.update_product(usku_id, listing_attributes, category_attributes)
+    return jsonify(response[0]), response[1]
 
 
 
@@ -275,16 +287,17 @@ async def delete_product(usku_id: str):
 
 
 
-@products.put("/<usku_id>")
-@login_required
-@brand_required
-async def upload_product_to_platforms(platform: str):
-    """
-    RESPONSIBLE FOR UPLOADING AND ENABLING THE PRODUCT ON THE PLATFORMS
-    """
-    #check the platform resource
-    if not platform or platform not in _platforms:
-        return abort(404)
+# @products.put("/<usku_id>")
+# @login_required
+# @brand_required
+# @product_api_access_required
+# async def upload_product_to_platforms(platform: str):
+#     """
+#     RESPONSIBLE FOR UPLOADING AND ENABLING THE PRODUCT ON THE PLATFORMS
+#     """
+#     #check the platform resource
+#     if not platform or platform not in _platforms:
+#         return abort(404)
 
-    await shopify_products.upload_product()
-    return
+#     await shopify_products.upload_product()
+    # return

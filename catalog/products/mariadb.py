@@ -155,50 +155,35 @@ class Write:
 
 
     @staticmethod
-    async def update_catalog(catalog: dict):
+    async def update_catalog(usku_id: str, listing_attributes: dict):
         pool = current_app.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
-                    query = '''
-                        UPDATE usku_record AS u
-                        INNER JOIN catalog AS c
-                            ON u.usku_id = c.usku_id
+                    '''Formating the attributes and values'''
+                    formated_filtered_attributes = [] # this will strong something like price = %s
+                    filtered_values = []  # keys in the same order as formatted attributes
+
+                    for key in listing_attributes.keys():
+                        if key == "sku_id":
+                            '''Update skuID in `usku_record`'''
+                            sku_query = '''UPDATE usku_record
+                                SET sku_id=%s WHERE usku_id = %s
+                                '''
+                            sku_value = (listing_attributes.get('sku_id'), usku_id)
+                            await cursor.execute(sku_query, sku_value)
+                        else:
+                            formated_filtered_attributes.append(f"{key} = %s")
+                            filtered_values.append(listing_attributes.get(key))
+
+                    query = f'''
+                        UPDATE catalog 
                         SET
-                            u.sku_id = %s,
-                            u.status = %s,
-                            c.product_title = %s,
-                            c.product_desc=%s,
-                            c.price = %s,
-                            c.compared_price = %s,
-                            c.purchasing_cost = %s,
-                            c.vendor = %s,
-                            c.ean = %s,
-                            c.hsn = %s,
-                            c.gtin = %s
-                            c.net_weight_kg = %s,
-                            c.dead_weight_kg = %s,
-                            c.volumetric_weight_kg = %s,
-                            c.brand_name = %s
-                        WHERE u.usku_id = %s
+                            {",".join(formated_filtered_attributes)}
+                        WHERE usku_id = %s
                     '''
 
-                    values = (
-                        catalog.get("sku_id"),
-                        "pending",
-                        catalog.get("title"),
-                        catalog.get("price"),
-                        catalog.get("compared_price"),
-                        catalog.get("purchasing_cost"),
-                        catalog.get("vendor"),
-                        catalog.get("ean"),
-                        catalog.get("hsn"),
-                        catalog.get("net_weight"),
-                        catalog.get("dead_weight"),
-                        catalog.get("volumetric_weight"),
-                        catalog.get("brand_name"),
-                        catalog.get("usku_id"),
-                    )
+                    values = [*filtered_values, usku_id]
 
                     await cursor.execute(query, values)
 
@@ -209,7 +194,7 @@ class Write:
                 await connection.rollback()
                 print(
                     f"error occured while updating the catalog details of "
-                    f"{catalog.get('usku_id')}\n{e}"
+                    f"{listing_attributes.get('usku_id')}\n{e}"
                 )
                 return {"error": e.args[0]}
 

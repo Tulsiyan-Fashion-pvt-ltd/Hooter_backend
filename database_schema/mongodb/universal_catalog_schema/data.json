@@ -45,19 +45,7 @@
       "field": "brand_name",
       "description": "The brand or manufacturer associated with the product.",
       "type": "string",
-      "required": false,
-      "max_length": 255
-    },
-    {
-      "name": "Collections",
-      "handle": "collections",
-      "field": "collection_id",
-      "description": "The collections this product belongs to.",
-      "type": [
-        "int",
-        "string"
-      ],
-      "required": false,
+      "required": true,
       "max_length": 255
     },
     {

@@ -1219,62 +1219,6 @@ paths:
         "403":
           $ref: "#/components/responses/brand_required"
 
-  /catalog/products/{usku_id}:
-    get:
-      summary:  Fetch product data
-      description: Fetch product listing and category
-      security:
-        - cookieAuth:
-      parameters:
-        - name: usku_id
-          in: path
-          required: true
-          description: product unique usku_id
-          schema:
-            type: string
-            example: usku_xxxx_xxx_xxxxxxxx
-      tags:
-        - Catalog
-      responses:
-        "200":
-          description: Successful request
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  sku_id:
-                    type: string
-                  product_title:
-                    type: string
-                  product_price:
-                    type:string
-                  product_desc:
-                    type: string
-              example:
-                sku_id: "#sku01"
-                product_title:  Blue shirt
-                product_description:  Blue shirt with black strips on the right side size(XL)
-                product_price:  500.00
-        "400":
-          description:  Request failed
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                  message:
-                    type: string
-              example:
-                status: failed
-                message:  request failed
-        "401":
-          $ref: "#/components/responses/login_required"
-        "403":
-          $ref: "#/components/responses/brand_required"
-
   /catalog/products:
     get:
       summary:  Fetches the uploaded catalog
@@ -1371,6 +1315,61 @@ paths:
         "default":
           $ref: "#/components/responses/default"
 
+  /catalog/products/{usku_id}:
+    get:
+      summary:  Fetch product data
+      description: Fetch product listing and category
+      security:
+        - cookieAuth:
+      parameters:
+        - name: usku_id
+          in: path
+          required: true
+          description: product unique usku_id
+          schema:
+            type: string
+            example: usku_xxxx_xxx_xxxxxxxx
+      tags:
+        - Catalog
+      responses:
+        "200":
+          description: Successful request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sku_id:
+                    type: string
+                  product_title:
+                    type: string
+                  product_price:
+                    type:string
+                  product_desc:
+                    type: string
+              example:
+                sku_id: "#sku01"
+                product_title:  Blue shirt
+                product_description:  Blue shirt with black strips on the right side size(XL)
+                product_price:  500.00
+        "400":
+          description:  Request failed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+              example:
+                status: failed
+                message:  request failed
+        "401":
+          $ref: "#/components/responses/login_required"
+        "403":
+          $ref: "#/components/responses/brand_required"
     delete:
       tags:
         - Catalog
@@ -1409,7 +1408,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: "#/components/schema/default"
               example:
                 status: invalid request
                 message: usku-id not provided
@@ -1437,7 +1436,7 @@ paths:
           required: true
           schema:
             type: string
-        - name: id
+        - name: type-id
           in: query
           description:  Category ID for the product
           required: true
@@ -1451,51 +1450,46 @@ paths:
             schema:
               type: object
               properties:
-                data:
+                listing_attributes:
                   type: object
                   properties:
-                    usku_id:
-                      type: string
                     sku_id:
                       type: string
-                    image_url:
+                    price:
                       type: string
-                    product_title:
+                    net_weight_kg:
                       type: string
-                    product_price:
-                      type: integer
-                    compared_price:
-                      type: integer
-                    purchasing_cost:
-                      type: integer
-                    status:
+                category_attributes:
+                  type: object
+                  properties:
+                    stitch:
                       type: string
-                      enum: ['completed', 'pending']
-                    product_type:
-                      type: string
-                    type_id:
-                      type: string
-                    fabric:
-                      type: string
-                    color:
-                      type: string
+                      enum: ['stitched', 'unstitched']
+                    blouse_piece_included:
+                      type: bool
+                      enum: ['included', 'not included']
             example:
-              data:
-                usku_id: USKU-1001
-                sku_id: SKU-RED-001
-                image_url: /images/red-shirt.jpg
-                product_title: Premium Red T-Shirt
-                product_price: 999
-                compared_price: 1299
-                purchasing_cost: 550
-                status: completed
-                product_type: apparel
-                type_id: TSHIRT001
-                fabric: Silk
-                color:  Teal
+              listing_attributes:
+                sku_id: '#012'
+                price: 1500
+                net_weight_kg: 0.75
+              category_attributes:
+                stitch: 'stitched'
+                blouse_piece_included: included
+                
       responses:
         "200":
           description:  Successfully updated the product values from the database
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schema/default"
+              example:
+                status: successful
+                message: successfully updated the catalog product
+        "default":
+          $ref: "#/components/responses/default"
+
           
 
 
