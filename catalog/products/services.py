@@ -254,7 +254,7 @@ async def upload_xlsx(xlsx_data: bytes, category_id: str) -> dict[str, str|int|B
                     return {"status": "failed", "error": "unable to upload product or create error sheet"}
         print("finished")
         if not error_sheet:
-            return {"status": "successful", "message": "Uploaded the products", "code": 200}
+            return {"status": "successful", "message": "Products uploaded", "code": 200}
         else: 
             error_sheet = await asyncio.to_thread(workbook.write, error_sheet, row=["Remove the error column entirely before uploading this file after correction"])
             return {"sheet": error_sheet, "code": 202}

@@ -1060,7 +1060,7 @@ paths:
         "default":
           $ref: "#/components/responses/default"
 
-  /catalog/products/single?type-id=value:
+  /catalog/products/single:
     post:
       tags:
         - Catalog
@@ -1188,7 +1188,10 @@ paths:
       parameters:
         - in: path
           required: true
-          $ref: "#/components/parameters/path/jobIdRequired"
+          name: job_id
+          description:  Unique job ID for the bulk product upload
+          schema:
+            type: string
       responses:
         "200":
           description: HTTP file download response for error sheet
@@ -1490,6 +1493,66 @@ paths:
         "default":
           $ref: "#/components/responses/default"
 
+  /catalog/products/events/{job_id}:
+    get:
+      summary:  Server Side Event for Bulk product upload
+      description:  SS3 Async API to get the status for XLSX sheet for bulk product upload, once it is done uploading the file
+      security:
+        - cookieAuth: [] 
+      tags:
+        - Catalog
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          description:  job ID for bulk product sheet upload
+          schema:
+            type: string
+      responses:  
+        "200":
+          description:  Successfully log in with async API
+          content:
+            text/event-stream:
+              schema:
+                type: string
+              examples:  
+                product_uploading:
+                  summary:  Bulk products is still uploading
+                  value: |
+                    data: {"status": "pending", "message": "Product is uploading"}
+                successful_upload:
+                  summary:  Bulk products uploaded without any fail
+                  value: |
+                    data: {"status": "successful", "message": "Products uploaded"}
+                uploaded_with_error:
+                  summary:  Bulk products uploaded with some errors
+                  value: |
+                    data: {"status": "finished", "message": "Some products could not be uploaded", 
+                    "download_link": "catalog/products/error_sheet/{job_id}"}
+                failed_upload:
+                  summary:  Bulk products upload failed
+                  value: |
+                    data: {'status': 'finsihed', 'message': 'Product upload failed'}
+        "406":
+          description:  Invalid header
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schema/default"
+              example:
+                status: failed
+                message:  Expected event stream
+        "422":
+          description:  Invalid job ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schema/default"
+              example:
+                status: failed
+                message:  Job is not available with this task
+        default:
+          $ref: "#/components/responses/default"
           
 
 
