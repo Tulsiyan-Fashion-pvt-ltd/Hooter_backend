@@ -123,7 +123,7 @@ async def upload_bulk_catalog():
         xlsx_sheet.seek(0)
         sheet_data = xlsx_sheet.stream.read()
 
-        upload_task = asyncio.create_task(services.upload_xlsx(sheet_data, type_id), name=job_id)
+        upload_task = asyncio.create_task(services.upload_xlsx(sheet_data, type_id, job_id=job_id), name=job_id)
         upload_task.job_id = job_id
 
         services.tasks[job_id] = {"status": "pending", "event": asyncio.Event(), "task": upload_task}

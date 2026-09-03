@@ -1519,19 +1519,23 @@ paths:
                 product_uploading:
                   summary:  Bulk products is still uploading
                   value: |
-                    data: {"status": "pending", "message": "Product is uploading"}
+                    event: progress
+                    data: {"status": "pending", "message": "Product is uploading", "progress": "10%"}
                 successful_upload:
                   summary:  Bulk products uploaded without any fail
                   value: |
-                    data: {"status": "successful", "message": "Products uploaded"}
+                    event: completed
+                    data: {"status": "successful", "message": "Products uploaded", "progress": "100%", "time"=0.23625850677490234}
                 uploaded_with_error:
                   summary:  Bulk products uploaded with some errors
                   value: |
+                    event: completed
                     data: {"status": "finished", "message": "Some products could not be uploaded", 
-                    "download_link": "catalog/products/error_sheet/{job_id}"}
+                    "download_link": "catalog/products/error_sheet/{job_id}", "progress": "70%", "time": 0.23625850677490234}
                 failed_upload:
                   summary:  Bulk products upload failed
                   value: |
+                    event: completed
                     data: {'status': 'finsihed', 'message': 'Product upload failed'}
         "406":
           description:  Invalid header

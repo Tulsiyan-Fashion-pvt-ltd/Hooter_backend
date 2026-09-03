@@ -106,6 +106,27 @@ def read_row(file: Workbook, row: int)-> list[str]:
 
 
 
+def ttl_rows(file: Workbook) -> int:
+    """Returns the total number of rows inside the Workbook
+    
+    Args:
+        file:
+            Workbook, FileObject or BytesIO
+            
+    Returns:
+        int
+    """
+
+    file.seek(0)
+    wb = load_workbook(file, read_only=True)
+    ws = wb.active
+    row = ws.max_row
+    file.seek(0)
+    return row
+
+
+
+
 def write(file: Workbook, row_object: dict = None, row: list| None = None):
     file.seek(0)
     wb = load_workbook(file)

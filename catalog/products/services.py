@@ -15,11 +15,16 @@ from utils import helper, workbook
 import s3
 from io import BytesIO
 from . import services
+from time import time
 
 
 '''tasks STORES THE OBJECT WITH KEYS job_id: {}, 
-WITH THEIR KEYS "status: pending| failed| completed", 
-"event: async.Event() supports .wait() and .set() and .clear()", "task: the task pointer from create_task()"'''
+WITH THEIR KEYS 
+`status`: pending| failed| completed", 
+`event`: async.Event() -> supports .wait() and .set() and .clear(), 
+`task`: asyncio.create_task -> the task pointer from create_task(), 
+`progress`: float -> progress percentage
+`time`: int -> total time taken after the finish (SO `time` WOULD BE NONE UNTIL THE FUNCTION ISN'T FINISHED)'''
 tasks = {} # object to store the tasks
 
 
@@ -161,7 +166,7 @@ async def delete_product(usku_id: str) -> tuple[dict[str, str], int]:
 
 
 
-async def upload_xlsx(xlsx_data: bytes, category_id: str) -> dict[str, str|int|BytesIO]:
+async def upload_xlsx(xlsx_data: bytes, category_id: str, job_id=None) -> dict[str, str|int|BytesIO]:
     """Upload bulk products to the server and create a new xlsx sheet if the upload has any error in it.
     It checks the product payload if it the mendatory fields are provided and then lists the product on sql and 
     runs a fire-and-forget function to upload product data on mongodb
@@ -196,14 +201,20 @@ async def upload_xlsx(xlsx_data: bytes, category_id: str) -> dict[str, str|int|B
         '''HEADER VERIFICATION'''
         xlsx_sheet = BytesIO(xlsx_data)
         document_header = await asyncio.to_thread(workbook.read_row, xlsx_sheet, row=1) # it's putting the pointer after the first row
+
         if not set(product_mandatory_attributes).issubset(set(document_header)): # if mandatory keys exists
             return {"status": "failed", "message": "redownload the bulk upload file and re-upload"}
 
         fields = await asyncio.to_thread(workbook.read_row, xlsx_sheet, row=1)
         names = await asyncio.to_thread(workbook.read_row, xlsx_sheet, row=2)
 
-        error_sheet = None
+        '''values needs to be used multiple times so creating it outside the block and constructing once'''
         fields, names = [], []
+
+        error_sheet = None # Storing eror sheet
+        total_products = await asyncio.to_thread(workbook.ttl_rows, xlsx_sheet) #For progress report work_done/ttl_work
+        uploaded_products = 0
+        init_time = time()
 
         '''Iterating over sheet rows'''
         for attributes in await asyncio.to_thread(workbook.read_generator, BytesIO(xlsx_data)): # creating the fresh sheet to void any pointer conflicts
@@ -252,7 +263,13 @@ async def upload_xlsx(xlsx_data: bytes, category_id: str) -> dict[str, str|int|B
                     print(e)
                     print_exc()
                     return {"status": "failed", "error": "unable to upload product or create error sheet"}
-        print("finished")
+
+            '''Counting progress for background job'''
+            uploaded_products += 1
+            tasks[job_id]['progress'] = f"{round((uploaded_products/total_products)*100, 2)}%"
+            tasks.get(job_id).get('event').set() # turn the event flag false
+            
+        tasks[job_id]["time"] = time() - init_time
         if not error_sheet:
             return {"status": "successful", "message": "Products uploaded", "code": 200}
         else: 
@@ -267,6 +284,7 @@ async def upload_xlsx(xlsx_data: bytes, category_id: str) -> dict[str, str|int|B
 
 
 def on_task_complete(task):
+    """Trigger when the bulk product upload will finish"""
     job_id = task.job_id
 
     if not job_id:
