@@ -8,34 +8,17 @@ from config import _product_image_bucket, _product_image_root_key, _image_types
 from . import services
 from werkzeug.datastructures import FileStorage
 import asyncio
-
+from ..products.authorize import product_api_access_required
 
 images = Blueprint("images", __name__, url_prefix = "/images")
 
 
 
-@images.post("")
+@images.post("/<usku_id>")
 @login_required
 @brand_required
-async def upload_image():
-    args = request.args
-    usku_id = args.get("usku-id", type=str)
-    if usku_id is None:
-        sku_id = args.get("sku-id")
-        # print(sku_id)
-        is_sku = await productdb.Fetch.is_sku_id_exists(sku_id, session.get("brand"))
-        # print(is_sku)
-        if is_sku and is_sku.get("found"):
-            usku_id=is_sku.get("usku_id")
-        else:
-            return jsonify({"status": "failed", "msg": "invalid sku id"}), 422
-    else:
-        '''checking if the usku_id is correct'''
-        is_usku_exists = await productdb.Fetch.is_usku_id_exists(usku_id)
-
-        if is_usku_exists != True:
-            return jsonify({"status": "invalid usku_id", "msg": 'usku id does not exists'}), 422
-
+@product_api_access_required
+async def upload_image(usku_id):
     '''VERIFY AND UPLOAD IMAGE'''
     file = await request.files
     form = await request.form
@@ -63,15 +46,14 @@ async def upload_image():
 
 
 
-@images.get("")
+@images.get("/<usku_id>")
 @login_required
 @brand_required
-async def get_image_url():
+@product_api_access_required
+async def get_image_url(usku_id):
     """Gets the image urls
     """
     arguments = request.args
-
-    usku_id = arguments.get("usku-id")
     type = arguments.get("image-type")
 
     if usku_id == None:
@@ -92,7 +74,6 @@ async def get_image_url():
     if type is None:
         print(image_urls)
         image_urls = {value.get("image_type"): {"url": json.loads(value.get("image_url")), "order": value.get("image_order")} for  value in image_urls}
-        return jsonify(image_urls)
     
     return jsonify(image_urls)
 
@@ -112,7 +93,7 @@ async def get_image(image_variant: str, usku_id: str, image: str):
         extension = split_name[len(split_name)-1]
         mimetype = f"image/{extension}" # if the original image is requested then the mimetype is changed
 
-    image = read_object(_product_image_bucket, key)
+    image = await asyncio.to_thread(read_object, _product_image_bucket, key)
     
     if image is None:
         abort(404)

@@ -122,6 +122,12 @@ async def upload_unit(image_file: FileStorage, metadata: dict, usku_id: str, ):
 
 
 
+async def background_upload_bulk_images(imageFiles: list):
+    """Takes the image files and image meta deta and upload them using `upload_unit` one by one"""
+    ...
+
+
+
 async def delete_images(usku_id:str, image_type:str| None = None):
     """Delete the images from the rdbms awa from the s3 like object storage service
     

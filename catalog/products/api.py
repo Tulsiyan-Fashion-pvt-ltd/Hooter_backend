@@ -123,7 +123,7 @@ async def upload_bulk_catalog():
         xlsx_sheet.seek(0)
         sheet_data = xlsx_sheet.stream.read()
 
-        upload_task = asyncio.create_task(services.upload_xlsx(sheet_data, type_id), name=job_id)
+        upload_task = asyncio.create_task(services.upload_xlsx(sheet_data, type_id, job_id=job_id), name=job_id)
         upload_task.job_id = job_id
 
         services.tasks[job_id] = {"status": "pending", "event": asyncio.Event(), "task": upload_task}
@@ -263,27 +263,6 @@ async def update_catalog_data(usku_id):
     response = await services.update_product(usku_id, listing_attributes, category_attributes)
     return jsonify(response[0]), response[1]
 
-
-
-# mark the catalog upload as completed
-# '''this function is meant to call after the images and catalog upload is successfull'''
-# @products.put("/<usku_id>/completed")
-# @login_required
-# @brand_required
-# async def mark_complete(usku_id):
-#     """
-#     UPDATE THE PRODUCT UPLOAD STATUS AS COMPLETED 
-#     """
-
-#     if usku_id and await mariadb.Fetch.is_usku_id_exists(usku_id):
-#         db_query = await mariadb.Write.status_complete(usku_id)
-#         if db_query == "ok":
-#             return jsonify({"status": "successful", "message": "updated the catalog upload as completed"}), 200
-#         else:
-#             jsonify({"status": "failed", "message": "error encountered while updating the status as completed"}), 500
-#     else:
-#         return jsonify({"status": "failed request", "message": "usku_id does not exists"}), 400               
-#     return jsonify({"status": "request completed", "message": "reqeust completed without updating the status"}), 202
 
 
 
