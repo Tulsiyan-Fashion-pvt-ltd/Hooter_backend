@@ -167,3 +167,34 @@ class Fetch:
                 attributes = doc.get("attributes")
                 universal_mandatory_keys = [attribute.get("field") for attribute in attributes]
                 return universal_mandatory_keys
+
+
+        class Images():
+            """
+            Image specific attribute
+            """
+            def __init__(self, type_id: str):
+                self.type_id = type_id
+
+
+            async def mandatory(self):
+                """fetch only mandatory attribute keys for images"""
+                doc = await Fetch.image_schema(self.type_id)
+                if not doc:
+                  return None
+                
+                attributes = doc.get("attributes")
+                image_mandatory_keys = [attribute.get("field") for attribute in attributes if attribute.get("required") == True]
+                return image_mandatory_keys
+
+            
+            # we don't need to check for all images. only mandatory images
+            # async def all(self):
+            #     """to fetch all the attribute schema for images"""
+            #     doc = await Fetch.image_schema(self.type_id)
+            #     if not doc:
+            #       return None
+                
+            #     attributes = doc.get("attributes")
+            #     all_image_keys = [attribute.get("field") for attribute in attributes]
+            #     return all_image_keys

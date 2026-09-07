@@ -31,3 +31,4 @@ _product_image_root_key = "catalog/images"
 
 '''IMAGE CONFIGS'''
 _image_types = ["original", "high_resol_webp", "low_resol_webp", "webp_card"]
+_max_allowed_image_size = 10 * 1024 * 1024 # 10MB

@@ -113,8 +113,6 @@ if __name__ == "__main__":
         config_path="openapi.yaml",
         url_prefix="/docs",
         title="Hooter internal APIs",
-        paths="./login.yaml",
-        editor=True
     )
     
     print('''>>>\nuse @login_required when the login is required and use\nfrom utils.prerequirements import login_required''')

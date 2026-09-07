@@ -1558,7 +1558,261 @@ paths:
         default:
           $ref: "#/components/responses/default"
           
+  /catalog/images/{usku_id}:
+    post:
+      summary:  Images upload api for the product
+      description: |
+        Upload images for image type and image order for products.
 
+        # Code Example
+        ## React
+        
+        **Defining the images form storage**
+        ```
+        const [imagesData, setImagesData] = useState({});
+        ```
+        Here the images is in key: value pairs of `image-type`: {"image": `imageFile`, "order": `image-order`}
+        > `image-order` >= 0
+      
+
+        **Set image and metadata example**
+        ```
+        function storeImageData(e, type, order){
+          const imageFile = e.target.files[0];
+
+          setImagesData((prev)=> ({
+            ...prev,
+            [type]: {"order": order, "image": imageFile}
+          }));
+        }
+        ```
+
+
+        **Submit form function**
+        ```
+        async function submitForm(){
+          const form = new FormData();
+          const metadata = {};
+
+          cosnt images = Object.entries(imagesData);
+          images.forEach(([ type, { image, order } ])=>{
+            form.append(type, image);   // <--- appending images
+            metadata[type] = order      // <-- creating metadata
+          });
+
+          form.append("meta", JSON.stringify(metadata));  // <--- appending meta
+
+          await uploadForm(form);
+        }
+
+
+        async function uploadForm(form){
+          const response = await fetch(`api/route`, {
+              method: 'POST',
+              credentials: "included",
+              body: form
+            })
+          
+          const data = await response.json();
+        }
+        ```
+
+        
+
+        **Multipart form example**
+        ```
+        <div id="ImageForm">
+          <input type=”file” name=front accept=”image/png,image/webp,image/jpeg,image/jpg”  onChange={(e)=> {storeImageData(e, imageType, imageOrder)}}/>
+          <input type=”file” name=zoomed accept=”image/png,image/webp,image/jpeg,image/jpg”  onChange={(e)=> {storeImageData(e, imageType, imageOrder)}}/>
+
+          <button type="submit" onClick=(submitForm)>Upload image</button>
+        </div>
+        ```
+
+        > **Warning**
+        > The form is supposed to be dynamically generated using the `image-attributes` from the category or custom images 
+          and the image-type and image-order are supposed to be acquired from the user input if it's custom
+      tags:
+        - Catalog
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: usku_id
+          in: path
+          required: true
+          description: Universally unique Stock Keeping Unit ID for the products
+          schema:
+            type: string
+        - name: type-id
+          in: query
+          required: true
+          description:  Unique ID for category from shopify category taxnomomy
+          schema:
+            type: string
+      requestBody:
+        description:  Images and their metadata, containing the image type and image order. The form payload will
+          be according to the image attributes and any custom attributes for image that user has selected
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                meta:
+                  type: string
+                  description:  meta contains the metadata of the images according to their image types in 
+                    the serielized JSON formate mapping `image_type` to `image_order` formate
+                  example:  '{"front":3,"zoomed":6}'
+                front:
+                  type: string
+                  format: binary
+                zoomed:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description:  Successfully scheduled the image upload to run on the background
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example:  successful
+                  message:
+                    type: string
+                    example:  Image upload has started
+                  event_url:
+                    type: string
+                    example: /catalog/images/events/04c6521a4c4348a4ba12f8315c93e9c8
+        "413":
+          description:  Denied request for the image upload
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: object
+                    properties:
+                      status:
+                        type: string
+                      message:
+                        type: string
+                      allowed_size:
+                        type: string
+
+                  - type: object
+                    properties:
+                      status:
+                        type: string
+                      message:
+                        type: string
+                      image_type:
+                        type: string 
+              examples:
+                size_not_allowed:
+                  summary:  Image too large
+                  value:
+                    status: denied
+                    message:  Image too large
+                    allowed_size: 10MB
+                Wrong_image_type:
+                  summary:  Invalid file type
+                  value:
+                    status: failed
+                    message:  File type should be an image
+                    image_type: front
+                Wrong_image_order:
+                  summary:  Invalid file order
+                  value:
+                    status: failed
+                    message:  Image order can not be equal to or less then 0
+        "500":
+          description:  Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: failed
+                  message:
+                    type: string
+                    example:  Internal server error
+        "default":
+          $ref: '#/components/responses/default'
+
+  /catalog/images/events/{job_id}:
+    get:
+      summary:  SSE for product images upload
+      description:  Shows the status and progress of the image upload
+
+      tags:
+        - Catalog
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          description:  Unique ID for the product images upload
+          schema:
+            type: string
+      responses:
+        "200":
+          summary: Successful event sign up
+          description:  Successfully connect with the event stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+              examples:
+                event_completed:
+                  summary:  Upload finished successfully
+                  description:  Successfully finished the upload and returns the report
+                  value: |
+                    event: completed
+                    data: {"result": {"front": {"status": "successful", "message": "Image uploaded successfully"}, "zoomed": {"status": "successful", "message": "Image uploaded successfully"}}, "progress": "100.0%"}
+                event_progress:
+                  summary:  Still uploading
+                  description:  Images are under uploading process
+                  value: |
+                    event: progress
+                    data: {"status": "failed", "message": "Images are getting uploaded", "progress": "50%"}
+                failed_upload:
+                  summary: Upload failed
+                  description:  Images upload failed with an unexpected error
+                  value: |
+                    event: completed
+                    data: {"status": "failed", "message": "Unexpected error occurred", "progress": "50%"}
+        "400":
+          summary:  Invalid job ID
+          description: Job id does not exists in the bacground tasks
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schema/default"
+              example:
+                status: failed
+                message:  job_id does not exists
+        "406":
+          summary:  Invalid headers
+          description: Appropriate accept headers is not provided
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schema/default"
+              example:
+                status: failed
+                message:  Expected event stream
+        "default":
+          $ref: "#/components/responses/default"
+                  
+
+                   
+
+              
 
 
 
