@@ -71,5 +71,9 @@ async def xlsx_upload_stream(job_id):
 
     return Response(
         event_generator(),
-        content_type="text/event-stream"
+        content_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+        },
     )

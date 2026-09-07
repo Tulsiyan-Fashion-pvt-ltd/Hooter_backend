@@ -69,8 +69,8 @@ def product_api_access_required(func):
             else:
                 return jsonify({'status': "error", "message": "Unexpected internal server error occured"}), 500
         except Exception as e:
-            print(e)
             print_exc
+            print(e)
             return jsonify({'status': "error", "message": "Unexpected internal server error occured"}), 500
 
     return wrapper

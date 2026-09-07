@@ -14,10 +14,10 @@ from traceback import print_exc
 from utils import helper, workbook
 import s3
 from io import BytesIO
-from . import services
 from time import time
+from .authorize import product_access_required
 
-
+tasks = {} # object to store the tasks
 '''tasks STORES THE OBJECT WITH KEYS job_id: {}, 
 WITH THEIR KEYS 
 `status`: pending| failed| completed", 
@@ -25,7 +25,6 @@ WITH THEIR KEYS
 `task`: asyncio.create_task -> the task pointer from create_task(), 
 `progress`: float -> progress percentage
 `time`: int -> total time taken after the finish (SO `time` WOULD BE NONE UNTIL THE FUNCTION ISN'T FINISHED)'''
-tasks = {} # object to store the tasks
 
 
 async def create_variants(usku_id: str, variants: list) -> dict| str:

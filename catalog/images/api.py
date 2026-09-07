@@ -1,17 +1,25 @@
-from quart import Blueprint, request, session, jsonify, abort, Response
+from quart import Blueprint, request, session, jsonify, abort, Response, url_for
 from utils.prerequirements import login_required, brand_required
+from utils.helper import Payload
 from . import mariadb
 from catalog.products import mariadb as productdb
+from catalog.categories import mongodb as categories_mongodb
 import json
 from s3 import read_object
-from config import _product_image_bucket, _product_image_root_key, _image_types
+from config import _product_image_bucket, _product_image_root_key, _image_types, _max_allowed_image_size
 from . import services
-from werkzeug.datastructures import FileStorage
 import asyncio
 from ..products.authorize import product_api_access_required
+from uuid import uuid4
+from .sse import tasks, image_sse
+from traceback import print_exc
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 images = Blueprint("images", __name__, url_prefix = "/images")
-
+images.register_blueprint(image_sse)
 
 
 @images.post("/<usku_id>")
@@ -20,29 +28,74 @@ images = Blueprint("images", __name__, url_prefix = "/images")
 @product_api_access_required
 async def upload_image(usku_id):
     '''VERIFY AND UPLOAD IMAGE'''
-    file = await request.files
+    files = await request.files
     form = await request.form
+    type_id = request.args.get('type-id')
 
-    image_files = file.getlist("image")
-    metadata = json.loads(form.get("meta"))
+    try:
+        metadata = json.loads(form.get("meta"))
+    except Exception as e:
+        print(e)
+        print_exc()
+        return jsonify({'status': 'failed', 'message': 'invalid stringify json'}), 400
 
     if not metadata:
         return jsonify({"status": "failed", "message": "metadata is not provided"}), 400
+
+    if not type_id:
+        return jsonify({"status": "failed", "message": "type-id is not provided"}), 400
     
+    img_mandatory_keys = await categories_mongodb.Fetch.Attributes.Images(type_id).mandatory()
+
+    if not Payload.check_required_payload(metadata, img_mandatory_keys):
+        return jsonify({'status': 'failed', 'message': 'mandatory image attributes not provided'}), 400
+    
+    '''Saving the files in temps'''
+    image_dict_object = {}      # stores image `path`, `order` on key `image_type`
+    for key in metadata.keys():
+        file = files.get(key) # getting the file from files by their keys e.i front, zoomed etc
+
+        '''Checking the file size'''
+        stream = file.stream
+        pos = stream.tell()
+        stream.seek(0, 2)          # end
+        file_size = stream.tell()        # bytes
+        stream.seek(pos)            # restore position
+        if file_size >= _max_allowed_image_size:
+            return jsonify({'status': 'denied', 'message': 'Image too large', "allowed_size": "10MB"}), 413
+
+        '''checking the file type'''
+        image_name = file.filename
+        check_image = image_name.endswith((".png", ".webp", ".jpeg", ".jpg"))    
+        if check_image is False:
+            return jsonify({"status": "failed", "message": "File type should be an image", "image_type": key}), 413
+
+        if  0 >= metadata.get(key):
+            return jsonify({'status': "failed", 'message': "Image order can not be equal to or less then 0"}), 413
+
+        '''Else store in the temp path for background upload'''
+        path = await services.save_image_temp(file)
+        image_dict_object[key] = {"path": path, "order": metadata.get(key)} # metadata stores image_type as key and image_order as value
+
 
     """UPLOAD UNIT SO IT CAN BE RUN ASYNCHRONOUSLY ON THE IMAGE DATA"""
-
     try:
-        upload_status = await asyncio.gather(
-            *(services.upload_unit(image_file, metadata, usku_id) for image_file in image_files)
-        )
+        job_id = uuid4().hex
+        bg_task = asyncio.create_task(services.background_upload_bulk_images(job_id, image_dict_object, usku_id))
+        bg_task.job_id = job_id
+        bg_task.add_done_callback(services.on_bg_image_upload_task_done)
+        tasks[job_id] = {"task": bg_task, 
+                         "event": asyncio.Event(),
+                         "progress": "0%"}
+    
     except Exception as e:
         print(f"error occured in upload_image api", e)
-        return jsonify({"status": "failed", "message": "internal server error"}), 500
+        print_exc()
+        return jsonify({"status": "failed", "message": "Internal server error"}), 500
 
-    if all("failed" == upload.get("status") for upload in upload_status):
-        return jsonify({"erros": upload_status}), 422
-    return jsonify({"status": "successful", "message": "image uploaded"}), 200
+    return jsonify({"status": "successful", 
+                    "message": "Image upload has started", 
+                    "event_url": url_for("catalog.images.image_sse.images_upload_sse", job_id=job_id)}), 200
 
 
 
