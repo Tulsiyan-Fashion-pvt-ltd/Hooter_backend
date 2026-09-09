@@ -12,6 +12,7 @@ from traceback import print_exc
 from .sse import tasks
 from pathlib import Path
 import logging
+import json
 
 async def image_variants_upload(image: bytes, url: dict) -> str:
     """Create and upload additional image variants to the S3-compatible server.
@@ -85,11 +86,8 @@ async def upload_image_type(image_file: FileStorage| str, image_type: str, image
     
     Args:
         image_file: FileStoage object containing the image bytes or image_file path
-        metadata: dict object containing the meta-data for the image
-            file_name{
-                image_order: str,
-                image_type: int
-            }
+        image_type: String value of image type
+        image_order: int value of image order
         usku_id: str
 
     Returns:
@@ -108,7 +106,7 @@ async def upload_image_type(image_file: FileStorage| str, image_type: str, image
 
     '''GET FILE EXTENSION AND GENERATE FILENAME'''
     image_extension = Path(image_name).suffix
-    original_image_name = f"{usku_id}/{image_type}.{image_extension}"
+    original_image_name = f"{usku_id}/{image_type}{image_extension}"
     webp_image_name = f"{usku_id}/{image_type}.webp"
 
     '''adding image entry into the databases'''
@@ -182,6 +180,7 @@ async def background_upload_bulk_images(job_id: str, image_data: dict, usku_id: 
     return upload_report
 
 
+
 def on_bg_image_upload_task_done(task):
     """Need to set the event as True to run it after the bg func has finished"""
     job_id = task.job_id
@@ -207,28 +206,29 @@ async def delete_images(usku_id:str, image_type:str| None = None):
             descriptive message
     """
     urls = await mariadb.Fetch.image(usku_id, image_type)
+
     if urls == "error":
-        return {"error": "failed", "message": "unable to fetch the urls for the product"}
+        return {"error": "failed", "message": "Unable to fetch the urls for the product"}
 
     if not image_type:
         keys = [
                 image_url
                 for url in urls
-                for image_url in url.get("image_url", {}).values()
+                for image_url in json.loads(url.get("image_url", {})).values()
             ] if urls else []
     else:
-        keys = urls.values() if urls else []
+        keys = json.loads(urls.get("image_url")).values() if urls and urls.get("image_url") else []
 
-    print(keys)
+    if [] == keys:
+        return {"error": "failed", "message": "Product does not have images to delete"}
 
     s3_responses = await asyncio.to_thread(s3.delete_bulk_objects, _product_image_bucket, keys)
-
     if "error" == s3_responses:
-        return {"error": "failed", "message": "unable to delete all the images"}
+        return {"error": "failed", "message": "Unable to delete all the images"}
 
     sql_response = await mariadb.Delete.image(usku_id, image_type) if image_type else await mariadb.Delete.all_image(usku_id)
     if sql_response.get("error"):
-        return {"error": "failed", "message": "deleted the images but could not delete the records"}
+        return {"error": "failed", "message": "Deleted the images but could not delete the records"}
 
-    return {"error": None, "message": "successfully deleted the images"}
+    return {"error": None, "message": "Successfully deleted the images"}
     

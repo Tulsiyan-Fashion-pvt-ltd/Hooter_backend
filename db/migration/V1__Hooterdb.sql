@@ -7,7 +7,7 @@
 # 
 # Host: 127.0.0.1 (mariadb.org binary distribution 11.8.9)
 # Database: Hooterdb
-# Generation time: 2026-09-01T15:31:37+05:30
+# Generation time: 2026-09-09T17:00:54+05:30
 # ************************************************************
 
 
@@ -22,8 +22,6 @@ SET NAMES utf8mb4;
 
 # Dump of table brand
 # ------------------------------------------------------------
-
-DROP TABLE IF EXISTS `brand`;
 
 CREATE TABLE `brand` (
   `brand_id` varchar(36) NOT NULL,
@@ -46,21 +44,10 @@ CREATE TABLE `brand` (
   CONSTRAINT `brand_ibfk_1` FOREIGN KEY (`poc`) REFERENCES `user_creds` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
-LOCK TABLES `brand` WRITE;
-/*!40000 ALTER TABLE `brand` DISABLE KEYS */;
-
-INSERT INTO `brand` (`brand_id`, `entity_name`, `brand_name`, `gstin`, `poc`, `hooter_plan`, `established_year`, `created_at`, `pincode`, `update_at`, `address`, `city`, `state`) VALUES
-	("brand_dda509e9-8dc1-20260829", "ABC Pvt Ltd", "ABC Fashion", NULL, "user_08e23d19-f7ab-4b6620260827", "lite", "2023", "2026-08-29 06:55:19", "110025", "2026-08-29 06:55:19", "221B Baker Street", "New Delhi", "Delhi");
-
-/*!40000 ALTER TABLE `brand` ENABLE KEYS */;
-UNLOCK TABLES;
-
 
 
 # Dump of table brand_access
 # ------------------------------------------------------------
-
-DROP TABLE IF EXISTS `brand_access`;
 
 CREATE TABLE `brand_access` (
   `brand_id` varchar(36) NOT NULL,
@@ -75,22 +62,10 @@ CREATE TABLE `brand_access` (
   CONSTRAINT `brand_access_ibfk_3` FOREIGN KEY (`user_id`) REFERENCES `user_creds` (`user_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
-LOCK TABLES `brand_access` WRITE;
-/*!40000 ALTER TABLE `brand_access` DISABLE KEYS */;
-
-INSERT INTO `brand_access` (`brand_id`, `user_id`, `id`, `user_access`) VALUES
-	("brand_dda509e9-8dc1-20260829", "user_08e23d19-f7ab-4b6620260827", 1, "brand_admin"),
-	("brand_dda509e9-8dc1-20260829", "user_8b72d4cd-d54b-41e120260829", 2, "brand_member");
-
-/*!40000 ALTER TABLE `brand_access` ENABLE KEYS */;
-UNLOCK TABLES;
-
 
 
 # Dump of table catalog
 # ------------------------------------------------------------
-
-DROP TABLE IF EXISTS `catalog`;
 
 CREATE TABLE `catalog` (
   `usku_id` varchar(64) NOT NULL,
@@ -117,12 +92,8 @@ CREATE TABLE `catalog` (
 
 
 
-
-
 # Dump of table catalogue_idempotency
 # ------------------------------------------------------------
-
-DROP TABLE IF EXISTS `catalogue_idempotency`;
 
 CREATE TABLE `catalogue_idempotency` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -140,12 +111,8 @@ CREATE TABLE `catalogue_idempotency` (
 
 
 
-
-
 # Dump of table collection_records
 # ------------------------------------------------------------
-
-DROP TABLE IF EXISTS `collection_records`;
 
 CREATE TABLE `collection_records` (
   `collection_id` int(11) NOT NULL AUTO_INCREMENT,
@@ -160,12 +127,8 @@ CREATE TABLE `collection_records` (
 
 
 
-
-
 # Dump of table grn
 # ------------------------------------------------------------
-
-DROP TABLE IF EXISTS `grn`;
 
 CREATE TABLE `grn` (
   `grn_id` varchar(64) NOT NULL,
@@ -181,12 +144,8 @@ CREATE TABLE `grn` (
 
 
 
-
-
 # Dump of table hsin_record
 # ------------------------------------------------------------
-
-DROP TABLE IF EXISTS `hsin_record`;
 
 CREATE TABLE `hsin_record` (
   `usku_id` varchar(64) NOT NULL,
@@ -199,12 +158,8 @@ CREATE TABLE `hsin_record` (
 
 
 
-
-
 # Dump of table inward
 # ------------------------------------------------------------
-
-DROP TABLE IF EXISTS `inward`;
 
 CREATE TABLE `inward` (
   `inward_id` int(11) NOT NULL AUTO_INCREMENT,
@@ -225,12 +180,8 @@ CREATE TABLE `inward` (
 
 
 
-
-
 # Dump of table inward_items
 # ------------------------------------------------------------
-
-DROP TABLE IF EXISTS `inward_items`;
 
 CREATE TABLE `inward_items` (
   `index_id` int(11) NOT NULL AUTO_INCREMENT,
@@ -252,12 +203,8 @@ CREATE TABLE `inward_items` (
 
 
 
-
-
 # Dump of table product_collections
 # ------------------------------------------------------------
-
-DROP TABLE IF EXISTS `product_collections`;
 
 CREATE TABLE `product_collections` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -272,32 +219,24 @@ CREATE TABLE `product_collections` (
 
 
 
-
-
 # Dump of table product_images
 # ------------------------------------------------------------
-
-DROP TABLE IF EXISTS `product_images`;
 
 CREATE TABLE `product_images` (
   `usku_id` varchar(64) NOT NULL,
   `image_url` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`image_url`)),
   `image_type` varchar(32) NOT NULL,
-  `image_order` char(1) NOT NULL,
+  `image_order` varchar(2) NOT NULL,
   `id` int(11) NOT NULL AUTO_INCREMENT,
   PRIMARY KEY (`id`),
   UNIQUE KEY `usku_id` (`usku_id`,`image_type`),
   CONSTRAINT `product_images_ibfk_1` FOREIGN KEY (`usku_id`) REFERENCES `usku_record` (`usku_id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=185 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
-
-
+) ENGINE=InnoDB AUTO_INCREMENT=226 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 
 
 # Dump of table product_info_change_stack
 # ------------------------------------------------------------
-
-DROP TABLE IF EXISTS `product_info_change_stack`;
 
 CREATE TABLE `product_info_change_stack` (
   `change_id` int(11) NOT NULL AUTO_INCREMENT,
@@ -310,12 +249,8 @@ CREATE TABLE `product_info_change_stack` (
 
 
 
-
-
 # Dump of table shipment
 # ------------------------------------------------------------
-
-DROP TABLE IF EXISTS `shipment`;
 
 CREATE TABLE `shipment` (
   `shipment_id` int(11) NOT NULL AUTO_INCREMENT,
@@ -333,12 +268,8 @@ CREATE TABLE `shipment` (
 
 
 
-
-
 # Dump of table shopify_product_mapping
 # ------------------------------------------------------------
-
-DROP TABLE IF EXISTS `shopify_product_mapping`;
 
 CREATE TABLE `shopify_product_mapping` (
   `mapping_id` int(11) NOT NULL AUTO_INCREMENT,
@@ -357,12 +288,8 @@ CREATE TABLE `shopify_product_mapping` (
 
 
 
-
-
 # Dump of table shopify_stores
 # ------------------------------------------------------------
-
-DROP TABLE IF EXISTS `shopify_stores`;
 
 CREATE TABLE `shopify_stores` (
   `store_id` int(11) NOT NULL AUTO_INCREMENT,
@@ -379,12 +306,8 @@ CREATE TABLE `shopify_stores` (
 
 
 
-
-
 # Dump of table supplier
 # ------------------------------------------------------------
-
-DROP TABLE IF EXISTS `supplier`;
 
 CREATE TABLE `supplier` (
   `supplier_id` int(11) NOT NULL AUTO_INCREMENT,
@@ -404,12 +327,8 @@ CREATE TABLE `supplier` (
 
 
 
-
-
 # Dump of table user_creds
 # ------------------------------------------------------------
-
-DROP TABLE IF EXISTS `user_creds`;
 
 CREATE TABLE `user_creds` (
   `user_id` char(36) NOT NULL,
@@ -424,22 +343,10 @@ CREATE TABLE `user_creds` (
   CONSTRAINT `user_creds_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
-LOCK TABLES `user_creds` WRITE;
-/*!40000 ALTER TABLE `user_creds` DISABLE KEYS */;
-
-INSERT INTO `user_creds` (`user_id`, `user_name`, `phone_number`, `user_email`, `user_designation`, `created_at`) VALUES
-	("user_08e23d19-f7ab-4b6620260827", "Farhan Ahmad", "7836815466", "farhanahmadpy@gmail.com", "Owner", "2026-08-27 00:00:00"),
-	("user_8b72d4cd-d54b-41e120260829", "John Doe", "9876543210", "john@example.com", "Manager", "2026-08-29 00:00:00");
-
-/*!40000 ALTER TABLE `user_creds` ENABLE KEYS */;
-UNLOCK TABLES;
-
 
 
 # Dump of table users
 # ------------------------------------------------------------
-
-DROP TABLE IF EXISTS `users`;
 
 CREATE TABLE `users` (
   `user_id` char(36) NOT NULL,
@@ -447,22 +354,10 @@ CREATE TABLE `users` (
   PRIMARY KEY (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
-LOCK TABLES `users` WRITE;
-/*!40000 ALTER TABLE `users` DISABLE KEYS */;
-
-INSERT INTO `users` (`user_id`, `user_password`) VALUES
-	("user_08e23d19-f7ab-4b6620260827", "$argon2id$v=19$m=65536,t=3,p=4$QOeGTGrPvd6DXH7PShw6aA$RHJyScGiCePdYTrsH2stfLsajynNz5UFVkpslhjue0k"),
-	("user_8b72d4cd-d54b-41e120260829", "$argon2id$v=19$m=65536,t=3,p=4$ePnc0pugH5IXORpDqgdJ7Q$meevabIzJTEmoBHfoHqHiMYeaQY7IBq1AZuehWWJMyc");
-
-/*!40000 ALTER TABLE `users` ENABLE KEYS */;
-UNLOCK TABLES;
-
 
 
 # Dump of table usku_record
 # ------------------------------------------------------------
-
-DROP TABLE IF EXISTS `usku_record`;
 
 CREATE TABLE `usku_record` (
   `usku_id` varchar(64) NOT NULL,
@@ -478,16 +373,12 @@ CREATE TABLE `usku_record` (
   UNIQUE KEY `brand_id` (`brand_id`,`sku_id`),
   UNIQUE KEY `usku_id` (`usku_id`),
   CONSTRAINT `usku_record_ibfk_2` FOREIGN KEY (`brand_id`) REFERENCES `brand` (`brand_id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=594 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
-
-
+) ENGINE=InnoDB AUTO_INCREMENT=722 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 
 
 # Dump of table variants
 # ------------------------------------------------------------
-
-DROP TABLE IF EXISTS `variants`;
 
 CREATE TABLE `variants` (
   `indx` int(11) NOT NULL AUTO_INCREMENT,
@@ -500,12 +391,8 @@ CREATE TABLE `variants` (
 
 
 
-
-
 # Dump of table warehouse
 # ------------------------------------------------------------
-
-DROP TABLE IF EXISTS `warehouse`;
 
 CREATE TABLE `warehouse` (
   `warehouse_id` int(11) NOT NULL AUTO_INCREMENT,
@@ -526,8 +413,6 @@ CREATE TABLE `warehouse` (
 
 
 
-
-
 # Dump of views
 # ------------------------------------------------------------
 
@@ -541,4 +426,4 @@ CREATE TABLE `warehouse` (
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 
-# Dump completed on 2026-09-01T15:31:37+05:30
+# Dump completed on 2026-09-09T17:00:54+05:30

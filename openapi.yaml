@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: Hooter Backend API
   version: '1.0.0'
-  description: Inter API for Hooter backend
+  description: Internal API for Hooter backend
 
 servers:
   - url: https://hooter_staging.h0oter.com
@@ -1572,7 +1572,7 @@ paths:
         const [imagesData, setImagesData] = useState({});
         ```
         Here the images is in key: value pairs of `image-type`: {"image": `imageFile`, "order": `image-order`}
-        > `image-order` >= 0
+        > 0 <= `image-order` <= 20
       
 
         **Set image and metadata example**
@@ -1641,12 +1641,6 @@ paths:
           in: path
           required: true
           description: Universally unique Stock Keeping Unit ID for the products
-          schema:
-            type: string
-        - name: type-id
-          in: query
-          required: true
-          description:  Unique ID for category from shopify category taxnomomy
           schema:
             type: string
       requestBody:
@@ -1742,6 +1736,167 @@ paths:
                     example:  Internal server error
         "default":
           $ref: '#/components/responses/default'
+    get:
+      summary:  Get product images urls
+      description:  Get product images urls of the USKU ID, for original, high_resol, low_resol and webp card images.
+      tags:
+        - Catalog
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: usku_id
+          in: path
+          required: true
+          description: Universally unique Stock Keeping Unit ID for the products
+          schema:
+            type: string
+        - name: image-type
+          in: query
+          required: false
+          description:  Unique ID for category from shopify category taxnomomy
+          schema:
+            type: string
+            example: front
+      responses:
+        "200":
+          description:  Successfully received the image urls based upon the whether the image-type provided or not
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: object
+                    properties:
+                      front:
+                        type: object
+                        properties:
+                          image_order:
+                            type: string
+                          image_urls:
+                            type: object
+                            properties:
+                              high_resol_webp:
+                                type: string
+                              low_resol_webp:
+                                type: string
+                              original:
+                                type: string
+                              webp_card:
+                                type: string
+                      zoomed:
+                        type: object
+                        properties:
+                          image_order:
+                            type: string
+                          image_urls:
+                            type: object
+                            properties:
+                              high_resol_webp:
+                                type: string
+                              low_resol_webp:
+                                type: string
+                              original:
+                                type: string
+                              webp_card:
+                                type: string
+
+                  - type: object
+                    properties: 
+                      image_order:
+                        type: string
+                      image_urls:
+                        type: object
+                        properties:
+                          high_resol_webp:
+                            type: string
+                          low_resol_webp:
+                            type: string
+                          original:
+                            type: string
+                          webp_card:
+                            type: string
+              examples:
+                image_type:
+                  summary:  image-type urls
+                  description:  Accessing the image-type specific keys
+                  value:
+                    image_order:  3
+                    image_urls:
+                      high_resol_webp: catalog/images/high_resol_webp/85448dd705574e3aafe07d10c58cca86/front.webp
+                      low_resol_webp: catalog/images/low_resol_webp/85448dd705574e3aafe07d10c58cca86/front.webp
+                      original: catalog/images/original_image/85448dd705574e3aafe07d10c58cca86/front..jpg
+                      webp_card: catalog/images/webp_card/85448dd705574e3aafe07d10c58cca86/front.webp
+                not_image_type:
+                  summary:  All image urls
+                  description:  Accessing all the image urls of the product
+                  value:
+                    front:
+                      image_order: 3
+                      image_urls:
+                        high_resol_webp: catalog/images/high_resol_webp/85448dd705574e3aafe07d10c58cca86/front.webp
+                        low_resol_webp: catalog/images/low_resol_webp/85448dd705574e3aafe07d10c58cca86/front.webp
+                        original: catalog/images/original_image/85448dd705574e3aafe07d10c58cca86/front..jpg
+                        webp_card: catalog/images/webp_card/85448dd705574e3aafe07d10c58cca86/front.webp
+                    zoomed:
+                      image_order: 6
+                      image_urls:
+                        high_resol_webp: catalog/images/high_resol_webp/85448dd705574e3aafe07d10c58cca86/zoomed.webp
+                        low_resol_webp: catalog/images/low_resol_webp/85448dd705574e3aafe07d10c58cca86/zoomed.webp
+                        original: catalog/images/original_image/85448dd705574e3aafe07d10c58cca86/zoomed..jpg
+                        webp_card: catalog/images/webp_card/85448dd705574e3aafe07d10c58cca86/zoomed.webp
+        "409":
+          description:  Could not find image urls
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schema/default'
+              examples:
+                image_type:
+                  summary:  image-type urls
+                  description:  No image found while accessing the image-type specific keys
+                  value:
+                    status: failed
+                    message:  Invalid image type or Image does not exists
+                not_image_type:
+                  summary:  All image urls
+                  description:  No image found while accessing all the image urls of the product
+                  value:
+                    status: failed
+                    message:  Image does not exists
+        "default":
+          $ref: "#/components/responses/default"
+    delete:
+      summary: Delete product images
+      description: Delete product images based upon the `image-type` or all the images of the product
+      security:
+        - cookieAuth: []
+      tags:
+        - Catalog
+      parameters:
+        - name: usku_id
+          in: path
+          required: true
+          description: Universally unique Stock Keeping Unit ID for the products
+          schema:
+            type: string
+        - name: image-type
+          in: query
+          required: false
+          description:  Unique ID for category from shopify category taxnomomy
+          schema:
+            type: string
+            example: front
+      responses:
+        "200":
+          description:  Successful request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/responses/default'
+              example:
+                status: successful
+                example:  Successfully deleted the images
+        "default":
+          $ref: "#/components/responses/default"
 
   /catalog/images/events/{job_id}:
     get:
@@ -1808,9 +1963,38 @@ paths:
                 message:  Expected event stream
         "default":
           $ref: "#/components/responses/default"
-                  
 
-                   
+  /catalog/images/{key}:         
+    get:
+      summary:  Download product image
+      description:  Download the product image url
+      tags: 
+        - Catalog
+      parameters:
+        - name: key
+          in: path
+          required: true
+          description:  S3 object storage service key
+          schema:
+            type: string
+      responses:
+        "200":
+          description:  Successful image download
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: Image not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schema/default'
+              example:
+                status: failed
+                message:  Image not found
+          
 
               
 

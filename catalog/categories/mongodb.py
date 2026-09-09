@@ -180,10 +180,12 @@ class Fetch:
             async def mandatory(self):
                 """fetch only mandatory attribute keys for images"""
                 doc = await Fetch.image_schema(self.type_id)
-                if not doc:
-                  return None
+
+                if doc.get('error'):
+                  return []
                 
                 attributes = doc.get("attributes")
+                
                 image_mandatory_keys = [attribute.get("field") for attribute in attributes if attribute.get("required") == True]
                 return image_mandatory_keys
 

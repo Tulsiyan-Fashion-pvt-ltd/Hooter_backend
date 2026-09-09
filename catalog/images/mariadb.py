@@ -92,19 +92,12 @@ class Fetch:
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor = DictCursor) as cursor:
-                    query = ''''''
-                    values = ()
-
                     if type:
-                        query = '''select image_url from product_images where usku_id=%s and image_type=%s'''
+                        query = '''select image_url, image_order from product_images where usku_id=%s and image_type=%s'''
                         values = (usku_id, type)
                         await cursor.execute(query, values)
                         urls = await cursor.fetchone()
 
-                        if not urls:
-                            return None
-                        else:
-                            return json.loads(urls.get("image_url"))
                         
                     else:
                         query = '''select image_type, image_url, image_order from product_images where usku_id=%s'''
@@ -112,10 +105,7 @@ class Fetch:
                         await cursor.execute(query, values)
                         urls = await cursor.fetchall()
                     
-                        if not urls:
-                            return None
-                        else:
-                            return urls
+                    return urls
             except Exception as e:
                 print(f"error occured while fetching the image urls\n{e}")
                 return "error"

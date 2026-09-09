@@ -2,7 +2,6 @@ from quart import Blueprint, session, request, jsonify, Response, abort, url_for
 from catalog.products import mariadb
 from catalog.categories import mongodb as categories
 from catalog.products import mongodb 
-from catalog.products.utils.id import create_usku, create_variant_id
 from utils.prerequirements import login_required, brand_required
 from utils import helper
 from utils.helper import Payload

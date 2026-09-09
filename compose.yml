@@ -49,6 +49,20 @@ services:
 
     restart: unless-stopped
 
+  flyway:
+    image: flyway/flyway:latest
+    command: >
+      -connectRetries=60
+      -locations=filesystem:/flyway/sql
+      migrate
+    volumes:
+      - ./db/migration:/flyway/sql
+    environment:
+      FLYWAY_URL: jdbc:mariadb://mariadb:3306/${HOOTER_DB}
+      FLYWAY_USER: ${HOOTER_DB_USER}
+      FLYWAY_PASSWORD: ${HOOTER_DB_PASSWORD}
+    depends_on:
+      - mariadb
 
   mongodb:
     image: mongo:8.2

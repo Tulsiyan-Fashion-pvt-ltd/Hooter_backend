@@ -1,6 +1,7 @@
 from quart import current_app
 from asyncmy.cursors import DictCursor
 from datetime import datetime
+from traceback import print_exc
 
 class Write:
     @staticmethod
@@ -354,3 +355,30 @@ class Fetch:
             except Exception as e:
                 print(f"error occured while fetching the catalog upload counts\n{e}")
                 return "error"
+
+
+    @staticmethod
+    async def product_category_id(usku_id: str):
+        """Get the shopify taxonomy category ID from the `usku_recrod`
+        
+        Args:
+            usku_id: Universally unique Stock Keeping Unit ID
+            
+        Returns:
+            {"category_id": `str`} str if exists or else None
+        """
+        pool = current_app.pool
+        async with pool.acquire() as connection:
+            try:
+                async with connection.cursor(cursor=DictCursor) as cursor:
+                    query = '''SELECT type_id FROM usku_record 
+                        WHERE usku_id = %s'''
+                    values = (usku_id, )
+
+                    await cursor.execute(query, values)
+                    id = await cursor.fetchone()
+                    return id
+            except Exception as e:
+                print(f"error occured while fetching the category ID for the product {usku_id}\n", e)
+                print_exc()
+                return None

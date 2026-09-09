@@ -3,6 +3,7 @@ from config import _s3
 from werkzeug.datastructures import FileStorage
 from io import BytesIO
 import traceback
+from botocore.exceptions import ClientError
 
 
 
@@ -46,7 +47,7 @@ def read_object(bucket: str, key: str):
     
     Returns:
         bytes -> generator  on success:
-        "error" -> on error
+        {"error", error_key(int)}-> on error
     """
     try:
         response = _s3.get_object(
@@ -57,10 +58,10 @@ def read_object(bucket: str, key: str):
         body = response.get("Body")
         data = body.read()
         return data
-    except Exception as e:
-        traceback.print_exc()
+    except ClientError as e:
         print(f"error encountered while reading object {key} from bucket {bucket}\n{e}")
-        return "error"
+        if e.response["Error"]["Code"] == "NoSuchKey":
+            return {"error": 404}
     
 
 
