@@ -42,7 +42,7 @@ CREATE TABLE `brand` (
   UNIQUE KEY `gstin` (`gstin`),
   KEY `poc` (`poc`),
   CONSTRAINT `brand_ibfk_1` FOREIGN KEY (`poc`) REFERENCES `user_creds` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 
@@ -60,7 +60,7 @@ CREATE TABLE `brand_access` (
   KEY `user_id` (`user_id`),
   CONSTRAINT `brand_access_ibfk_2` FOREIGN KEY (`brand_id`) REFERENCES `brand` (`brand_id`) ON DELETE CASCADE,
   CONSTRAINT `brand_access_ibfk_3` FOREIGN KEY (`user_id`) REFERENCES `user_creds` (`user_id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 
@@ -88,7 +88,7 @@ CREATE TABLE `catalog` (
   `product_desc` varchar(5000) NOT NULL,
   PRIMARY KEY (`usku_id`),
   CONSTRAINT `catalog_ibfk_1` FOREIGN KEY (`usku_id`) REFERENCES `usku_record` (`usku_id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 
@@ -107,7 +107,7 @@ CREATE TABLE `catalogue_idempotency` (
   KEY `brand_id` (`brand_id`),
   CONSTRAINT `catalogue_idempotency_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user_creds` (`user_id`),
   CONSTRAINT `catalogue_idempotency_ibfk_2` FOREIGN KEY (`brand_id`) REFERENCES `brand` (`brand_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 
@@ -123,7 +123,7 @@ CREATE TABLE `collection_records` (
   PRIMARY KEY (`collection_id`),
   KEY `brand_id` (`brand_id`),
   CONSTRAINT `collection_records_ibfk_1` FOREIGN KEY (`brand_id`) REFERENCES `brand` (`brand_id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 
@@ -140,7 +140,7 @@ CREATE TABLE `grn` (
   PRIMARY KEY (`grn_id`),
   KEY `inward_id` (`inward_id`),
   CONSTRAINT `grn_ibfk_1` FOREIGN KEY (`inward_id`) REFERENCES `inward` (`inward_id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 
@@ -154,7 +154,7 @@ CREATE TABLE `hsin_record` (
   `updated_at` timestamp NOT NULL,
   PRIMARY KEY (`usku_id`,`hsin`),
   CONSTRAINT `hsin_record_ibfk_1` FOREIGN KEY (`usku_id`) REFERENCES `usku_record` (`usku_id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 
@@ -176,7 +176,7 @@ CREATE TABLE `inward` (
   CONSTRAINT `inward_ibfk_1` FOREIGN KEY (`supplier_id`) REFERENCES `supplier` (`supplier_id`),
   CONSTRAINT `inward_ibfk_2` FOREIGN KEY (`brand_id`) REFERENCES `brand` (`brand_id`) ON DELETE CASCADE,
   CONSTRAINT `inward_ibfk_4` FOREIGN KEY (`warehouse_id`) REFERENCES `warehouse` (`warehouse_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 
@@ -199,7 +199,7 @@ CREATE TABLE `inward_items` (
   KEY `usku_id` (`usku_id`),
   CONSTRAINT `inward_items_ibfk_1` FOREIGN KEY (`inward_id`) REFERENCES `inward` (`inward_id`) ON DELETE CASCADE,
   CONSTRAINT `inward_items_ibfk_2` FOREIGN KEY (`usku_id`) REFERENCES `usku_record` (`usku_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 
@@ -215,7 +215,7 @@ CREATE TABLE `product_collections` (
   KEY `usku_id` (`usku_id`),
   CONSTRAINT `product_collections_ibfk_1` FOREIGN KEY (`collection_id`) REFERENCES `collection_records` (`collection_id`),
   CONSTRAINT `product_collections_ibfk_2` FOREIGN KEY (`usku_id`) REFERENCES `usku_record` (`usku_id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 
@@ -231,7 +231,7 @@ CREATE TABLE `product_images` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `usku_id` (`usku_id`,`image_type`),
   CONSTRAINT `product_images_ibfk_1` FOREIGN KEY (`usku_id`) REFERENCES `usku_record` (`usku_id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=226 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=226 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 
@@ -245,7 +245,7 @@ CREATE TABLE `product_info_change_stack` (
   `updated_at` timestamp NOT NULL,
   `changed_attribute` text NOT NULL,
   PRIMARY KEY (`change_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 
@@ -264,7 +264,7 @@ CREATE TABLE `shipment` (
   UNIQUE KEY `shipment_ref_no` (`shipment_ref_no`),
   KEY `inward_id` (`inward_id`),
   CONSTRAINT `shipment_ibfk_1` FOREIGN KEY (`inward_id`) REFERENCES `inward` (`inward_id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 
@@ -284,7 +284,7 @@ CREATE TABLE `shopify_product_mapping` (
   KEY `store_id` (`store_id`),
   CONSTRAINT `shopify_product_mapping_ibfk_1` FOREIGN KEY (`usku_id`) REFERENCES `usku_record` (`usku_id`) ON DELETE CASCADE,
   CONSTRAINT `shopify_product_mapping_ibfk_2` FOREIGN KEY (`store_id`) REFERENCES `shopify_stores` (`store_id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 
@@ -302,7 +302,7 @@ CREATE TABLE `shopify_stores` (
   UNIQUE KEY `shopify_shop_name` (`shopify_shop_name`),
   KEY `brand_id` (`brand_id`),
   CONSTRAINT `shopify_stores_ibfk_1` FOREIGN KEY (`brand_id`) REFERENCES `brand` (`brand_id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 
@@ -323,7 +323,7 @@ CREATE TABLE `supplier` (
   UNIQUE KEY `email` (`email`),
   KEY `brand_id` (`brand_id`),
   CONSTRAINT `supplier_ibfk_1` FOREIGN KEY (`brand_id`) REFERENCES `brand` (`brand_id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 
@@ -341,7 +341,7 @@ CREATE TABLE `user_creds` (
   UNIQUE KEY `phone_number` (`phone_number`),
   UNIQUE KEY `user_email` (`user_email`),
   CONSTRAINT `user_creds_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 
@@ -352,7 +352,7 @@ CREATE TABLE `users` (
   `user_id` char(36) NOT NULL,
   `user_password` varchar(255) NOT NULL,
   PRIMARY KEY (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 
@@ -373,7 +373,7 @@ CREATE TABLE `usku_record` (
   UNIQUE KEY `brand_id` (`brand_id`,`sku_id`),
   UNIQUE KEY `usku_id` (`usku_id`),
   CONSTRAINT `usku_record_ibfk_2` FOREIGN KEY (`brand_id`) REFERENCES `brand` (`brand_id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=722 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=722 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 
@@ -387,7 +387,7 @@ CREATE TABLE `variants` (
   PRIMARY KEY (`indx`),
   UNIQUE KEY `usku_id` (`usku_id`,`variant_id`),
   CONSTRAINT `variants_ibfk_1` FOREIGN KEY (`usku_id`) REFERENCES `usku_record` (`usku_id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 
@@ -409,7 +409,7 @@ CREATE TABLE `warehouse` (
   UNIQUE KEY `email` (`email`),
   KEY `brand_id` (`brand_id`),
   CONSTRAINT `warehouse_ibfk_1` FOREIGN KEY (`brand_id`) REFERENCES `brand` (`brand_id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 
