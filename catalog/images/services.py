@@ -71,7 +71,7 @@ async def save_image_temp(file: FileStorage) -> str:
             temp path ex /temp/xysjs.jpeg
     """    
     suffix = Path(file.filename).suffix
-
+    print("suffix >>>", suffix)
     temp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
     path = temp.name
     temp.close()
@@ -120,6 +120,8 @@ async def upload_image_type(image_file: FileStorage| str, image_type: str, image
         "type": image_type,
         "order": image_order 
     }
+
+    print(image_path_object.get('url'))
 
     sql_data_response = await mariadb.Write.image(image_path_object)
     if sql_data_response.get('error') == 1062:

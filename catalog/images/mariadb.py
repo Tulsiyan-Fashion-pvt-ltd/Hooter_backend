@@ -9,16 +9,25 @@ class Write:
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
-                    query = '''insert into product_images(usku_id, image_url, image_type, image_order)
-                                values(%s, %s, %s, %s)
-                            '''
-
                     usku_id = img_obj.get("usku_id")
-                    image_url = json.dumps(img_obj.get("url"))
+                    image_urls = img_obj.get("url")
                     image_type = img_obj.get("type")
                     image_order = img_obj.get("order")
                     
-                    await cursor.execute(query, (usku_id, image_url, image_type, image_order))
+                    '''Inserting record in product_images'''
+                    query = '''insert into product_images(usku_id, image_type,  image_order)
+                                values(%s, %s, %s)
+                            '''
+                    values = (usku_id, image_type, image_order)
+                    await cursor.execute(query, values)
+
+                    id = cursor.lastrowid
+                    '''Adding relational data to image_urls'''
+                    query = '''insert into image_urls (image_id, image_variation, image_url)
+                            values(%s, %s, %s)'''
+                    values = [(id, key, image_urls.get(key))   for key in image_urls]
+                    await cursor.executemany(query, values)
+
                     await connection.commit()
                     return {"response": "ok", "error": None}
 
@@ -93,14 +102,26 @@ class Fetch:
             try:
                 async with connection.cursor(cursor = DictCursor) as cursor:
                     if type:
-                        query = '''select image_url, image_order from product_images where usku_id=%s and image_type=%s'''
+                        query = '''select url.image_variation, url.image_url, image.image_order from 
+                            product_images as image
+                            join 
+                            image_urls as url
+                            on
+                            url.image_id = image.id
+                             where image.usku_id=%s and image.image_type=%s'''
                         values = (usku_id, type)
                         await cursor.execute(query, values)
-                        urls = await cursor.fetchone()
+                        urls = await cursor.fetchall()
 
                         
                     else:
-                        query = '''select image_type, image_url, image_order from product_images where usku_id=%s'''
+                        query = '''select image.image_type, url.image_variation, url.image_url, image.image_order from 
+                            product_images as image
+                            join 
+                            image_urls as url
+                            on
+                            url.image_id = image.id
+                             where image.usku_id=%s'''
                         values = (usku_id, )
                         await cursor.execute(query, values)
                         urls = await cursor.fetchall()

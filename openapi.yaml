@@ -1819,7 +1819,7 @@ paths:
                   summary:  image-type urls
                   description:  Accessing the image-type specific keys
                   value:
-                    image_order:  3
+                    image_order:  "3"
                     image_urls:
                       high_resol_webp: catalog/images/high_resol_webp/85448dd705574e3aafe07d10c58cca86/front.webp
                       low_resol_webp: catalog/images/low_resol_webp/85448dd705574e3aafe07d10c58cca86/front.webp
@@ -1830,14 +1830,14 @@ paths:
                   description:  Accessing all the image urls of the product
                   value:
                     front:
-                      image_order: 3
+                      image_order: "3"
                       image_urls:
                         high_resol_webp: catalog/images/high_resol_webp/85448dd705574e3aafe07d10c58cca86/front.webp
                         low_resol_webp: catalog/images/low_resol_webp/85448dd705574e3aafe07d10c58cca86/front.webp
                         original: catalog/images/original_image/85448dd705574e3aafe07d10c58cca86/front..jpg
                         webp_card: catalog/images/webp_card/85448dd705574e3aafe07d10c58cca86/front.webp
                     zoomed:
-                      image_order: 6
+                      image_order: "6"
                       image_urls:
                         high_resol_webp: catalog/images/high_resol_webp/85448dd705574e3aafe07d10c58cca86/zoomed.webp
                         low_resol_webp: catalog/images/low_resol_webp/85448dd705574e3aafe07d10c58cca86/zoomed.webp
