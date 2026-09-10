@@ -3,11 +3,8 @@
 alter table product_images
 modify column image_variation
 enum('original', 'high_resol_webp', 'low_resol_webp', 'webp_card')
-unique not null;
+not null;
 
--- Removing the image variation unique constraint
-alter table product_images
-drop index image_variation
 
 
 -- Creating seperate record to store image_url
@@ -33,7 +30,7 @@ COLLATE=utf8mb4_unicode_ci;
 
 -- altering the product_images and removing the data which is needing other records to be redundant
 alter table product_images
-drop column image_url;
+drop column image_url,
 drop index uq_usku_variation,
 drop column image_variation,
 add unique key(usku_id, image_type);
