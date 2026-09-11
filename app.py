@@ -110,9 +110,10 @@ if __name__ == "__main__":
     """OPENAPI DOCS"""
     api_doc(
         app,
-        config_path="openapi.yaml",
+        config_path="./openapi.yaml",
         url_prefix="/docs",
         title="Hooter internal APIs",
+        editor=True
     )
     
     print('''>>>\nuse @login_required when the login is required and use\nfrom utils.prerequirements import login_required''')

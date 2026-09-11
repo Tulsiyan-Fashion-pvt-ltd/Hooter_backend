@@ -1894,7 +1894,7 @@ paths:
                 $ref: '#/components/responses/default'
               example:
                 status: successful
-                example:  Successfully deleted the images
+                message:  Successfully deleted the images
         "default":
           $ref: "#/components/responses/default"
 
