@@ -56,7 +56,7 @@ async def image_variants_upload(image: bytes, url: dict) -> str:
 
         return "ok"
     except Exception as e:
-        print(f"error occourced while making coppies and uploading the image from image services", e)
+        print("error occourced while making coppies and uploading the image from image services", e)
         return "error"
 
 
@@ -71,7 +71,6 @@ async def save_image_temp(file: FileStorage) -> str:
             temp path ex /temp/xysjs.jpeg
     """    
     suffix = Path(file.filename).suffix
-    print("suffix >>>", suffix)
     temp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
     path = temp.name
     temp.close()
@@ -80,8 +79,7 @@ async def save_image_temp(file: FileStorage) -> str:
     return path
 
 
-
-async def upload_image_type(image_file: FileStorage| str, image_type: str, image_order: int, usku_id: str, ):
+async def upload_image_type(image_file: FileStorage| str, image_type: str, image_order: int, usku_id: str):
     """Upload image object and image meta data to the databases
     
     Args:
@@ -121,8 +119,6 @@ async def upload_image_type(image_file: FileStorage| str, image_type: str, image
         "order": image_order 
     }
 
-    print(image_path_object.get('url'))
-
     sql_data_response = await mariadb.Write.image(image_path_object)
     if sql_data_response.get('error') == 1062:
         raise Exception("Duplicate image")
@@ -149,8 +145,8 @@ async def background_upload_bulk_images(job_id: str, image_data: dict, usku_id: 
     
     Returns:
         dict:
-            `status`, `message` and `error` key for the upload status. If the status is successful then the images
-            uploaded successfully and error is None and if status is failed the error will be `str`
+            `status`and  `message` key for the upload status. If the status is successful then the images
+            uploaded successfully  if status is failed when image upload is unsuccessful
     """
 
     upload_report = {} # image_types as keys and dict response and value
@@ -189,6 +185,54 @@ def on_bg_image_upload_task_done(task):
     event = tasks.get(job_id).get('event')
     event.set()
 
+
+
+async def background_update_bulk_images(job_id: str, image_data: dict, usku_id: str):
+    """Starts updating the images in the background for the usku_id
+    
+    Args:
+        job_id:
+            Unique job ID for the background task
+        image_data:
+            dict of `image_types` as keys with `order` and `path` as their dict value
+        usku_id:
+            Uique universal ID of Stock Keeping Unit
+    
+    Returns:
+        list[dict[str, str]]:
+            `status`and  `message` key for the upload status. If the status is successful then the images
+            uploaded successfully  if status is failed when image upload is unsuccessful
+    """
+    '''Get image key from the sql and upload the image on those keys'''
+    upload_status = []
+    total_work = len(image_data.keys())
+
+    work_done = 0
+    for image_type in image_data.keys():
+        sql_image_data = await mariadb.Fetch.image(usku_id, image_type)
+        
+        url_key_obj = {
+            _.get('image_variation'): _.get('image_url')
+            for _ in sql_image_data
+        }
+
+        async with aiofiles.open(image_data.get(image_type).get('path'), 'rb') as file:
+            image = await file.read()
+
+        s3_upload_response = await image_variants_upload(image, url_key_obj)
+    
+        if s3_upload_response == "ok":
+            work_done += 1
+            upload_status.append({'status': 'successful', 'message': 'Successfully uploaded the image', 'image_type': image_type})
+        else:
+            upload_status.append({'status': 'failed', 'message': 'Could not upload the image', 'image_type': image_type})
+
+        '''sse task update'''
+        progress = f"{round((work_done/total_work) * 100, 2)}%"
+        tasks[job_id]["progress"] = progress
+        tasks.get(job_id).get("event").set()
+
+    return upload_status
 
 
 

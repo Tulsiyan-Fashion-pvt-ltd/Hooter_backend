@@ -143,7 +143,7 @@ paths:
                         type: string
                         example: login successful
                   brand_connection:
-                    $ref: "#/components/schema/brandConnection"
+                    $ref: "#/components/schemas/brandConnection"
               examples:
                 single_brand:
                   summary: Single brand
@@ -285,7 +285,7 @@ paths:
                         type: string
                         enum: [deny]
                         example: deny
-                  - $ref: "#/components/schema/default"
+                  - $ref: "#/components/schemas/default"
 
         "500":
           $ref: "#/components/responses/500"
@@ -899,17 +899,17 @@ paths:
                   listing_attributes:
                     type: array
                     items:
-                      $ref: "#/components/schema/AttributeField"
+                      $ref: "#/components/schemas/AttributeField"
 
                   category_attributes:
                     type: array
                     items:
-                      $ref: "#/components/schema/AttributeField"
+                      $ref: "#/components/schemas/AttributeField"
 
                   image_attributes:
                     type: array
                     items:
-                      $ref: "#/components/schema/ImageAttribute"
+                      $ref: "#/components/schemas/ImageAttribute"
 
               example:
                 listing_attributes:
@@ -1075,7 +1075,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schema/SingleCatalogPayload"
+              $ref: "#/components/schemas/SingleCatalogPayload"
 
       responses:
         "200":
@@ -1103,7 +1103,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schema/default"
+                $ref: "#/components/schemas/default"
               examples:
                 invalid_listing:
                   summary: Invalid lsiting attribute
@@ -1411,7 +1411,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schema/default"
+                $ref: "#/components/schemas/default"
               example:
                 status: invalid request
                 message: usku-id not provided
@@ -1424,7 +1424,6 @@ paths:
 
         "default":
           $ref: '#/components/responses/default'
-
     put:
       summary:  Update catalog product
       description:  Update catalog product listing and category attributes data
@@ -1486,7 +1485,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schema/default"
+                $ref: "#/components/schemas/default"
               example:
                 status: successful
                 message: successfully updated the catalog product
@@ -1542,7 +1541,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schema/default"
+                $ref: "#/components/schemas/default"
               example:
                 status: failed
                 message:  Expected event stream
@@ -1551,7 +1550,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schema/default"
+                $ref: "#/components/schemas/default"
               example:
                 status: failed
                 message:  Job is not available with this task
@@ -1848,7 +1847,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schema/default'
+                $ref: '#/components/schemas/default'
               examples:
                 image_type:
                   summary:  image-type urls
@@ -1895,6 +1894,50 @@ paths:
               example:
                 status: successful
                 message:  Successfully deleted the images
+        "default":
+          $ref: "#/components/responses/default"
+    put:
+      summary:  Update the product images
+      description:  Update the images, including all the image quality variants, of the product
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: usku_id
+          schema:
+            $ref: "#/components/schemas/usku_id"
+          required: true
+          description: Universally unique SKU ID
+      tags:
+        - Catalog
+      requestBody: 
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                front:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description:  Returns urls for the Server Side Event to track the upload status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+                  event_url: 
+                    type: string
+              example:
+                status: successful
+                message: Image upload has started
+                event_url: /catalog/images/events/rsdlwuf8cJS9LwOv04A__8CPKZMc0XIkK-vSQlBj6KA
         "default":
           $ref: "#/components/responses/default"
 
@@ -1947,7 +1990,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schema/default"
+                $ref: "#/components/schemas/default"
               example:
                 status: failed
                 message:  job_id does not exists
@@ -1957,7 +2000,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schema/default"
+                $ref: "#/components/schemas/default"
               example:
                 status: failed
                 message:  Expected event stream
@@ -1990,11 +2033,85 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schema/default'
+                $ref: '#/components/schemas/default'
               example:
                 status: failed
                 message:  Image not found
           
+  /inventory/inward/count:
+    get:
+      summary:  Get the inward count
+      description: Get the total number of inward based upon total, completed, partial or pending
+      tags:
+        - Inventory
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description:  Get the count for the inventory inward
+          content:
+            appliation/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                    example: 10
+                  completed:
+                    type: integer
+                    example: 20
+                  partial:
+                    type: integer
+                    example: 2
+                  pending:
+                    type: integer
+                    example: 0
+        "500":
+          description: Inernal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: failed
+                  message:
+                    type: string
+                    example: Internal server error
+        default:
+          $ref: "#/components/responses/default"
+        
+  /inventory/inward:
+    post:
+      summary: Create new Inward
+      description:  Registering new inward for the product stock
+      tags:
+        - Inventory
+      security:
+        - cookieAuth: []
+      requestBody:
+        description:  Inward information
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                supplier_id:
+                  type: integer
+                  example: 10
+                  required: true
+                usku_ids:
+                  type: array
+                  items:
+                    - usku_id: 
+                        type: string
+                        required: true
+                        example: 3419xxxxxxxxx
+                shipment:
+                  
+                warehouse_id:
 
               
 
@@ -2007,7 +2124,12 @@ components:
       in: cookie
       name: session
 
-  schema:
+  schemas:
+    usku_id:
+      type: string
+      summary: Unique Stock Keeping Unit ID
+      description:  Univerally traces the stock accross all the brands
+
     AttributeField:
       type: object
       required:
@@ -2070,7 +2192,7 @@ components:
         - category_attributes
       properties:
         listing_attributes:
-          $ref: "#/components/schema/ListingAttributes"
+          $ref: "#/components/schemas/ListingAttributes"
 
         category_attributes:
           type: object
@@ -2221,13 +2343,13 @@ components:
         content: 
           application/json:
             schema:
-              $ref : "#/components/schema/loginRequried"
+              $ref : "#/components/schemas/loginRequried"
     brand_required: # 403
         description: Brand session required
         content: 
           application/json:
             schema:
-              $ref : "#/components/schema/brandRequired"
+              $ref : "#/components/schemas/brandRequired"
     "500":
       description: Internal server error
       content:

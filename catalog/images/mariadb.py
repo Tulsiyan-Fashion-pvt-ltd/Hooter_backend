@@ -35,7 +35,12 @@ class Write:
                 await connection.rollback()
                 print(f"error encountered while adding a single product\n{e}")
                 return {"error": e.args[0]}                          
-            
+
+    # @staticmethod
+    # async def update_image(img_obj: dict):
+    #     ...
+
+    
 
 class Delete:
     @staticmethod
@@ -77,7 +82,7 @@ class Delete:
 
 class Fetch:
     @staticmethod
-    async def image(usku_id: str, type: str = None) -> dict[str, str]| list[dict[str, str| int]]| str:
+    async def image(usku_id: str, type: str = None) -> list[dict[str, str]]| str:
         """Fetch image urls from for the given usku id that 
         later can be use to download the images from the s3 server.
 
@@ -86,16 +91,15 @@ class Fetch:
             type: image type of the url e.g. front | back| zoomed etc
         
         Returns:
-            dict["{image_resolution}", "{image_url}"]: 
-                if the the image `type` is provided then it returns a dict containing 
-                the image resolution as key and `image key` for s3 bucket
+            list[dict[str, str]]: 
+                if the the image `type` is provided then it returns a list containing 
+                dict or keys `image_variation`, `image_url` and `image_order`
 
             list[dict[str, str| int]]: 
                 if the image `type` is not provided then it returns a `list` containing a `dict`
-                of keys as `image_type -> str`, `image_url -> json.dumps(resol, s3-keys)`,
-                `image_order`
+                of keys as `image_type`(str), `image_variation`(str), `image_url`(str), `image_order`(str)
 
-            error: on failure
+            `literal["error"]`: on failure
         """
         pool = current_app.pool
         async with pool.acquire() as connection:

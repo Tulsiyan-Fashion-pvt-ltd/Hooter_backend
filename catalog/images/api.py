@@ -10,11 +10,11 @@ from config import _product_image_bucket, _product_image_root_key, _image_types,
 from . import services
 import asyncio
 from ..products.authorize import product_api_access_required
-from uuid import uuid4
 from .sse import tasks, image_sse
 from traceback import print_exc
 from dotenv import load_dotenv
 from pathlib import Path
+import secrets
 
 load_dotenv()
 
@@ -22,7 +22,7 @@ images = Blueprint("images", __name__, url_prefix = "/images")
 images.register_blueprint(image_sse)
 
 
-@images.route("/<usku_id>", methods=['POST', 'PUT'])
+@images.post("/<usku_id>")
 @login_required
 @brand_required
 @product_api_access_required
@@ -45,12 +45,10 @@ async def upload_image(usku_id):
     if type_id:
         try:
             img_mandatory_keys = await categories_mongodb.Fetch.Attributes.Images(type_id).mandatory()
-
-            if request.method == 'POST':  
-                '''upload need to check for all the mandatory keys whether provided or not'''
-                if not Payload.check_required_payload(metadata, img_mandatory_keys):
-                    return jsonify({'status': 'failed', 'message': 'mandatory image attributes not provided'}), 400
-
+            '''upload need to check for all the mandatory keys whether provided or not'''
+            if not Payload.check_required_payload(metadata, img_mandatory_keys):
+                return jsonify({'status': 'failed', 'message': 'mandatory image attributes not provided'}), 400
+        
         except Exception as e:
             print("error encountered while validating the payload", e)
             print_exc()
@@ -71,7 +69,7 @@ async def upload_image(usku_id):
         if not file:
             return jsonify({'status': 'failed', 'message': 'Image can not be null'}), 422
         if file_size >= _max_allowed_image_size:
-            return jsonify({'status': 'denied', 'message': 'Image too large', "allowed_size": "10MB"}), 413
+            return jsonify({'status': 'failed', 'message': 'Image too large', "allowed_size": "10MB"}), 413
 
         '''checking the file type'''
         image_name = file.filename
@@ -89,14 +87,11 @@ async def upload_image(usku_id):
 
     """UPLOAD UNIT SO IT CAN BE RUN ASYNCHRONOUSLY ON THE IMAGE DATA"""
     try:
-        job_id = uuid4().hex
-
-        if request.method == 'POST':
-            bg_task = asyncio.create_task(services.background_upload_bulk_images(job_id, image_dict_object, usku_id))
-        else:
-            ...
+        job_id = secrets.token_urlsafe()
+        bg_task = asyncio.create_task(services.background_upload_bulk_images(job_id, image_dict_object, usku_id))
         bg_task.job_id = job_id
         bg_task.add_done_callback(services.on_bg_image_upload_task_done)
+
         tasks[job_id] = {"task": bg_task, 
                          "event": asyncio.Event(),
                          "progress": "0%"}
@@ -149,22 +144,56 @@ async def get_image_url(usku_id):
     return jsonify(image_urls)
 
 
+@images.put("/<usku_id>")
+@login_required
+@brand_required
+@product_api_access_required
+async def update_image(usku_id):
+    """Upload images of the product. Takes USKU ID params in path"""
+    files = await request.files
 
-# @images.put("/<usku_id>")
-# @login_required
-# @brand_required
-# @product_api_access_required
-# async def update_image(usku_id):
-#     ...
-#     type_id = await productdb.Fetch.product_category_id(usku_id)
-#     files = await request.files
-#     form = await request.form
+    image_dict_object = {}      # stores image `path`, `order` on key `image_type`
+    for key in files.keys():
+        file = files.get(key) # getting the file from files by their keys e.i front, zoomed etc
 
-#     '''Mandatory image should not be updated as null'''
-#     mandatory_keys = await categories_mongodb.Fetch.Attributes.Images(type_id).mandatory()
-#     if 
+        '''Checking the file size'''
+        stream = file.stream
+        pos = stream.tell()
+        stream.seek(0, 2)          # end
+        file_size = stream.tell()        # bytes
+        stream.seek(pos)            # restore position
 
+        if not file:
+            return jsonify({'status': 'failed', 'message': 'Image can not be null'}), 422
+        if file_size >= _max_allowed_image_size:
+            return jsonify({'status': 'failed', 'message': 'Image too large', "allowed_size": "10MB"}), 413
 
+        '''checking the file type'''
+        image_name = file.filename
+        check_image = image_name.endswith((".png", ".webp", ".jpeg", ".jpg"))    
+        if check_image is False:
+            return jsonify({"status": "failed", "message": "File type should be an image", "image_type": key}), 413
+
+        '''Else store in the temp path for background upload'''
+        path = await services.save_image_temp(file)
+        image_dict_object[key] = {"path": path} # metadata stores image_type as key and image_order as value
+
+    try:
+        '''Run backgroun job'''
+        job_id = secrets.token_urlsafe()
+        task = asyncio.create_task(services.background_update_bulk_images(job_id, image_dict_object, usku_id), name="update_bulk_image")
+        task.job_id = job_id
+        task.add_done_callback(services.on_bg_image_upload_task_done)
+
+        '''Store the job_id in the sse tasks record'''
+        tasks[job_id] = {"task": task, "event": asyncio.Event(), "progress": "0%"}
+        return jsonify({"status": "successful", 
+                        "message": "Image upload has started", 
+                        "event_url": url_for("catalog.images.image_sse.images_upload_sse", job_id=job_id)}), 200
+    except Exception as e:
+        print(e)
+        print_exc()
+        return jsonify({"status": "failed", "message": "Could not start the background upload task"}), 500
 
 
 
