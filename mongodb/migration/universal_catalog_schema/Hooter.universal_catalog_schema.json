@@ -1,7 +1,4 @@
 [{
-  "_id": {
-    "$oid": "69c8c9d5e625c78df6e864b0"
-  },
   "attributes": [
     {
       "name": "SKU ID",

@@ -1,7 +1,4 @@
 [{
-  "_id": {
-    "$oid": "6aa69d3449f130a773153f0d"
-  },
   "type_id": "default",
   "attributes": [
     {

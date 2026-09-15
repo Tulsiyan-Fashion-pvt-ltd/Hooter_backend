@@ -2113,6 +2113,33 @@ paths:
                   
                 warehouse_id:
 
+  /inventory/stocks/{usku_id}:
+    get:
+      summary:  Get inventory stocks
+      description:  Fetches the inventory stocks according to the usku_id or 
+        total inventory stocks if usku_id is not provided
+      tags:
+        - Inventory
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: usku_id
+          schema:
+            $ref: "#/components/schemas/usku_id"
+          required: false
+          description:  Universally unique SKU ID
+        - in: query
+          name: fileter
+          required: false
+          schema:
+            type: string
+            example: oos
+            enum: 
+              - sellable
+              - oos
+              - low-stock
+          description:  Pass fileter for the 
               
 
 

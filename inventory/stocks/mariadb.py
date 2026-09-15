@@ -1,4 +1,4 @@
-from quart import current_app, json
+from quart import current_app, session
 from asyncmy.cursors import DictCursor
 from datetime import datetime
 
@@ -27,35 +27,57 @@ class Write:
 
 
 
-
-
-
 class Fetch:
     @staticmethod
-    async def inventory(brand_id: str, filter: str = "", usku_id: str = None):
+    async def inventory(brand_id: str, filter: str = ""):
         pool = current_app.pool
+        brand_id = session.get('brand')
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
                     sql_condition = ""
                     if filter == "sellable":
-                        sql_condition = "and c.product_stock != 0"
+                        sql_condition = "and stock != 0"
                     elif filter == "oos":
-                        sql_condition = "and c.product_stock = 0"
+                        sql_condition = "and stock = 0"
                     elif filter == "low-stock":
-                        sql_condition = "and c.product_stock <= 10 and c.product_stock > 0"   
+                        sql_condition = "and stock <= 10 and stock > 0"   
 
-                    query = f'''select img.image_url, u.usku_id, u.sku_id, c.product_title, n.product_name as product_type, c.product_stock
-                                from usku_record as u
-                                inner join catalog as c on u.usku_id = c.usku_id
-                                inner join niche_products as n on u.product_type_id = n.type_id
-                                inner join images as img on u.usku_id = img.usku_id
-                                where u.brand_id = %s and u.status="completed" and img.image_type = "front"
-                                and {"u.usku_id = %s" if usku_id else "1=1"}
+                    query = f'''select usku_id, sku_id, stock
+                                from usku_record
+                                where brand_id = %s and status="completed"
                                 {sql_condition}
                             '''
                     # print(query)
-                    values = (brand_id, usku_id) if usku_id else (brand_id, )
+                    values = (brand_id, )
+
+                    await cursor.execute(query, values)
+                    inventory = await cursor.fetchall()
+                    return inventory
+            except Exception as e:
+                print(f"error encountered whie fetching the inventory for {brand_id}\n{e}")
+                return "error"
+
+    @staticmethod
+    async def product_stock(usku_id: str) -> dict[str, str| int]:
+        """Get product stock for the usku_id for the brand session
+        
+        Args:
+            usku_id: Universally unique SKUID
+            
+        Returns:
+            dict object with `usku_id`, `sku_id` and `stock` as the keys
+        """
+        pool = current_app.pool
+        brand_id = session.get('brand')
+        async with pool.acquire() as connection:
+            try:
+                async with connection.cursor(cursor=DictCursor) as cursor:
+                    query = f'''SELECT usku_id, stock
+                                FROM master_inventory
+                                WHERE usku_id = %s
+                            '''
+                    values = (usku_id, )
 
                     await cursor.execute(query, values)
                     inventory = await cursor.fetchall()
@@ -76,13 +98,13 @@ class Fetch:
                 async with connection.cursor(cursor=DictCursor) as cursor:
                     query = '''
                             select
-                            count(c.product_stock) as total, 
-                            count(case when c.product_stock = 0 then 1 end) as oos,
-                            count(case when c.product_stock!=0 then 1 end) as sellable,
-                            count(case when c.product_stock <= 10 and c.product_stock >0 then 1 end) as low
+                            count(stock) as total, 
+                            count(case when stock = 0 then 1 end) as oos,
+                            count(case when stock!=0 then 1 end) as sellable,
+                            count(case when stock <= 10 and stock >0 then 1 end) as low
                             from catalog as c
-                            inner join usku_record as u on c.usku_id = u.usku_id
-                            where u.brand_id = %s and u.status="completed"
+                            inner join usku_record as u on c.usku_id = usku_id
+                            where brand_id = %s and status="completed"
                             '''
                     values = (brand_id, )
                     await cursor.execute(query, values)

@@ -37,7 +37,9 @@ services:
 
     ports:
       - "3308:3306"
-
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
     environment:
       MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
       MARIADB_DATABASE: ${HOOTER_DB}
