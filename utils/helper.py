@@ -16,13 +16,10 @@ class Validate:
             return False
         
     @staticmethod
-    def in_phone_num(number):
-        phone_number = str(number)
-        phone_number = phone_number.lstrip('+91')
-        phone_number = phone_number.replace('-', '')
+    def in_phone_num(phone_number):
 
         regex = r'^\d{10}$'
-        if re.match(regex, phone_number.strip()):  #checking the phonenumber by removing the whitespace in case
+        if re.fullmatch(regex, phone_number.strip()):  #checking the phonenumber by removing the whitespace in case
             return True                             #the number is something like +91 xxxxxxxxxx
         else:
             return False

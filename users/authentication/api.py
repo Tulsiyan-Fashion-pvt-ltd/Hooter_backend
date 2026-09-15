@@ -13,20 +13,23 @@ auth = Blueprint("auth", __name__)
 async def signup():
     data = await request.get_json()
     name=data.get('name')
-    number = data.get('number')
+    number = data.get('number', type=int)
     email = data.get('email')
     password = data.get('password')
     designation = data.get('designation')
     
     if designation == None:
         designation = 'Owner'
-    # verify number and email
+
+    print(name, number, email, password, designation)
+    print(Validate.email(email))
+    print(Validate.in_phone_num(number))
     if number and email and password and designation and Validate.email(email) and Validate.in_phone_num(number):
         # verify number and email
         user_creds = {
             'name': name,
             'userid': create_userid(),
-            'number': number,
+            'number': str(number),
             'email': email,
             'hashed_password': hash_password(password),
             'designation': designation,
