@@ -739,19 +739,19 @@ paths:
                 type: object
                 required:
                   - error
-                  - msg
+                  - message
                 properties:
                   error:
                     type: string
                     example: failed
-                  msg:
+                  message:
                     type: string
                     example: could not complete the request
               examples:
                 failed:
                   value:
                     error: failed
-                    msg: could not complete the request
+                    message: could not complete the request
         "default":
           $ref: "#/components/responses/default"
 
@@ -2110,7 +2110,6 @@ paths:
                         required: true
                         example: 3419xxxxxxxxx
                 shipment:
-                  
                 warehouse_id:
 
   /inventory/stocks/{usku_id}:
@@ -2120,8 +2119,6 @@ paths:
         total inventory stocks if usku_id is not provided
       tags:
         - Inventory
-      security:
-        - cookieAuth: []
       parameters:
         - in: path
           name: usku_id
@@ -2141,7 +2138,216 @@ paths:
               - low-stock
           description:  Pass fileter for the 
               
+  /inventory/supplier/{supplier_id}:
+    get:
+      summary:  Get the brand suppliers for the inward creation
+      description : get the brand suppliers for the inward creation if not id is provided or id is null. If the id is provided then the supplier details will be provided. 
 
+      tags:
+       - Inventory
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name : supplier_id
+          schema:
+           type : integer
+          
+          required : true
+          description: Unique id for supplier
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items :     
+                  type: object
+                  required:
+                    - supplier_id
+                    - name
+                    - number
+                    - email
+                    - address
+                  properties:
+                    supplier_id:
+                      type: integer
+                      example: 1
+                    name:
+                      type: string
+                      example: "ABC Traders"
+                    number:
+                      type: string
+                      pattern: '^[0-9]{10}$'
+                      example: "9876543210"
+                    email:
+                      type: string
+                      format: email
+                      example: "abc@example.com"
+                    address:
+                      type: object
+                      required:
+                        - street
+                        - city
+                        - state
+                        - pincode
+                      properties:
+                        street:
+                          type: string
+                          example: "123 Main Street"
+                        city:
+                          type: string
+                          example: "Delhi"
+                        state:
+                          type: string
+                          example: "Delhi"
+                        pincode:
+                          type: string
+                          pattern: '^[0-9]{6}$'
+                          example: "110044"
+              example:
+                - supplier_id: 1
+                  name: "ABC Traders"
+                  number: "9876543210"
+                  email: "abc@example.com"
+                  address:
+                    street: "123 Main Street"
+                    city: "Delhi"
+                    state: "Delhi"
+                    pincode: "110044"
+                - supplier_id: 2
+                  name: "XYZ Supplies"
+                  number: "9123456780"
+                  email: "xyz@example.com"
+                  address:
+                    street: "45 Market Road"
+                    city: "Mumbai"
+                    state: "Maharashtra"
+                    pincode: "400001"
+
+  /inventory/supplier:
+    post:
+      summary: Add supplier
+      description: Add supplier
+      tags:
+        - Supplier
+      security:
+        - cookieAuth: []
+  
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - number
+                - email
+                - locality
+                - city
+                - state
+                - pincode
+              properties:
+                name:
+                  type: string
+                  example: ABC Suppliers
+  
+                number:
+                  type: string
+                  example: "9876543210"
+  
+                email:
+                  type: string
+                  format: email
+                  example: supplier@example.com
+  
+                house:
+                  type: string
+                  example: "House No. 123"
+  
+                street:
+                  type: string
+                  example: "MG Road"
+  
+                locality:
+                  type: string
+                  example: "Sector 15"
+  
+                city:
+                  type: string
+                  example: "Gurugram"
+  
+                state:
+                  type: string
+                  example: "Haryana"
+  
+                pincode:
+                  type: integer
+                  example: 122001
+  
+      responses:
+        "200":
+          description: Supplier added successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: successful
+                  message:
+                    type: string
+                    example: added the supplier
+                  supplier_id:
+                    type: integer
+                    example: 123
+  
+        "400":
+          description: Invalid payload
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: invalid payload
+                  message:
+                    type: string
+                    example: payload is either missing mandatory payload or sending unaccepted payload
+  
+        "406":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: invalid request
+                  message:
+                    type: string
+                    example: pincode should be 6 digit integer value
+  
+        "500":
+          description: Failed to add the supplier
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: failed
+                  message:
+                    type: string
+                    example: failed to add the supplier
+                
+  
 
 
 components:

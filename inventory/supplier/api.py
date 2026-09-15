@@ -17,7 +17,7 @@ async def add_supplier():
     mandatory_payload = ["name", "number", "email", "locality", "city", "state", "pincode"]
 
     if not Helper.check_required_payload(payload, accepted_payload, mandatory_payload):
-        return jsonify({"status": "invalid payload", "msg": "payload is either missing mandatory payload or sending unaccepted payload"}), 400
+        return jsonify({"status": "invalid payload", "message": "payload is either missing mandatory payload or sending unaccepted payload"}), 400
     
     '''
         checking pincode
@@ -26,7 +26,7 @@ async def add_supplier():
     pincode_regex = r'^\d{6}$'
 
     if not re.match(pincode_regex, pincode):
-        return jsonify({"status": "invalid request", "msg": "pincode should be 6 digit integer value"}), 406
+        return jsonify({"status": "invalid request", "message": "pincode should be 6 digit integer value"}), 406
 
     data = {
         "brand_id": session.get("brand"),
@@ -45,16 +45,15 @@ async def add_supplier():
 
     supplier_id = await mariadb.Write.supplier(data)
     if supplier_id == "error": 
-        return jsonify({"status": "failed", "msg": "failed to add the supplier"}), 500
-    return jsonify({"status": "successful", "msg": "added the supplier", "supplier_id": supplier_id}), 200
-
+        return jsonify({"status": "failed", "message": "failed to add the supplier"}), 500
+    return jsonify({"status": "successful", "message": "added the supplier", "supplier_id": supplier_id}), 200
 
 @supplier.get("")
+@supplier.get("/<supplier_id>")
 @login_required
 @brand_required
-async def get_suppliers():
+async def get_suppliers(supplier_id = None):
     brand_id = session.get("brand")
-    supplier_id = request.args.get("supplier-id")
 
     suppliers = None
     if supplier_id is None:
