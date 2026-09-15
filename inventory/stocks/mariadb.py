@@ -29,7 +29,16 @@ class Write:
 
 class Fetch:
     @staticmethod
-    async def inventory(brand_id: str, filter: str = ""):
+    async def inventory(filter: str = "") -> list[dict[str, str| int]]:
+        """Fetches the total inventory of the brand. Where it returns a list of dict objects with keys `usku_id`, `stock`
+        
+        Args:
+            filter:
+                filter is a string value, which takes the values as 'sellable', 'oos', 'low-stock'
+
+        Returns:
+            list of dict objects with usku_id and stock    
+        """
         pool = current_app.pool
         brand_id = session.get('brand')
         async with pool.acquire() as connection:
@@ -43,20 +52,23 @@ class Fetch:
                     elif filter == "low-stock":
                         sql_condition = "and stock <= 10 and stock > 0"   
 
-                    query = f'''select usku_id, sku_id, stock
-                                from usku_record
-                                where brand_id = %s and status="completed"
+                    query = f'''select u.usku_id, i.stock
+                                from master_inventory as i 
+                                inner join
+                                usku_record as u on u.usku_id = i.usku_id
+                                where brand_id = %s
                                 {sql_condition}
                             '''
-                    # print(query)
+                    print(query)
                     values = (brand_id, )
-
+                    print(values)
                     await cursor.execute(query, values)
                     inventory = await cursor.fetchall()
                     return inventory
             except Exception as e:
                 print(f"error encountered whie fetching the inventory for {brand_id}\n{e}")
                 return "error"
+
 
     @staticmethod
     async def product_stock(usku_id: str) -> dict[str, str| int]:
@@ -80,7 +92,7 @@ class Fetch:
                     values = (usku_id, )
 
                     await cursor.execute(query, values)
-                    inventory = await cursor.fetchall()
+                    inventory = await cursor.fetchone()
                     return inventory
             except Exception as e:
                 print(f"error encountered whie fetching the inventory for {brand_id}\n{e}")
@@ -88,23 +100,24 @@ class Fetch:
 
 
     @staticmethod
-    async def stock_count(brand_id: str):
+    async def stock_count() -> dict[str, int]:
         """
         FETCHES THE STOCK COUNT OF SELLABLE, OOS AND LOW STOCK PRODUCTS
         """
+        brand_id = session.get('brand')
         pool = current_app.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
                     query = '''
                             select
-                            count(stock) as total, 
-                            count(case when stock = 0 then 1 end) as oos,
-                            count(case when stock!=0 then 1 end) as sellable,
-                            count(case when stock <= 10 and stock >0 then 1 end) as low
-                            from catalog as c
-                            inner join usku_record as u on c.usku_id = usku_id
-                            where brand_id = %s and status="completed"
+                            count(i.stock) as total, 
+                            count(case when i.stock = 0 then 1 end) as oos,
+                            count(case when i.stock!=0 then 1 end) as sellable,
+                            count(case when i.stock <= 10 and stock >0 then 1 end) as low
+                            from master_inventory as i
+                            inner join usku_record as u on u.usku_id = i.usku_id
+                            where u.brand_id = %s
                             '''
                     values = (brand_id, )
                     await cursor.execute(query, values)
