@@ -182,7 +182,9 @@ class Fetch:
                 doc = await Fetch.image_schema(self.type_id)
 
                 if doc.get('error'):
-                  return []
+                   doc = await Fetch.image_schema("default")
+                if doc.get('error'):
+                    return []
                 
                 attributes = doc.get("attributes")
                 

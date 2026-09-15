@@ -1,6 +1,6 @@
 tasks = {}
 '''tasks stores the `job_id` as key and dict as values with keys
-`tasks` -> Containing the task object from create_task
+`task` -> Containing the task object from create_task
 `event` -> asyncio.Event()
 `progress` -> current background task progress in percentage
 '''
@@ -29,7 +29,6 @@ async def images_upload_sse(job_id):
         while True:
             event.clear()
             if task.done():
-                result = task.result()
                 break
 
             yield (f"event: progress\n"
@@ -38,15 +37,18 @@ async def images_upload_sse(job_id):
                                         'progress': tasks.get(job_id).get('progress')})}\n\n")
             await event.wait()
 
-        if result is None:
-            yield (f"event: completed\n"
-                   f"data: {json.dumps({'status': 'failed', 
+        if task.exception():
+            print(task.exception())
+            yield   (f"event: completed\n"
+                    f"data: {json.dumps({'status': 'failed', 
                                         'message': 'Unexpected error occurred', 
                                         'progress': tasks.get(job_id).get('progress')})}\n\n")
         else:
             yield (f"event: completed\n"
-                   f"data: {json.dumps({"result": result,
+                   f"data: {json.dumps({"result": task.result(),
                                         'progress': tasks.get(job_id).get('progress')})}\n\n")
+
+        tasks.pop(job_id)
 
     return Response(
         event_stream(),

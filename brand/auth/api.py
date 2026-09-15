@@ -1,6 +1,7 @@
 from quart import Blueprint, session, request, jsonify, Response
 from users.authentication import mariadb as usersql
-from utils.helper import Payload, Brand
+from utils.helper import Payload
+from .utils import Brand
 from users.helper import hash_password, create_userid
 from brand.auth import mariadb
 from utils.prerequirements import login_required, super_admin_required

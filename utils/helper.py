@@ -40,34 +40,54 @@ class Helper:
         time = str(datetime.datetime.now().strftime('%H:%M:%S'))
         return time
     
-    # if you want to check if the current payload is valid or not
-    # create a list of expected payloads
-    # and pass the json response payload of the request here
-
+    
 
 class Payload:
+    """if you want to check if the current payload is valid or not
+    create a list of expected payloads
+    and pass the json response payload of the request here
+    """
+
     @staticmethod
     def check_required_payload(payload: dict, necessary_keys: list):
+        """Checks the required keys in the given payload
+        
+        Args:
+            payload: 
+                dict object with keys and values
+            neccessary_keys:
+                array of required keys
+                
+        Returns:
+            True:
+                if the required keys are available
+            False:
+                if the required kes are not available
+        """
         return (
             all(key in payload and payload[key] is not None for key in necessary_keys)
         )
 
     @staticmethod
     def check_accepted_payload(payload: dict, accepted_keys: list) -> bool:
+        """Checks the accepted keys in the given payload
+            
+            Args:
+                payload: 
+                    dict object with keys and values
+                accepted_keys:
+                    array of accepted keys
+                    
+            Returns:
+                True:
+                    if all the keys are acceptable
+                False:
+                    if the any of the keys are not acceptable
+            """
         return all((key in accepted_keys for key in payload))
 
-
-class Brand:
-    @staticmethod
-    def create_id() -> str:
-        prefix = 'brand_'
-
-        unique_id = str(uuid.uuid4())[:14]
-        date = str(datetime.datetime.now().date()).replace('-', '')
-        id = prefix+unique_id+date
-        return id
     
 
 
 if __name__ == "__main__":
-    print(Brand.access_specifiers())
+    print()

@@ -3,7 +3,7 @@ from quart import Blueprint, jsonify, request, session, json
 import inventory.routes as routes
 from utils.prerequirements import login_required, brand_required
 from . import mariadb
-from utils.helper import Helper
+from utils.helper import Payload
 import re
 
 inward = Blueprint("inward", __name__, url_prefix="/inward")
@@ -18,7 +18,7 @@ async def get_inward():
     inward = await mariadb.Fetch.inward_count(brand_id)
 
     if inward == "error":
-        return jsonify({"status": "failed", "msg": "internal server error"}), 500
+        return jsonify({"status": "failed", "message": "internal server error"}), 500
     return jsonify(inward), 200
 
 
@@ -38,9 +38,9 @@ async def inward_count():
         inward = await mariadb.Fetch.inward(condition, brand_id)
 
     if inward == "error":
-        return jsonify({"status": "failed", "msg": "internal server error"}), 500
+        return jsonify({"status": "failed", "message": "Internal server error"}), 500
     elif inward == "not allowed":
-        return jsonify({"status": "failed", "msg": "The inward has already completed"}), 403
+        return jsonify({"status": "failed", "message": "The inward has already completed"}), 403
     return jsonify(inward), 200
 
 
@@ -52,24 +52,25 @@ async def create_inward():
     
     '''payload check'''
     payload = await request.get_json()
-    print(payload)
     accepted_payload = ["supplier_id", "usku_ids", "shipment", "warehouse_id"]
     mandatory_payload = accepted_payload
 
-    if not Helper.check_required_payload(payload, accepted_payload, mandatory_payload):
-        return jsonify({"status": "denied", "msg": "invalid payload"}), 400
+    if not (Payload.check_required_payload(payload, mandatory_payload) and 
+            Payload.check_accepted_payload(payload, accepted_payload)):
+        return jsonify({"status": "denied", "message": "invalid payload"}), 400
     
     shipment_payload = payload.get("shipment")
     accepted_shipment_payload = ["shipment-ref", "vehicle-no", "transporter", "challan", "arrival-date"]
     mandatory_payload_shipment = ["transporter"]
 
-    if not Helper.check_required_payload(shipment_payload, accepted_shipment_payload, mandatory_payload_shipment):
-        return jsonify({"status": "denied", "msg": "invalid shipment payload"}), 400
+    if not (Payload.check_required_payload(shipment_payload,  mandatory_payload_shipment) and
+            Payload.check_accepted_payload(shipment_payload, accepted_shipment_payload)):
+        return jsonify({"status": "denied", "message": "invalid shipment payload"}), 400
 
 
     db_respose = await mariadb.Write.inward(payload, brand_id)
     if db_respose == "error":
-        return jsonify({"status": "failed", "msg": "unable to create the inward"}), 500
+        return jsonify({"status": "failed", "message": "unable to create the inward"}), 500
     
     return jsonify({"status": "successful", "inward-id": db_respose}), 200
 
@@ -86,14 +87,14 @@ async def upload_inward():
     upload_type = request.args.get("type")
 
     if (not inward_id or not upload_type ) and upload_type not in ("partial", "completed"):
-        return jsonify({"status": "rejected", "msg": "invalid request"}), 400
+        return jsonify({"status": "rejected", "message": "invalid request"}), 400
     
     payload = await request.get_json()
     accepted_paylaod = ["usku_ids"]
     mandatory_paylaod = accepted_paylaod
 
     if not Helper.check_required_payload(payload, accepted_paylaod, mandatory_paylaod):
-        return jsonify({"status": "failed", "msg": "invalid payload"}), 422
+        return jsonify({"status": "failed", "message": "invalid payload"}), 422
     
 
     inward = {
@@ -108,5 +109,5 @@ async def upload_inward():
 
     db_query = await mariadb.Update.inward(inward, session.get("brand"))
     if db_query == "error": 
-        return jsonify({"status": "failed", "msg": "could not process the request"}), 500
-    return jsonify({"status": "successful", "msg": f"inward uploaded as {payload.get("status")}", "grn_id": db_query}), 200
+        return jsonify({"status": "failed", "message": "could not process the request"}), 500
+    return jsonify({"status": "successful", "message": f"inward uploaded as {payload.get("status")}", "grn_id": db_query}), 200
