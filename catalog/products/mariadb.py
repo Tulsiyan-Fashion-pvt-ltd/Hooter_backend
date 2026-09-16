@@ -36,7 +36,7 @@ class Write:
                                       product.get("price", 0.00), product.get("compared_price", 0.00), product.get("purchasing_cost", 0.00),
                                       product.get("vendor"), product.get("ean"), product.get("hsn"), product.get("gtin"),
                                       product.get("upc"), product.get("isbn"),
-                                      product.get("net_weight_kg"), product.get("dead_weight_kg"), product.get("volumetric_weight_kg"),
+                                      product.get("net_weight_kg").removesuffix("kg"), product.get("dead_weight_kg").removesuffix("kg"), product.get("volumetric_weight_kg").removesuffix("kg"),
                                       product.get("brand_name"))
 
                     await cursor.execute(catalog_query, catalog_values)

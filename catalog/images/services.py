@@ -168,10 +168,10 @@ async def background_upload_bulk_images(job_id: str, image_data: dict, usku_id: 
             upload_report[key] = {"status": "successful", "message": "Image uploaded successfully"}
             work_done += 1
             tasks[job_id]['progress'] = f"{round(((work_done/total_work)*100), 2)}%"
-            tasks[job_id]['event'].set() # execute the waiting function
 
         finally:
             Path(image_path).unlink()
+            tasks[job_id]['event'].set() # execute the waiting function
 
     if work_done == total_work:
         await product_sql.Write.status_complete(usku_id)

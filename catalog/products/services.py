@@ -90,9 +90,10 @@ async def create_product(listing_attributes: dict, category_attributes: dict, ca
         if sql_response.get("error") is not None:
             if sql_response.get('error') == 1062:
                 return {"error": "Duplicate sku id", "code": 409}
-
             elif sql_response.get("error") == 1366:
                 return {"error": "Incorrect value for the listing_attributes fields", "code": 400}
+            else:
+                return {"error": "Invalid value for the listing_attributes column", "code": 400}
 
 
         if mongo_response.get('error'):
@@ -211,10 +212,10 @@ async def upload_xlsx(xlsx_data: bytes, category_id: str, job_id=None) -> dict[s
         fields, names = [], []
 
         error_sheet = None # Storing eror sheet
-        total_products = await asyncio.to_thread(workbook.ttl_rows, xlsx_sheet) #For progress report work_done/ttl_work
+        total_products = (await asyncio.to_thread(workbook.ttl_rows, xlsx_sheet)) - 2 #For progress report work_done/ttl_work, not counting header and name
         uploaded_products = 0
         init_time = time()
-
+        print(total_products)
         '''Iterating over sheet rows'''
         for attributes in await asyncio.to_thread(workbook.read_generator, BytesIO(xlsx_data)): # creating the fresh sheet to void any pointer conflicts
             '''VALIDATING PRODUCT ATTRIBUTES'''
@@ -233,7 +234,6 @@ async def upload_xlsx(xlsx_data: bytes, category_id: str, job_id=None) -> dict[s
                 else:
                     category_attributes_object[attribute.get("field")] = attribute.get("value") 
 
-            # print(values)
             '''IF ANY OF THE MANDATORY ATTRIBUTE VALUE IS NULL'''
             if not (helper.Payload.check_required_payload(listing_attributes_object, listing_mandatory_keys)
                 and helper.Payload.check_required_payload(category_attributes_object, category_mandatory_keys)):
@@ -253,6 +253,10 @@ async def upload_xlsx(xlsx_data: bytes, category_id: str, job_id=None) -> dict[s
                 '''UPLOAD THE DATA'''
                 try:
                     response = await create_product(listing_attributes_object, category_attributes_object, category_id)
+                    '''Counting progress for background job'''
+                    uploaded_products += 1
+                    tasks[job_id]['progress'] = f"{round((uploaded_products/total_products)*100, 2)}%"
+                    
                     if response.get('error'):
                         if error_sheet is None:
                             error_sheet = await asyncio.to_thread(workbook.create, fields=['error']+ fields, names=["Error"]+names)
@@ -263,9 +267,6 @@ async def upload_xlsx(xlsx_data: bytes, category_id: str, job_id=None) -> dict[s
                     print_exc()
                     return {"status": "failed", "error": "unable to upload product or create error sheet"}
 
-            '''Counting progress for background job'''
-            uploaded_products += 1
-            tasks[job_id]['progress'] = f"{round((uploaded_products/total_products)*100, 2)}%"
             tasks.get(job_id).get('event').set() # turn the event flag false
             
         tasks[job_id]["time"] = time() - init_time
