@@ -161,7 +161,6 @@ async def connect_brand(brand_id=None) -> Response:
         return jsonify({"status": "successful", "brands": None, "connection": "not connected", "message": "no brand is registered"}), 201
     elif len(brand_access) == 1:
         session['brand'] = brand_access[0].get('brand_id')
-        print(f"{session.get('brand')} accessed by {session.get('user')}")
-        return jsonify({"status": "successful", "brands": "single brand", "connection": "connected", "message": "brand connected successfully"}), 200
+        return jsonify({"status": "successful", "brands": brand_access, "connection": "connected", "message": "brand connected successfully"}), 200
     else:
         return jsonify({"status": "successful", "bands": brand_access, "connection": "not connected", "message": "a brand needs to be selected"}), 201

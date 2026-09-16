@@ -13,7 +13,7 @@ auth = Blueprint("auth", __name__)
 async def signup():
     data = await request.get_json()
     name=data.get('name')
-    number = data.get('number', type=int)
+    number = data.get('number')
     email = data.get('email')
     password = data.get('password')
     designation = data.get('designation')

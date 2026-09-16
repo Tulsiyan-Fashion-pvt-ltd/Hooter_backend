@@ -216,14 +216,14 @@ paths:
             application/json:
               schema:
                 type: object
+                required:
+                  - status
+                  - message
                 properties:
                   status:
                     type: string
-                    required: true
-                  
                   message:
                     type: string
-                    required: true
 
               examples:
                   user_not_found:
@@ -564,7 +564,8 @@ paths:
                   summary: Successful
                   value:
                     status: successful
-                    brands: single brand
+                    brands: 
+                      - brand_id: brand-xsdr3f-20260911
                     connection: connected
                     message: brand connected successfully
                 
@@ -579,9 +580,9 @@ paths:
                   status:
                     type: string
                   brands:
-                    onOf:
+                    oneOf:
                       - type: string
-                      - type: 
+                      - type: "null"
                   connection: 
                     type: string
                   message:
@@ -1199,7 +1200,7 @@ paths:
             application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
               schema:
                 type: string
-                formate: binary
+                format: binary
 
         "202":
           description: Bulk product upload has not completed yet
@@ -1323,7 +1324,7 @@ paths:
       summary:  Fetch product data
       description: Fetch product listing and category
       security:
-        - cookieAuth:
+        - cookieAuth: []
       parameters:
         - name: usku_id
           in: path
@@ -1347,7 +1348,7 @@ paths:
                   product_title:
                     type: string
                   product_price:
-                    type:string
+                    type: string
                   product_desc:
                     type: string
               example:
@@ -1468,7 +1469,7 @@ paths:
                       type: string
                       enum: ['stitched', 'unstitched']
                     blouse_piece_included:
-                      type: bool
+                      type: string
                       enum: ['included', 'not included']
             example:
               listing_attributes:
@@ -1959,7 +1960,6 @@ paths:
             type: string
       responses:
         "200":
-          summary: Successful event sign up
           description:  Successfully connect with the event stream
           content:
             text/event-stream:
@@ -1985,7 +1985,6 @@ paths:
                     event: completed
                     data: {"status": "failed", "message": "Unexpected error occurred", "progress": "50%"}
         "400":
-          summary:  Invalid job ID
           description: Job id does not exists in the bacground tasks
           content:
             application/json:
@@ -1995,7 +1994,6 @@ paths:
                 status: failed
                 message:  job_id does not exists
         "406":
-          summary:  Invalid headers
           description: Appropriate accept headers is not provided
           content:
             application/json:
@@ -2101,16 +2099,16 @@ paths:
                 supplier_id:
                   type: integer
                   example: 10
-                  required: true
                 usku_ids:
                   type: array
                   items:
-                    - usku_id: 
+                    type: object
+                    properties:
+                      usku_id: 
                         type: string
-                        required: true
                         example: 3419xxxxxxxxx
-                shipment:
-                warehouse_id:
+                      # shipment:
+                      # warehouse_id:
 
   /inventory/stocks/{usku_id}:
     get:
@@ -2124,7 +2122,7 @@ paths:
           name: usku_id
           schema:
             $ref: "#/components/schemas/usku_id"
-          required: false
+          required: true
           description:  Universally unique SKU ID
         - in: query
           name: fileter
@@ -2360,7 +2358,6 @@ components:
   schemas:
     usku_id:
       type: string
-      summary: Unique Stock Keeping Unit ID
       description:  Univerally traces the stock accross all the brands
 
     AttributeField:
@@ -2490,28 +2487,20 @@ components:
           type: number
         compared_price:
           type: number
-          nullable: true
         purchasing_cost:
           type: number
-          nullable: true
         vendor:
           type: string
-          nullable: true
         ean:
           type: string
-          nullable: true
         hsn:
           type: string
-          nullable: true
         net_weight:
           type: number
-          nullable: true
         dead_weight:
           type: number
-          nullable: true
         volumetric_weight:
           type: number
-          nullable: true
         brand_name:
           type: string
 
@@ -2615,13 +2604,6 @@ components:
       
   
   parameters:
-    brandIdNotRequired:
-      in: path
-      name: brand_id
-      schema:
-        type: string
-      required: false
-      description: unique id for the registered brand
     brandIdRequired:
       name: brand_id
       in: path
@@ -2636,13 +2618,3 @@ components:
       schema:
         type: string
       description: Shopify taxonomy category ID
-    path:
-      jobIdRequired:
-        in: path
-        name: job_id
-        schema:
-          type: string
-        descrioption: Job id for server side events
-        required: true
-
-  "requestBody":
