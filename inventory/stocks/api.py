@@ -17,11 +17,11 @@ async def get_inventory():
     filter = request.args.get("filter")
     accepted_filters = ("sellable", "oos", "low-stock", None)
     if filter not in accepted_filters:
-        return jsonify({"status": "invalid request", "msg": "not a valid filter"}), 400
+        return jsonify({"status": "invalid request", "message": "not a valid filter"}), 400
      
     inventory = await mariadb.Fetch.inventory(filter)
     if inventory == "error":
-        return jsonify({"status": "failed", "msg": "internal server error"}), 500
+        return jsonify({"status": "failed", "message": "internal server error"}), 500
     return jsonify(inventory), 200
 
 
@@ -34,7 +34,10 @@ async def get_product_stock(usku_id: str):
     """Fetches the stock for the given usku_id"""
     inventory = await mariadb.Fetch.product_stock(usku_id)
     if inventory == "error":
-        return jsonify({"status": "failed", "msg": "internal server error"}), 500
+        return jsonify({"status": "failed", "message": "internal server error"}), 500
+
+    if inventory is None:
+        return jsonify({"status": "failed", "message": "Product stock not found for the given usku_id"}), 404
     return jsonify(inventory), 200
 
 
