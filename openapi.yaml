@@ -554,7 +554,14 @@ paths:
                   status:
                     type: string
                   brands:
-                    type: string
+                    type: array
+                    items:
+                     type: object
+                     properties: 
+                      brand_id:
+                       type: string
+                      brand_name:
+                       type: string
                   connection: 
                     type: string
                   message:
@@ -566,6 +573,7 @@ paths:
                     status: successful
                     brands: 
                       - brand_id: brand-xsdr3f-20260911
+                        brand_name : ABC Fashion
                     connection: connected
                     message: brand connected successfully
                 
@@ -2194,8 +2202,126 @@ paths:
                 message: "Internal server error"
         default:
           $ref: "#/components/responses/default"
-       
-              
+
+  
+  /inventory/stocks/count:
+    get:
+      summary: Get inventory counts
+      description: Fetches the total, out of stock, sellable and low stock product counts for the brand.
+  
+      tags:
+        - Inventory
+  
+      security:
+        - cookieAuth: []
+  
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - total
+                  - oos
+                  - sellable
+                  - low
+                properties:
+                  total:
+                    type: integer
+                    description: Total number of inventory products
+                  oos:
+                    type: integer
+                    description: Number of out of stock products
+                  sellable:
+                    type: integer
+                    description: Number of products with stock available
+                  low:
+                    type: integer
+                    description: Number of products with stock between 1 and 10
+  
+        "401":
+          $ref: "#/components/responses/login_required"
+  
+        "403":
+          $ref: "#/components/responses/brand_required"
+  
+        "500":
+          $ref: "#/components/responses/500"
+
+        "default":
+          $ref: "#/components/responses/default"
+
+
+  /inventory/stocks:
+    get:
+      summary: Get inventory
+      description: Fetches the total inventory including usku_id and stock. Inventory can be filtered by sellable, out of stock, or low stock products.
+  
+      tags:
+        - Inventory
+  
+      security:
+        - cookieAuth: []
+  
+      parameters:
+        - in: query
+          name: filter
+          schema:
+            type: string
+            enum:
+              - sellable
+              - oos
+              - low-stock
+          required: false
+          description: Filter inventory by sellable, out of stock, or low stock products.
+  
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - usku_id
+                    - stock
+                  properties:
+                    usku_id:
+                      type: string
+                    stock:
+                      type: integer
+  
+        "400":
+          description: Invalid filter
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - message
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+  
+        "401":
+          $ref: "#/components/responses/login_required"
+  
+        "403":
+          $ref: "#/components/responses/brand_required"
+  
+        "500":
+          $ref: "#/components/responses/500"
+  
+        "default":
+          $ref: "#/components/responses/default"
+                
   /inventory/supplier/{supplier_id}:
     get:
       summary:  Get the brand suppliers for the inward creation
