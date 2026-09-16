@@ -21,9 +21,6 @@ async def signup():
     if designation == None:
         designation = 'Owner'
 
-    print(name, number, email, password, designation)
-    print(Validate.email(email))
-    print(Validate.in_phone_num(number))
     if number and email and password and designation and Validate.email(email) and Validate.in_phone_num(number):
         # verify number and email
         user_creds = {

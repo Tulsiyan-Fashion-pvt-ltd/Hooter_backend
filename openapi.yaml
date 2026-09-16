@@ -2112,29 +2112,90 @@ paths:
 
   /inventory/stocks/{usku_id}:
     get:
-      summary:  Get inventory stocks
-      description:  Fetches the inventory stocks according to the usku_id or 
-        total inventory stocks if usku_id is not provided
+      summary: Get product stock
+      description: Fetches the stock for the given usku_id.
+
       tags:
-        - Inventory
+      - Inventory
+
+      security:
+      - cookieAuth: []
+
       parameters:
         - in: path
           name: usku_id
           schema:
-            $ref: "#/components/schemas/usku_id"
-          required: true
-          description:  Universally unique SKU ID
-        - in: query
-          name: fileter
-          required: false
-          schema:
             type: string
-            example: oos
-            enum: 
-              - sellable
-              - oos
-              - low-stock
-          description:  Pass fileter for the 
+          required: true
+          description: Unique identifier for the product.
+
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - usku_id
+                  - stock
+                properties:
+                  usku_id:
+                    type: string
+                    example: "USKU12345"
+                  stock:
+                    type: integer
+                    example: 50
+  
+              example:
+                usku_id: "USKU12345"
+                stock: 50
+  
+        "404":
+          description: Product stock not found
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - message
+                properties:
+                  status:
+                    type: string
+                    example: "failed"
+                  message:
+                    type: string
+                    example: "Product stock not found for the given usku_id"
+  
+              example:
+                status: "failed"
+                message: "Product stock not found for the given usku_id"
+  
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - message
+                properties:
+                  status:
+                    type: string
+                    example: "failed"
+                  message:
+                    type: string
+                    example: "Internal server error"
+  
+              example:
+                status: "failed"
+                message: "Internal server error"
+
+        "default":
+          $ref: "#/components/schemas/default"
+       
               
   /inventory/supplier/{supplier_id}:
     get:
