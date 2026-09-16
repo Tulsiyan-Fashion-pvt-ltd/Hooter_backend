@@ -2192,9 +2192,8 @@ paths:
               example:
                 status: "failed"
                 message: "Internal server error"
-
-        "default":
-          $ref: "#/components/schemas/default"
+        default:
+          $ref: "#/components/responses/default"
        
               
   /inventory/supplier/{supplier_id}:
