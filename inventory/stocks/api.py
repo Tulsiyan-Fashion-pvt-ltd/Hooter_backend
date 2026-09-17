@@ -19,7 +19,7 @@ async def get_inventory():
     if filter not in accepted_filters:
         return jsonify({"status": "invalid request", "message": "not a valid filter"}), 400
      
-    inventory = await mariadb.Fetch.inventory(filter)
+    inventory = await mariadb.Fetch.inventory_stocks(session.get('brand'), filter)
     if inventory == "error":
         return jsonify({"status": "failed", "message": "internal server error"}), 500
     return jsonify(inventory), 200
@@ -41,12 +41,13 @@ async def get_product_stock(usku_id: str):
     return jsonify(inventory), 200
 
 
+
 @stocks.get("/count")
 @login_required
 @brand_required
 async def get_inventory_counts():
     """Fetch inventory counts for a brand. for low, oos, sellable and total inventory"""
-    stock = await mariadb.Fetch.stock_count()
+    stock = await mariadb.Fetch.stock_count(session.get('brand'))
     if stock == "error":
         return jsonify({"status": "failed", "message": "Internal server error while fetching inventory counts"}), 500
     return jsonify(stock), 200

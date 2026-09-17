@@ -1,4 +1,4 @@
-from quart import current_app, json
+from quart import current_app
 from asyncmy.cursors import DictCursor
 from datetime import datetime
 
