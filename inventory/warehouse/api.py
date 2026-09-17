@@ -3,7 +3,8 @@ from quart import Blueprint, jsonify, request, session, json
 import inventory.routes as routes
 from utils.prerequirements import login_required, brand_required
 from inventory.warehouse import mariadb
-from utils.helper import Helper
+from utils.helper import Payload
+from catalog.products.authorize import warehouse_api_access_required
 import re
 
 warehouse    = Blueprint("warehouse", __name__, url_prefix="/warehouse")
@@ -19,7 +20,8 @@ async def add_warehouse():
     accepted_payload = ["name", "number", "email", "house", "street", "locality", "city", "state", "pincode"]
     mandatory_payload = ["name", "number", "email", "locality", "city", "state", "pincode"]
 
-    if not Helper.check_required_payload(payload, accepted_payload, mandatory_payload):
+    if not (Payload.check_required_payload(payload, mandatory_payload) and
+            Payload.check_accepted_payload(payload,accepted_payload)):
         return jsonify({"status": "denied", "msg": "invalid payload"}), 400
     
     pincode = str(payload.get("pincode"))
@@ -52,12 +54,9 @@ async def add_warehouse():
 @warehouse.get("")
 @login_required
 @brand_required
+@warehouse_api_access_required
 async def get_warehouses():
     brand_id = session.get("brand")
-    warehouse_id = request.args.get("warehouse-id")
 
-    if warehouse_id is None:
-        warehouses = await mariadb.Fetch.warehouses(brand_id)
-    else:
-        warehouses = await mariadb.Fetch.warehouse(brand_id, warehouse_id)
+    warehouses = await mariadb.Fetch.warehouses(brand_id)
     return jsonify(warehouses)
