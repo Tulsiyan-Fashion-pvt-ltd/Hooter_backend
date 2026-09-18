@@ -4,7 +4,7 @@ import inventory.routes as routes
 from utils.prerequirements import login_required, brand_required
 from inventory.warehouse import mariadb
 from utils.helper import Payload
-from catalog.products.authorize import warehouse_api_access_required
+from inventory.warehouse.authorize import warehouse_api_access_required
 import re
 
 warehouse    = Blueprint("warehouse", __name__, url_prefix="/warehouse")
@@ -59,4 +59,6 @@ async def get_warehouses():
     brand_id = session.get("brand")
 
     warehouses = await mariadb.Fetch.warehouses(brand_id)
+    if warehouses == "error":
+        return jsonify({"status": "failed", "message": "Failed to fetch warehouses" }), 500
     return jsonify(warehouses)

@@ -2532,7 +2532,232 @@ paths:
                     example: failed to add the supplier
                 
   
+  /inventory/warehouse:
+    get:
+      summary: Get warehouses
+      description: Fetches all warehouses associated with the brand.
+  
+      tags:
+        - Inventory 
+      security:
+        - cookieAuth: []
+  
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - warehouse_id
+                    - name
+                    - number
+                    - email
+                    - address
+                  properties:
+                    warehouse_id:
+                      type: integer
+                      description: Unique ID of the warehouse
+                      example: 8
+  
+                    name:
+                      type: string
+                      description: Name of the warehouse
+                      example: Warehouse
+  
+                    number:
+                      type: string
+                      description: Contact number of the warehouse
+                      example: "9518603545"
+  
+                    email:
+                      type: string
+                      format: email
+                      description: Email address of the warehouse
+                      example: warehouse@gmail.com
+  
+                    address:
+                      type: object
+                      required:
+                        - locality
+                        - city
+                        - state
+                        - pincode
+                      properties:
+                        house:
+                          type: string
+                          nullable: true
+                          example: "12A"
+  
+                        street:
+                          type: string
+                          nullable: true
+                          example: "MG Road"
+  
+                        locality:
+                          type: string
+                          example: Sector 18
+  
+                        city:
+                          type: string
+                          example: Gurgaon
+  
+                        state:
+                          type: string
+                          example: Haryana
+  
+                        pincode:
+                          type: integer
+                          example: 122001
+  
+        "401":
+          $ref: "#/components/responses/login_required"
+  
+        "403":
+          $ref: "#/components/responses/brand_required"
+  
+        "500":
+          $ref: "#/components/responses/500"
+  
+        "default":
+          $ref: "#/components/responses/default"
 
+    post:
+      summary: Add warehouse
+      description: Adds a new warehouse for the brand.
+  
+      tags:
+        - Inventory
+      security:
+        - cookieAuth: []
+  
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - number
+                - email
+                - locality
+                - city
+                - state
+                - pincode
+              properties:
+                name:
+                  type : string
+                  example: Warehouse
+  
+                number:
+                  type: string
+                  example: "9518603545"
+  
+                email:
+                  type: string
+                  format: email
+                  example: warehouse@gmail.com
+  
+                house:
+                  type: string
+                  example: "12A"
+  
+                street:
+                  type: string
+                  example: "MG Road"
+  
+                locality:
+                  type: string
+                  example: Sector 18
+  
+                city:
+                  type: string
+                  example: Gurgaon
+  
+                state:
+                  type: string
+                  example: Haryana
+  
+                pincode:
+                  type: integer
+                  example: 122001
+  
+      responses:
+        "200":
+          description: Warehouse added successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - msg
+                  - warehouse_id
+                properties:
+                  status:
+                    type: string
+                    example: successful
+  
+                  msg:
+                    type: string
+                    example: added the warehouse
+  
+                  warehouse_id:
+                    type: integer
+                    example: 8
+  
+        "400":
+          description: Invalid payload
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - msg
+                properties:
+                  status:
+                    type: string
+                    example: denied
+  
+                  msg:
+                    type: string
+                    example: invalid payload
+  
+        "406":
+          description: Invalid pincode
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - msg
+                properties:
+                  status:
+                    type: string
+                    example: invalid request
+  
+                  msg:
+                    type: string
+                    example: pincode should be 6 digit integer value
+  
+        "401":
+          $ref: "#/components/responses/login_required"
+  
+        "403":
+          $ref: "#/components/responses/brand_required"
+  
+        "500":
+          $ref: "#/components/responses/500"
+  
+        "default":
+          $ref: "#/components/responses/default"
+  
 
 components:
   securitySchemes:

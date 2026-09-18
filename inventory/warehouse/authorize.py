@@ -4,13 +4,10 @@ from traceback import print_exc
 from functools import wraps
 from async_lru import alru_cache
 
+
 @alru_cache(maxsize=128, ttl=500)
-async def product_access(usku_id: str, brand_id: str) -> bool:
-    '''Checks whether the `usku_id` belongs to the specified brand ID or not
-    
-    Args:
-        usku_id: globally unique identifier for the product or stock
-        brand_id: Unique identifier for the brand
+async def warehouse_access(warehouse_id: str, brand_id: str) -> bool:
+    '''Checks whether the `warehouse_id` belongs to the specified brand ID or not
         
     Returns:
         - `True` -> If yes
@@ -20,9 +17,9 @@ async def product_access(usku_id: str, brand_id: str) -> bool:
     async with pool.acquire() as connection:
         try:
             async with connection.cursor(cursor=DictCursor) as cursor:
-                query = '''SELECT 1 FROM usku_record
-                    WHERE usku_id = %s and brand_id = %s'''
-                value = (usku_id, brand_id)
+                query = '''SELECT 1 FROM warehouse
+                    WHERE warehouse_id = %s and brand_id = %s'''
+                value = (warehouse_id, brand_id)
 
                 await cursor.execute(query, value)
                 belongs = await cursor.fetchone()
@@ -36,36 +33,36 @@ async def product_access(usku_id: str, brand_id: str) -> bool:
             print_exc
             return "error"
 
-
-
-def product_access_required(func):
-    """Run the product function if the usku_id belongs to the brand.
+def warehouse_access_required(func):
+    """Run the warehouse function if the warehouse_id belongs to the brand.
     
     Requirement:
-        usku_id should be as the first positional argument"""
+        warehouse_id should be as the first positional argument"""
     @wraps(func)
     async def wrapper(*args, **kwargs):
-        has_access = await product_access(args[0], session.get('brand'))
+        has_access = await warehouse_access(args[0], session.get('brand'))
         if has_access == True:
             return await func(*args, **kwargs)
         else:
-            raise Exception("unauthorized", "USKU ID does not belongs to the brand login")
+            raise Exception("unauthorized", "Warehouse ID does not belongs to the brand login")
 
     return wrapper
 
 
-def product_api_access_required(func):
+def warehouse_api_access_required(func):
     @wraps(func)
     async def wrapper(*args, **kwargs):
-        if not kwargs.get('usku_id'):
+        warehouse_id = request.args.get("warehouse-id")
+
+        if not warehouse_id:
             return await func(*args, **kwargs)
         
         try:
-            has_access = await product_access(kwargs.get('usku_id'), session.get('brand'))
+            has_access = await warehouse_access(warehouse_id, session.get('brand'))
             if has_access == True:
                 return await func(*args, **kwargs)
             elif has_access == False:
-                return jsonify({'status': 'unauthorized', "message": "Invalid USKU ID for the brand"}), 401
+                return jsonify({'status': 'unauthorized', "message": "Invalid Warehouse ID for the brand"}), 401
             else:
                 return jsonify({'status': "error", "message": "Unexpected internal server error occured"}), 500
         except Exception as e:
