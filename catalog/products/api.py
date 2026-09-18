@@ -285,7 +285,11 @@ async def update_catalog_data(usku_id):
 @login_required
 @brand_required
 async def get_brand_uploaded_categories():
-    ...
+    categories = await mariadb.Fetch.uploaded_product_category(session.get('brand'))
+    if categories.get('error'):
+        return jsonify({'status': 'failed', 'message': 'Could not fetch the uploaded product categories'}), 500
+
+    return jsonify({'status': 'successful', 'categories': categories.get('categories')}), 200
 
 
 

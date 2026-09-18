@@ -8,13 +8,15 @@ from utils.prerequirements import login_required, super_admin_required
 import config
 from traceback import print_exc
 from .authorize import brand_api_access_required
+from quart_rate_limiter import rate_limit, RateLimit, timedelta
 
 
 
 auth = Blueprint('auth', __name__)
 
-# route to register the business
+
 @auth.route('/register', methods=['POST'])
+@rate_limit(20, timedelta(minutes=60))
 @login_required
 # @super_admin_required
 async def register_entity() -> Response:
@@ -126,6 +128,7 @@ async def register_entity() -> Response:
 # request for brand access
 @auth.get('/connect')
 @auth.get('/connect/<brand_id>')
+@rate_limit(60, timedelta(minutes=1))
 @login_required
 @brand_api_access_required
 async def connect_brand(brand_id=None) -> Response:

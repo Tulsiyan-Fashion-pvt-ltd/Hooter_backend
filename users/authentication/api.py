@@ -4,12 +4,15 @@ from utils.helper import Validate, Helper
 from users.helper import create_userid, hash_password, verify_hashed_password
 from utils.prerequirements import login_required
 from brand.auth.api import connect_brand
+from quart_rate_limiter import rate_limit, RateLimit
+from datetime import timedelta
 
 
 auth = Blueprint("auth", __name__)
 
 
 @auth.post('/signup')
+@rate_limit(20, timedelta(minutes=60))
 async def signup():
     data = await request.get_json()
     name=data.get('name')
@@ -48,6 +51,7 @@ async def signup():
 
 
 @auth.post('/login')
+@rate_limit(5, timedelta(minutes=15))
 async def login():
     data = await request.get_json()
     if not data:
@@ -86,12 +90,10 @@ async def login():
 
 
 
-# request to fetch user session
 @auth.get('/session')
 async def check_session():
-    # print(request.cookies)
+    '''Get user login status'''
     user = session.get('user')
-    # print(user)
     if user:
         return jsonify({'login': 'ok'}), 200
     else:

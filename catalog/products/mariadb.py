@@ -308,6 +308,7 @@ class Fetch:
     
     @staticmethod
     async def catalog_list(brand_id: str):
+        """Show the list of uploaded catalog"""
         pool = current_app.pool
         async with pool.acquire() as connection:
             try:
@@ -396,3 +397,33 @@ class Fetch:
                 print(f"error occured while fetching the category ID for the product {usku_id}\n", e)
                 print_exc()
                 return None
+
+
+    @staticmethod
+    async def uploaded_product_category(brand_id: str) -> dict[str, str| list[dict[str, str]]]:
+        '''
+        Get the list of categories of the uploaded products by the brand
+        
+        Args:
+            brand_id: Unique ID for brands
+            
+        Returns:
+            dict with keys `error` and `categories`(list of dicts of categories with key `category` and `id`)
+        '''
+        pool = current_app.pool
+        async with pool.acquire() as connection:
+            try:
+                async with connection.cursor(cursor=DictCursor) as cursor:
+                    query = '''SELECT DISTINCT type_id as id, type_name as category 
+                            FROM usku_record
+                            WHERE brand_id = %s
+                            '''
+                    value = (brand_id, )
+                    await cursor.execute(query, value)
+                    categories = await cursor.fetchall()
+                    return {"categories": categories, "error": None}                    
+                    
+            except Exception as e:
+                print(e)
+                print_exc()
+                return {"error": e.args[0]}

@@ -4,9 +4,9 @@ The application has default rate limit of 300 reqs per minute.
 This can be overwrite by using limiter decorator
 
 example:
-from rate_limiter import limiter
+from quart_rate_limiter import rate_limit, RateLimit, timedelta
 
-@limiter.limit(RateLimit(5, timedelta(minutes=15)))
+@rate_limit(5, timedelta(minutes=15))
 async def api_func():
     ...
 """
