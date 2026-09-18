@@ -199,7 +199,7 @@ async def list_products():
     if catalog_data == "error":
         return jsonify({"status": "failed", "message": "could not fetch the catalog data"}), 500
     
-    return jsonify({"catalog_list": catalog_data[1]}), 200
+    return jsonify({"catalog_list": catalog_data}), 200
 
 
 
