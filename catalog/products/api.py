@@ -167,6 +167,24 @@ async def send_error_sheet(job_id):
         return jsonify({"status": "failed", "message": "unexpected error occured in the server"}), 500
 
 
+@products.get("/counts")
+@login_required
+@brand_required
+async def get_catlog_counts():
+    """
+    SERVING THE COUNT OF UPLOADED CATALOG
+    Returns:
+        total, pending and completed stock count
+    """
+    brand_id = session.get("brand")
+    catalog_counts = await mariadb.Fetch.catalog_upload_count(brand_id)
+    
+    if "error" == catalog_counts:
+        return jsonify({"status": "failed", "message": "could not fetch the catalog data"}), 500
+    
+    return jsonify({"count": catalog_counts}), 200
+
+
 @products.get("")
 @login_required
 @brand_required
@@ -176,13 +194,12 @@ async def list_products():
     """
     brand_id = session.get("brand")
 
-    catalog_data = await asyncio.gather(mariadb.Fetch.catalog_upload_count(brand_id), 
-                          mariadb.Fetch.catalog_list(brand_id))
+    catalog_data = await mariadb.Fetch.catalog_list(brand_id)
     
-    if catalog_data[0] == "error" or catalog_data[1] == "error":
+    if catalog_data == "error":
         return jsonify({"status": "failed", "message": "could not fetch the catalog data"}), 500
     
-    return jsonify({"count": catalog_data[0], "catalog_list": catalog_data[1]}), 200
+    return jsonify({"catalog_list": catalog_data[1]}), 200
 
 
 
@@ -262,6 +279,13 @@ async def update_catalog_data(usku_id):
     response = await services.update_product(usku_id, listing_attributes, category_attributes)
     return jsonify(response[0]), response[1]
 
+
+
+@products.get("/uploaded-categories")
+@login_required
+@brand_required
+async def get_brand_uploaded_categories():
+    ...
 
 
 

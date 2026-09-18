@@ -50,6 +50,9 @@ async def signup():
 @auth.post('/login')
 async def login():
     data = await request.get_json()
+    if not data:
+        return jsonify({'status': 'failed', 'message': 'json payload is not provided'}), 400
+
     email = data.get('email')
     password = data.get('password')
 

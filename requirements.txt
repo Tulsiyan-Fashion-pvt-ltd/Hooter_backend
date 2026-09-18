@@ -63,6 +63,7 @@ PyYAML==6.0.3
 Quart==0.20.0
 quart-cors==0.8.0
 quart-mongo==0.1.2
+quart-rate-limiter==0.12.1
 redis==8.1.0
 referencing==0.37.0
 requests==2.32.5

@@ -15,6 +15,7 @@ import asyncio
 import aiofiles
 import json
 from swagger_ui import api_doc
+from rate_limiter import limiter
 
 
 load_dotenv()  # Load environment variables from .env file
@@ -25,13 +26,16 @@ app = cors(app, allow_credentials=True if os.getenv("DASHBOARD_DOMAIN") != "*" e
     # send_origin_wildcard=False,
     max_age=timedelta(days=1))
 
+'''Rate Limiter'''
+limiter.init_app(app)
+
+'''Session and cookies config'''
 app.secret_key = os.environ.get('HOOTER_SECRET_KEY')
 app.config["SECRET_KEY"] = os.environ.get('HOOTER_SECRET_KEY')
-
-# only for texting nad development
 app.config["SESSION_COOKIE_SAMESITE"] = "None"
 app.config["SESSION_COOKIE_SECURE"] = bool(os.environ.get('SESSION_COOKIE_SECURE'))  # because you're using http locally
 
+'''SQL DB config'''
 app.config['MYSQL_HOST'] = os.environ.get('HOOTER_DB_HOST')
 app.config['MYSQL_PORT'] = int(os.environ.get('HOOTER_DB_PORT'))
 app.config['MYSQL_USER'] = os.environ.get('HOOTER_DB_USER')
@@ -39,21 +43,17 @@ app.config['MYSQL_PASSWORD'] = os.environ.get('HOOTER_DB_PASSWORD')
 app.config['MYSQL_DB'] = os.environ.get('HOOTER_DB')
 app.config['MYSQL_PORT'] = int(os.environ.get('HOOTER_DB_PORT', '3306'))
 
-# mongo db connection
+'''Mongo DB config'''
 app.config['MONGO_URI'] = os.environ.get('MONGO_ROUTE')
 app.mongo = Mongo(app)
 
-# app.root_path = Path(__file__).resolve() # root path for the main directory
-
+'''Registering blueprints'''
 app.register_blueprint(page)
 app.register_blueprint(brand)
 app.register_blueprint(catalog)
 app.register_blueprint(inventory)
 app.register_blueprint(users)
 app.register_blueprint(shopify.shopify)
-# need to convert the programs and methods as per asgi
-# app.register_blueprint(products)
-
 
 
 # creating and closing of the connection pool
@@ -88,10 +88,9 @@ async def sql_connection_shutdown(response):
     await app.pool.wait_closed()
 
 
-'''
-INITIALIZING THE TAXONOMY VARIABLE (it's temporary dude)
-'''
+
 app.taxonomy = []
+'''INITIALIZING THE TAXONOMY VARIABLE'''
 
 @app.before_serving
 async def list_taxonomy():
