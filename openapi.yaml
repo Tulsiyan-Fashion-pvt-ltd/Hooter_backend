@@ -1230,6 +1230,49 @@ paths:
           $ref: "#/components/responses/login_required"
         "403":
           $ref: "#/components/responses/brand_required"
+  
+  /catalog/products/counts:
+    get:
+      summary: Get counts of uploaded catalog
+      description: Get the counts of uploaded catalog for total catalog, pending  and completed status catalog
+      tags:
+        - Catalog
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: 
+                  count:
+                    type: object
+                    properties: 
+                      completed:
+                        type: integer
+                      pending:
+                        type: integer
+                      total:
+                        type: integer
+              example:
+                count:
+                  completed: 2
+                  pending: 22
+                  total: 24
+        "500":
+          description: Could not fetch the data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/default"
+              example:
+                status: failed
+                message: Could not fetch the catalog data
+        "default":
+          $ref: "#/components/responses/default"
+
 
   /catalog/products:
     get:
@@ -1248,15 +1291,6 @@ paths:
               schema:
                 type: object
                 properties:
-                  count:
-                    type: object
-                    properties:
-                      total:
-                        type: integer
-                      completed:
-                        type: integer
-                      pending:
-                        type: integer
                   catalog_list:
                     type: array
                     items:
@@ -1284,10 +1318,6 @@ paths:
                         type_id:
                           type: string
               example:
-                count:
-                  total: 2
-                  completed: 2
-                  pending: 0
                 catalog_list:
                   - usku_id: USKU-1001
                     sku_id: SKU-RED-001
@@ -2043,6 +2073,56 @@ paths:
               example:
                 status: failed
                 message:  Image not found
+  
+  /catalog/products/uploaded-categories:
+    get:
+      summary: Get uploaded product categories
+      description: Get the unique categories of the products which the brand has uploaded
+      tags: 
+        - Catalog
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: 
+                  status:
+                    type: string
+                  categories:
+                    type: array
+                    items:
+                      type: object
+                      properties: 
+                        id:
+                          type: string
+                        category:
+                          type: string
+              example:
+                status: successful
+                categories:
+                  - id: gid://shopify/TaxonomyCategory/aa-1-23-2-1
+                    category: Saris
+        "500":
+          description: Failed to fetch the categories
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: 
+                  status:
+                    type: string
+                  message:
+                    type: string
+              example:
+                status: failed
+                message:  Could not fetch the uploaded product categories
+        "default":
+          $ref: "#/components/responses/default"
+
           
   /inventory/inward/count:
     get:

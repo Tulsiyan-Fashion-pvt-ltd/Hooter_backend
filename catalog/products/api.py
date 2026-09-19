@@ -180,7 +180,7 @@ async def get_catlog_counts():
     catalog_counts = await mariadb.Fetch.catalog_upload_count(brand_id)
     
     if "error" == catalog_counts:
-        return jsonify({"status": "failed", "message": "could not fetch the catalog data"}), 500
+        return jsonify({"status": "failed", "message": "Could not fetch the catalog data"}), 500
     
     return jsonify({"count": catalog_counts}), 200
 
@@ -285,6 +285,7 @@ async def update_catalog_data(usku_id):
 @login_required
 @brand_required
 async def get_brand_uploaded_categories():
+    """Gets the uploaded category from the brand"""
     categories = await mariadb.Fetch.uploaded_product_category(session.get('brand'))
     if categories.get('error'):
         return jsonify({'status': 'failed', 'message': 'Could not fetch the uploaded product categories'}), 500
