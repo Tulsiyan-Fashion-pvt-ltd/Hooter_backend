@@ -43,9 +43,7 @@ class Fetch:
                                 where brand_id = %s
                                 {sql_condition}
                             '''
-                    print(query)
                     values = (brand_id, )
-                    print(values)
                     await cursor.execute(query, values)
                     inventory = await cursor.fetchall()
                     return inventory

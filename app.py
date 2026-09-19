@@ -21,8 +21,10 @@ from rate_limiter import limiter
 load_dotenv()  # Load environment variables from .env file
 
 app = Quart(__name__)
-app = cors(app, allow_credentials=True if os.getenv("DASHBOARD_DOMAIN") != "*" else False,
-    allow_origin=os.getenv("DASHBOARD_DOMAIN"),
+
+
+app = cors(app, allow_credentials=True,
+    allow_origin=os.getenv("ALLOWED_ORIGINS").split(','),
     # send_origin_wildcard=False,
     max_age=timedelta(days=1))
 
@@ -83,7 +85,7 @@ async def sql_connection_startup():
 
 
 @app.after_serving
-async def sql_connection_shutdown(response):
+async def sql_connection_shutdown():
     app.pool.close()
     await app.pool.wait_closed()
 
