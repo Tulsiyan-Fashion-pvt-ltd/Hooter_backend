@@ -4,8 +4,9 @@ from utils.helper import Validate, Helper
 from users.helper import create_userid, hash_password, verify_hashed_password
 from utils.prerequirements import login_required
 from brand.auth.api import connect_brand
-from quart_rate_limiter import rate_limit, RateLimit
+from quart_rate_limiter import rate_limit
 from datetime import timedelta
+from security_extensions import validate_csrf
 
 
 auth = Blueprint("auth", __name__)
@@ -51,7 +52,8 @@ async def signup():
 
 
 @auth.post('/login')
-@rate_limit(5, timedelta(minutes=15))
+# @rate_limit(5, timedelta(minutes=15))
+@validate_csrf
 async def login():
     data = await request.get_json()
     if not data:

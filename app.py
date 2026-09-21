@@ -15,7 +15,7 @@ import asyncio
 import aiofiles
 import json
 from swagger_ui import api_doc
-from rate_limiter import limiter
+from security_extensions import limiter, security
 
 
 load_dotenv()  # Load environment variables from .env file
@@ -50,6 +50,7 @@ app.config['MONGO_URI'] = os.environ.get('MONGO_ROUTE')
 app.mongo = Mongo(app)
 
 '''Registering blueprints'''
+app.register_blueprint(security)
 app.register_blueprint(page)
 app.register_blueprint(brand)
 app.register_blueprint(catalog)

@@ -26,6 +26,9 @@ tags:
 
   - name: Inventory
     description: Inventory management APIs
+
+  - name: CSRF Token
+    description: CSRF token API
     
 
 paths:
@@ -2611,7 +2614,28 @@ paths:
                     type: string
                     example: failed to add the supplier
                 
-  
+  /security/csrf:
+    get:
+      summary:  Get csrf token for apis
+      description:  Get CSRF token for state changing APIs access
+        Include `X-CSRF-Token` in the headers
+      tags:
+        - CSRF Token 
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  csrf_token:
+                    type: string
+              example:
+                csrf_token: 8771267dc1e86235b5f2e28a5bd8bfeff75ca9f6ec40d1a56e5da4e759b03393
+        "default":
+          $ref: "#/components/responses/default"
+
 
 
 components:
