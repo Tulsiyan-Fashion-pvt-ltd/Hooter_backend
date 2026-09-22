@@ -14,6 +14,7 @@ auth = Blueprint("auth", __name__)
 
 @auth.post('/signup')
 @rate_limit(20, timedelta(minutes=60))
+@validate_csrf
 async def signup():
     data = await request.get_json()
     name=data.get('name')
@@ -52,7 +53,7 @@ async def signup():
 
 
 @auth.post('/login')
-# @rate_limit(5, timedelta(minutes=15))
+@rate_limit(5, timedelta(minutes=15))
 @validate_csrf
 async def login():
     data = await request.get_json()
@@ -104,6 +105,7 @@ async def check_session():
 
 @auth.post('/logout')
 @login_required
+@validate_csrf
 async def logout():
     session.clear()
     return jsonify({'status': 'ok', 'message': 'user logout'}), 200

@@ -1,9 +1,7 @@
-from quart import Blueprint, jsonify, request, session, json
+from quart import Blueprint, jsonify, request, session
 # import asyncio
 from utils.prerequirements import login_required, brand_required
 from . import mariadb
-from utils.helper import Helper
-import re
 from catalog.products.authorize import product_api_access_required
 
 stocks = Blueprint("stocks", __name__, url_prefix="/stocks")

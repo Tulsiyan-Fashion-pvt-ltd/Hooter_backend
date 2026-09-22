@@ -38,7 +38,8 @@ paths:
         - Authentication
       summary: Register a new user
       description: Creates a new user account using name, phone number, email, password, and designation
-
+      parameters:
+        - $ref: '#/components/parameters/csrf'
       requestBody:
         required: true
         content:
@@ -104,8 +105,10 @@ paths:
     post:
       tags:
         - Authentication
-
-      summary: Upload user credentials for login, to use the apis which requires user session
+      summary: User login API
+      description: Upload user credentials for login, to use the apis which requires user session
+      parameters:
+        - $ref: '#/components/parameters/csrf'
       requestBody:
         required: true
         content:
@@ -302,6 +305,8 @@ paths:
         - Authentication
       summary: Logout user
       description: Ends the current authenticated session.
+      parameters:
+        - $ref: '#/components/parameters/csrf'
       security:
         - cookieAuth: []
       responses:
@@ -333,7 +338,8 @@ paths:
       description: Sends the logged in user credentials
       security:
         - cookieAuth: []
-
+      parameters:
+        - $ref: '#/components/parameters/csrf'
       responses:
         "200":
           description: Current authenticated user
@@ -396,13 +402,12 @@ paths:
         - Brand
 
       summary: Register a new brand
-
       description: Registers a new brand. If `poc.self` is `true`, the authenticated user becomes the Point of Contact. 
         Otherwise, a new POC account is created as per the given poc details.
-
       security:
         - cookieAuth: []
-
+      parameters:
+        - $ref: '#/components/parameters/csrf'
       requestBody:
         required: true
         content:
@@ -545,7 +550,8 @@ paths:
         - Brand
       security:
         - cookieAuth: []
-      
+      parameters:
+        - $ref: '#/components/parameters/csrf'
       responses:
         "200":
           description: Brand connection status
@@ -634,6 +640,7 @@ paths:
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/brandIdRequired"
+        - $ref: '#/components/parameters/csrf'
       tags:
         - Brand
       
@@ -677,11 +684,8 @@ paths:
     get:
       tags:
         - Catalog
-
       summary: Get top level categories
-
       description: Returns all level 0 (top level) Shopify taxonomy categories.
-
       security:
         - cookieAuth: []
 
@@ -1082,6 +1086,7 @@ paths:
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/categoryID"
+        - $ref: '#/components/parameters/csrf'
       requestBody:
         required: true
         content:
@@ -1141,6 +1146,7 @@ paths:
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/categoryID"
+        - $ref: '#/components/parameters/csrf'
       requestBody:
         required: true
         content:
@@ -1431,6 +1437,7 @@ paths:
           description: Unique SKU ID of the product to delete.
           schema:
             type: string
+        - $ref: '#/components/parameters/csrf'
 
       responses:
         "200":
@@ -1474,6 +1481,7 @@ paths:
       tags:
         - Catalog
       parameters:
+        - $ref: '#/components/parameters/csrf'
         - name: usku_id
           in: path
           description:  Universal SKU ID of the product
@@ -1684,6 +1692,7 @@ paths:
           description: Universally unique Stock Keeping Unit ID for the products
           schema:
             type: string
+        - $ref: '#/components/parameters/csrf'
       requestBody:
         description:  Images and their metadata, containing the image type and image order. The form payload will
           be according to the image attributes and any custom attributes for image that user has selected
@@ -1926,6 +1935,7 @@ paths:
           schema:
             type: string
             example: front
+        - $ref: '#/components/parameters/csrf'
       responses:
         "200":
           description:  Successful request
@@ -1950,6 +1960,7 @@ paths:
             $ref: "#/components/schemas/usku_id"
           required: true
           description: Universally unique SKU ID
+        - $ref: '#/components/parameters/csrf'
       tags:
         - Catalog
       requestBody: 
@@ -2179,6 +2190,8 @@ paths:
         - Inventory
       security:
         - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/csrf'
       requestBody:
         description:  Inward information
         required: true
@@ -2501,7 +2514,8 @@ paths:
         - Inventory
       security:
         - cookieAuth: []
-  
+      parameters:
+        - $ref: '#/components/parameters/csrf'
       requestBody:
         required: true
         content:
@@ -2908,3 +2922,10 @@ components:
       schema:
         type: string
       description: Shopify taxonomy category ID
+    csrf:
+        name: X-CSRF-Token
+        in: header
+        required: true
+        description: CSRF acesss token acquired using /security/csrf API
+        schema:
+          type: string

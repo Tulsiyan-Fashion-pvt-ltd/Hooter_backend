@@ -13,12 +13,13 @@ from traceback import print_exc
 from uuid import uuid4
 from .sse import product_sse
 from .authorize import product_api_access_required
-
-
+from security_extensions import validate_csrf
 
 
 products = Blueprint("products", __name__, url_prefix = "/products")
 products.register_blueprint(product_sse)
+
+
 
 
 # check if the user has even added a single catalog or not.
@@ -35,6 +36,7 @@ async def if_catalog_exists():
 
 # upload single catalog to the hooter backend
 @products.post('/single')
+@validate_csrf
 @login_required
 @brand_required
 async def upload_single_catalog():
@@ -93,6 +95,7 @@ async def upload_single_catalog():
 
 
 @products.post('/bulk')
+@validate_csrf
 @login_required
 @brand_required
 async def upload_bulk_catalog():
@@ -222,6 +225,7 @@ async def show_product(usku_id: str):
 
 
 @products.delete("/<usku_id>")
+@validate_csrf
 @login_required
 @brand_required
 @product_api_access_required
@@ -238,6 +242,7 @@ async def delete_product(usku_id: str):
 
 '''THIS FUNCTION REQUIRE SOME CORRECTION'''
 @products.put("/<usku_id>")
+@validate_csrf
 @login_required
 @brand_required
 @product_api_access_required
