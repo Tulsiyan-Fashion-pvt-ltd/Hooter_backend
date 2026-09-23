@@ -1,14 +1,17 @@
-from quart import Blueprint, request, Response, jsonify, session
+from quart import Blueprint, jsonify, session
 from utils.prerequirements import login_required
 from users.profile import mariadb
+from security_extensions import validate_csrf
 
 profile = Blueprint("profile", __name__, url_prefix="/profile")
 
+
 @profile.get('')
 @login_required
+@validate_csrf
 async def fetch_user_creds():
     user = session.get('user')
-    # print(user)
+    
     if user==None:
         return jsonify({'status': 'unauthorised access', 'message': 'no loged in user found'}), 401
     _ = await mariadb.Fetch.user_details(user)

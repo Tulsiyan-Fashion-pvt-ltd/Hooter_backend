@@ -8,9 +8,20 @@ class Write:
     async def product(product):
         pool = current_app.pool
 
+        def clean_weight(value):
+            '''Tiny function to cleant he weight value issue'''
+            if isinstance(value, str):
+                value = value.strip().lower().removesuffix("kg").strip()
+                return float(value) if value else None
+            return value
+
+        net_weight_kg = clean_weight(product.get("net_weight_kg"))
+        dead_weight_kg = clean_weight(product.get("dead_weight_kg"))
+        volumetric_weight_kg = clean_weight(product.get("volumetric_weight_kg"))
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
+
                     '''usku_record query'''
                     usku_query = '''insert into usku_record
                                 (usku_id, brand_id, sku_id, type_id, type_name)
@@ -36,7 +47,7 @@ class Write:
                                       product.get("price", 0.00), product.get("compared_price", 0.00), product.get("purchasing_cost", 0.00),
                                       product.get("vendor"), product.get("ean"), product.get("hsn"), product.get("gtin"),
                                       product.get("upc"), product.get("isbn"),
-                                      product.get("net_weight_kg").removesuffix("kg"), product.get("dead_weight_kg").removesuffix("kg"), product.get("volumetric_weight_kg").removesuffix("kg"),
+                                      net_weight_kg, dead_weight_kg, volumetric_weight_kg,
                                       product.get("brand_name"))
 
                     await cursor.execute(catalog_query, catalog_values)
@@ -297,20 +308,24 @@ class Fetch:
     
     @staticmethod
     async def catalog_list(brand_id: str):
+        """Show the list of uploaded catalog"""
         pool = current_app.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor = DictCursor) as cursor:
-                    query = '''select COALESCE(JSON_VALUE(img.image_url, "$.webp_card"), '') as image_url, s.usku_id, s.sku_id,
+                    query = '''select url.image_url, s.usku_id, s.sku_id,
                     c.product_title, c.compared_price, c.price, c.purchasing_cost, s.status
                     from usku_record as s
                     inner join catalog as c on s.usku_id = c.usku_id
-                    left join product_images img on img.usku_id = s.usku_id and
+                    left join product_images img on img.usku_id = s.usku_id
+                    and
                     img.image_type="front"
+                    left join image_urls url on url.image_id = img.id
+                    and
+                    url.image_variation = "webp_card"
                     where
-                    s.brand_id = %s
+                    s.brand_id =  %s
                     '''
-                    
                     await cursor.execute(query, (brand_id, ))
                     catalog_data = await cursor.fetchall()
                     
@@ -382,3 +397,33 @@ class Fetch:
                 print(f"error occured while fetching the category ID for the product {usku_id}\n", e)
                 print_exc()
                 return None
+
+
+    @staticmethod
+    async def uploaded_product_category(brand_id: str) -> dict[str, str| list[dict[str, str]]]:
+        '''
+        Get the list of categories of the uploaded products by the brand
+        
+        Args:
+            brand_id: Unique ID for brands
+            
+        Returns:
+            dict with keys `error` and `categories`(list of dicts of categories with key `category` and `id`)
+        '''
+        pool = current_app.pool
+        async with pool.acquire() as connection:
+            try:
+                async with connection.cursor(cursor=DictCursor) as cursor:
+                    query = '''SELECT DISTINCT type_id as id, type_name as category 
+                            FROM usku_record
+                            WHERE brand_id = %s
+                            '''
+                    value = (brand_id, )
+                    await cursor.execute(query, value)
+                    categories = await cursor.fetchall()
+                    return {"categories": categories, "error": None}                    
+                    
+            except Exception as e:
+                print(e)
+                print_exc()
+                return {"error": e.args[0]}

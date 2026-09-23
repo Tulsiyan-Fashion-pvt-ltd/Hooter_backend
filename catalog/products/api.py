@@ -13,12 +13,13 @@ from traceback import print_exc
 from uuid import uuid4
 from .sse import product_sse
 from .authorize import product_api_access_required
-
-
+from security_extensions import validate_csrf
 
 
 products = Blueprint("products", __name__, url_prefix = "/products")
 products.register_blueprint(product_sse)
+
+
 
 
 # check if the user has even added a single catalog or not.
@@ -35,6 +36,7 @@ async def if_catalog_exists():
 
 # upload single catalog to the hooter backend
 @products.post('/single')
+@validate_csrf
 @login_required
 @brand_required
 async def upload_single_catalog():
@@ -93,6 +95,7 @@ async def upload_single_catalog():
 
 
 @products.post('/bulk')
+@validate_csrf
 @login_required
 @brand_required
 async def upload_bulk_catalog():
@@ -167,6 +170,24 @@ async def send_error_sheet(job_id):
         return jsonify({"status": "failed", "message": "unexpected error occured in the server"}), 500
 
 
+@products.get("/counts")
+@login_required
+@brand_required
+async def get_catlog_counts():
+    """
+    SERVING THE COUNT OF UPLOADED CATALOG
+    Returns:
+        total, pending and completed stock count
+    """
+    brand_id = session.get("brand")
+    catalog_counts = await mariadb.Fetch.catalog_upload_count(brand_id)
+    
+    if "error" == catalog_counts:
+        return jsonify({"status": "failed", "message": "Could not fetch the catalog data"}), 500
+    
+    return jsonify({"count": catalog_counts}), 200
+
+
 @products.get("")
 @login_required
 @brand_required
@@ -176,13 +197,12 @@ async def list_products():
     """
     brand_id = session.get("brand")
 
-    catalog_data = await asyncio.gather(mariadb.Fetch.catalog_upload_count(brand_id), 
-                          mariadb.Fetch.catalog_list(brand_id))
+    catalog_data = await mariadb.Fetch.catalog_list(brand_id)
     
-    if catalog_data[0] == "error" or catalog_data[1] == "error":
+    if catalog_data == "error":
         return jsonify({"status": "failed", "message": "could not fetch the catalog data"}), 500
     
-    return jsonify({"count": catalog_data[0], "catalog_list": catalog_data[1]}), 200
+    return jsonify({"catalog_list": catalog_data}), 200
 
 
 
@@ -205,6 +225,7 @@ async def show_product(usku_id: str):
 
 
 @products.delete("/<usku_id>")
+@validate_csrf
 @login_required
 @brand_required
 @product_api_access_required
@@ -221,6 +242,7 @@ async def delete_product(usku_id: str):
 
 '''THIS FUNCTION REQUIRE SOME CORRECTION'''
 @products.put("/<usku_id>")
+@validate_csrf
 @login_required
 @brand_required
 @product_api_access_required
@@ -262,6 +284,18 @@ async def update_catalog_data(usku_id):
     response = await services.update_product(usku_id, listing_attributes, category_attributes)
     return jsonify(response[0]), response[1]
 
+
+
+@products.get("/uploaded-categories")
+@login_required
+@brand_required
+async def get_brand_uploaded_categories():
+    """Gets the uploaded category from the brand"""
+    categories = await mariadb.Fetch.uploaded_product_category(session.get('brand'))
+    if categories.get('error'):
+        return jsonify({'status': 'failed', 'message': 'Could not fetch the uploaded product categories'}), 500
+
+    return jsonify({'status': 'successful', 'categories': categories.get('categories')}), 200
 
 
 

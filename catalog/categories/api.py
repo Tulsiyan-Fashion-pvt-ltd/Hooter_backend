@@ -5,7 +5,7 @@ from . import services
 categories = Blueprint("categories", __name__, url_prefix = "/categories")
 
 
-@categories.get("/top") 
+@categories.get("/top")
 @login_required
 @brand_required
 async def list_top_level_categories():

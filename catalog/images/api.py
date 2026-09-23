@@ -6,7 +6,7 @@ from catalog.products import mariadb as productdb
 from catalog.categories import mongodb as categories_mongodb
 import json
 from s3 import read_object
-from config import _product_image_bucket, _product_image_root_key, _image_types, _max_allowed_image_size
+from config import _product_image_bucket, _product_image_root_key, _max_allowed_image_size
 from . import services
 import asyncio
 from ..products.authorize import product_api_access_required
@@ -15,6 +15,7 @@ from traceback import print_exc
 from dotenv import load_dotenv
 from pathlib import Path
 import secrets
+from security_extensions import validate_csrf
 
 load_dotenv()
 
@@ -23,6 +24,7 @@ images.register_blueprint(image_sse)
 
 
 @images.post("/<usku_id>")
+@validate_csrf
 @login_required
 @brand_required
 @product_api_access_required
@@ -145,6 +147,7 @@ async def get_image_url(usku_id):
 
 
 @images.put("/<usku_id>")
+@validate_csrf
 @login_required
 @brand_required
 @product_api_access_required
@@ -198,6 +201,9 @@ async def update_image(usku_id):
 
 
 @images.delete("/<usku_id>")
+@validate_csrf
+@login_required
+@brand_required
 @product_api_access_required
 async def delete(usku_id: str):
     image_type = request.args.get('image-type', None)
@@ -212,6 +218,7 @@ async def delete(usku_id: str):
 
 @images.get("/<path:key>")
 async def get_image(key):
+    '''Sends the image object itself hence it does not require any kind of authentication'''
     mimetype = "image/webp" # default it's webp 
     suffix = Path(key).suffix
     if ".webp" != suffix:

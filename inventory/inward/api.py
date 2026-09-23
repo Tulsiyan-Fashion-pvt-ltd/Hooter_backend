@@ -1,10 +1,8 @@
-from quart import Blueprint, jsonify, request, session, json
-# import asyncio
-import inventory.routes as routes
+from quart import Blueprint, jsonify, request, session
 from utils.prerequirements import login_required, brand_required
 from . import mariadb
 from utils.helper import Payload
-import re
+from security_extensions import validate_csrf
 
 inward = Blueprint("inward", __name__, url_prefix="/inward")
 
@@ -45,6 +43,7 @@ async def inward_count():
 
 
 @inward.post("")
+@validate_csrf
 @login_required
 @brand_required
 async def create_inward():
@@ -76,6 +75,7 @@ async def create_inward():
 
 
 @inward.put("")
+@validate_csrf
 @login_required
 @brand_required
 async def upload_inward():

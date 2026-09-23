@@ -4,10 +4,12 @@ from utils.prerequirements import login_required, brand_required
 from . import mariadb
 from utils.helper import Helper
 import re
+from security_extensions import validate_csrf
 
 supplier = Blueprint("supplier", __name__, url_prefix="/supplier")
 
 @supplier.post("")
+@validate_csrf
 @login_required
 @brand_required
 async def add_supplier():

@@ -26,6 +26,9 @@ tags:
 
   - name: Inventory
     description: Inventory management APIs
+
+  - name: CSRF Token
+    description: CSRF token API
     
 
 paths:
@@ -35,7 +38,8 @@ paths:
         - Authentication
       summary: Register a new user
       description: Creates a new user account using name, phone number, email, password, and designation
-
+      parameters:
+        - $ref: '#/components/parameters/csrf'
       requestBody:
         required: true
         content:
@@ -101,8 +105,10 @@ paths:
     post:
       tags:
         - Authentication
-
-      summary: Upload user credentials for login, to use the apis which requires user session
+      summary: User login API
+      description: Upload user credentials for login, to use the apis which requires user session
+      parameters:
+        - $ref: '#/components/parameters/csrf'
       requestBody:
         required: true
         content:
@@ -299,6 +305,8 @@ paths:
         - Authentication
       summary: Logout user
       description: Ends the current authenticated session.
+      parameters:
+        - $ref: '#/components/parameters/csrf'
       security:
         - cookieAuth: []
       responses:
@@ -330,7 +338,8 @@ paths:
       description: Sends the logged in user credentials
       security:
         - cookieAuth: []
-
+      parameters:
+        - $ref: '#/components/parameters/csrf'
       responses:
         "200":
           description: Current authenticated user
@@ -393,13 +402,12 @@ paths:
         - Brand
 
       summary: Register a new brand
-
       description: Registers a new brand. If `poc.self` is `true`, the authenticated user becomes the Point of Contact. 
         Otherwise, a new POC account is created as per the given poc details.
-
       security:
         - cookieAuth: []
-
+      parameters:
+        - $ref: '#/components/parameters/csrf'
       requestBody:
         required: true
         content:
@@ -542,7 +550,8 @@ paths:
         - Brand
       security:
         - cookieAuth: []
-      
+      parameters:
+        - $ref: '#/components/parameters/csrf'
       responses:
         "200":
           description: Brand connection status
@@ -631,6 +640,7 @@ paths:
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/brandIdRequired"
+        - $ref: '#/components/parameters/csrf'
       tags:
         - Brand
       
@@ -674,11 +684,8 @@ paths:
     get:
       tags:
         - Catalog
-
       summary: Get top level categories
-
       description: Returns all level 0 (top level) Shopify taxonomy categories.
-
       security:
         - cookieAuth: []
 
@@ -1079,6 +1086,7 @@ paths:
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/categoryID"
+        - $ref: '#/components/parameters/csrf'
       requestBody:
         required: true
         content:
@@ -1138,6 +1146,7 @@ paths:
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/categoryID"
+        - $ref: '#/components/parameters/csrf'
       requestBody:
         required: true
         content:
@@ -1230,6 +1239,49 @@ paths:
           $ref: "#/components/responses/login_required"
         "403":
           $ref: "#/components/responses/brand_required"
+  
+  /catalog/products/counts:
+    get:
+      summary: Get counts of uploaded catalog
+      description: Get the counts of uploaded catalog for total catalog, pending  and completed status catalog
+      tags:
+        - Catalog
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: 
+                  count:
+                    type: object
+                    properties: 
+                      completed:
+                        type: integer
+                      pending:
+                        type: integer
+                      total:
+                        type: integer
+              example:
+                count:
+                  completed: 2
+                  pending: 22
+                  total: 24
+        "500":
+          description: Could not fetch the data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/default"
+              example:
+                status: failed
+                message: Could not fetch the catalog data
+        "default":
+          $ref: "#/components/responses/default"
+
 
   /catalog/products:
     get:
@@ -1248,15 +1300,6 @@ paths:
               schema:
                 type: object
                 properties:
-                  count:
-                    type: object
-                    properties:
-                      total:
-                        type: integer
-                      completed:
-                        type: integer
-                      pending:
-                        type: integer
                   catalog_list:
                     type: array
                     items:
@@ -1284,10 +1327,6 @@ paths:
                         type_id:
                           type: string
               example:
-                count:
-                  total: 2
-                  completed: 2
-                  pending: 0
                 catalog_list:
                   - usku_id: USKU-1001
                     sku_id: SKU-RED-001
@@ -1398,6 +1437,7 @@ paths:
           description: Unique SKU ID of the product to delete.
           schema:
             type: string
+        - $ref: '#/components/parameters/csrf'
 
       responses:
         "200":
@@ -1441,6 +1481,7 @@ paths:
       tags:
         - Catalog
       parameters:
+        - $ref: '#/components/parameters/csrf'
         - name: usku_id
           in: path
           description:  Universal SKU ID of the product
@@ -1651,6 +1692,7 @@ paths:
           description: Universally unique Stock Keeping Unit ID for the products
           schema:
             type: string
+        - $ref: '#/components/parameters/csrf'
       requestBody:
         description:  Images and their metadata, containing the image type and image order. The form payload will
           be according to the image attributes and any custom attributes for image that user has selected
@@ -1893,6 +1935,7 @@ paths:
           schema:
             type: string
             example: front
+        - $ref: '#/components/parameters/csrf'
       responses:
         "200":
           description:  Successful request
@@ -1917,6 +1960,7 @@ paths:
             $ref: "#/components/schemas/usku_id"
           required: true
           description: Universally unique SKU ID
+        - $ref: '#/components/parameters/csrf'
       tags:
         - Catalog
       requestBody: 
@@ -2043,6 +2087,56 @@ paths:
               example:
                 status: failed
                 message:  Image not found
+  
+  /catalog/products/uploaded-categories:
+    get:
+      summary: Get uploaded product categories
+      description: Get the unique categories of the products which the brand has uploaded
+      tags: 
+        - Catalog
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: 
+                  status:
+                    type: string
+                  categories:
+                    type: array
+                    items:
+                      type: object
+                      properties: 
+                        id:
+                          type: string
+                        category:
+                          type: string
+              example:
+                status: successful
+                categories:
+                  - id: gid://shopify/TaxonomyCategory/aa-1-23-2-1
+                    category: Saris
+        "500":
+          description: Failed to fetch the categories
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: 
+                  status:
+                    type: string
+                  message:
+                    type: string
+              example:
+                status: failed
+                message:  Could not fetch the uploaded product categories
+        "default":
+          $ref: "#/components/responses/default"
+
           
   /inventory/inward/count:
     get:
@@ -2096,6 +2190,8 @@ paths:
         - Inventory
       security:
         - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/csrf'
       requestBody:
         description:  Inward information
         required: true
@@ -2418,7 +2514,8 @@ paths:
         - Inventory
       security:
         - cookieAuth: []
-  
+      parameters:
+        - $ref: '#/components/parameters/csrf'
       requestBody:
         required: true
         content:
@@ -2531,7 +2628,7 @@ paths:
                     type: string
                     example: failed to add the supplier
                 
-  
+
   /inventory/warehouse:
     get:
       summary: Get warehouses
@@ -2772,8 +2869,7 @@ paths:
         - cookieAuth: []
 
       parameters:
-        - $ref: "#/components/parameters/warehouseID" 
-        
+        - $ref: "#/components/parameters/warehouseID"         
       responses:
         "200":
           description: Successful response
@@ -2996,6 +3092,28 @@ paths:
         "500":
           $ref: "#/components/responses/500"
     
+        "default":
+          $ref: "#/components/responses/default"
+          
+  /security/csrf:
+    get:
+      summary:  Get csrf token for apis
+      description:  Get CSRF token for state changing APIs access
+        Include `X-CSRF-Token` in the headers
+      tags:
+        - CSRF Token 
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  csrf_token:
+                    type: string
+              example:
+                csrf_token: 8771267dc1e86235b5f2e28a5bd8bfeff75ca9f6ec40d1a56e5da4e759b03393
         "default":
           $ref: "#/components/responses/default"
 
@@ -3279,3 +3397,10 @@ components:
         type: string 
             
     
+    csrf:
+        name: X-CSRF-Token
+        in: header
+        required: true
+        description: CSRF acesss token acquired using /security/csrf API
+        schema:
+          type: string
