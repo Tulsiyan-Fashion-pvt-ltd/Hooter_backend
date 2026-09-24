@@ -2730,6 +2730,8 @@ paths:
         - Inventory
       security:
         - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/csrf'
   
       requestBody:
         required: true
@@ -2959,6 +2961,7 @@ paths:
       security:
         - cookieAuth: []
       parameters:
+        - $ref: '#/components/parameters/csrf'
         - $ref: "#/components/parameters/warehouseID" 
   
       responses:
@@ -3012,6 +3015,7 @@ paths:
         - Inventory
     
       parameters:
+        - $ref: '#/components/parameters/csrf'
         - $ref: "#/components/parameters/warehouseID" 
     
       requestBody:

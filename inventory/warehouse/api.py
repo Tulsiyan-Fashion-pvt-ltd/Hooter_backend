@@ -7,10 +7,12 @@ from inventory.warehouse import mariadb
 from utils.helper import Payload
 from inventory.warehouse.authorize import warehouse_api_access_required
 import re
+from security_extensions import validate_csrf
 
 warehouse = Blueprint("warehouse", __name__, url_prefix="/warehouse")
                 
 @warehouse.post("")
+@validate_csrf
 @login_required
 @brand_required
 async def add_warehouse():
@@ -78,6 +80,7 @@ async def get_warehouse(warehouse_id):
 
 
 @warehouse.delete("/<warehouse_id>")
+@validate_csrf
 @login_required
 @brand_required
 @warehouse_api_access_required
@@ -91,6 +94,7 @@ async def delete_warehouse(warehouse_id:str):
 
 
 @warehouse.put("/<warehouse_id>")
+@validate_csrf
 @login_required
 @brand_required
 @warehouse_api_access_required
