@@ -2,13 +2,24 @@ from datetime import datetime
 from quart import current_app
 from asyncmy.cursors import DictCursor
 from traceback import print_exc
+from .authorize import brand_access_required
 
 # handling the database quiries related to brands to handle brands
 
 class Write:
     @staticmethod
     async def insert_brand(brand_data: dict, user_id: str, access: str) -> str| int:
-        """Adds new brand to the database"""
+        """Adds new brand to the database for the given user
+        Args:
+            - brand_data: dict object for brand containing the sql fields
+            - user_id: Unique ID for the user
+            - access: specific access for the user
+            
+            NOTE: Allowed access are `brand_admin`,  `brand_member`, `hooter_admin`, `hooter_member`
+        Returns:
+            - on success - literal[ok]
+            - on failure - dict[literal[error], int]
+        """
         pool = current_app.pool
         async with pool.acquire() as connection:
             async with connection.cursor(cursor=DictCursor) as cursor:
@@ -33,7 +44,7 @@ class Write:
                         brand_data.get('brand_id'),
                         brand_data.get('entity_name'),
                         brand_data.get('brand_name'),
-                        brand_data.get('gstin'),
+                        brand_data.get('gstin') if brand_data.get('gstin') and brand_data.get('gstin') != "" else None,
                         brand_data.get('plan'),
                         brand_data.get('address'),
                         brand_data.get('city'),
@@ -42,8 +53,8 @@ class Write:
                         brand_data.get('estyear'),
                         user_id
                     )
-
                     await cursor.execute(query, values)
+
                     await cursor.execute('''INSERT INTO brand_access (brand_id, user_id, user_access)
                         VALUES(%s, %s, %s)''', (brand_data.get('brand_id'), user_id, access))
                     
@@ -53,7 +64,7 @@ class Write:
                     print(f'error occured while registering brand as \n{e}')
                     print_exc()
                     await connection.rollback()
-                    return e.args[0]
+                    return {"error": e.args[0]}
 
 
     @staticmethod
@@ -74,6 +85,42 @@ class Write:
                     await connection.rollback()
                     return e.args[0]
 
+    @staticmethod
+    @brand_access_required
+    async def update_poc(brand_id: str, poc_id: str) -> str| dict[str, int]:
+        '''Updates the POC for the given brand_id if the brand belongs to the user else raise an exception
+        
+        Args:
+            - brand_id - Unique ID for brand
+            - poc_id - Unique ID for the user who is going to be the poc for the brand
+        
+        Returns:
+            - on success - literal[ok]
+            - on failure - dict[literal[error], int]
+        '''
+        pool = current_app.pool
+        async with pool.acquire() as connection:
+            try:
+                async with connection.cursor(cursor=DictCursor) as cursor:
+                    query = """
+                                UPDATE brand
+                                SET poc = %s
+                                WHERE brand_id = %s
+                            """
+
+                    values = (poc_id, brand_id)
+
+                    await cursor.execute(query, values)
+                    await connection.commit()
+                    return "ok"
+                
+            except Exception as e:
+                print(e)
+                print_exc()
+                return {"error": e.args[0]} 
+
+
+                
 class Fetch:
     
     @staticmethod

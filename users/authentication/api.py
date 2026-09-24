@@ -1,12 +1,15 @@
 from quart import Blueprint, request, Response, jsonify, session
 from users.authentication import mariadb
-from utils.helper import Validate, Helper
-from users.helper import create_userid, hash_password, verify_hashed_password
+from utils.helper import Validate
 from utils.prerequirements import login_required
-from brand.auth.api import connect_brand
+from brand.auth.services import connect_brand
 from quart_rate_limiter import rate_limit
 from datetime import timedelta
 from security_extensions import validate_csrf
+from utils.helper import Payload
+from . import services
+from brand.auth.services import connect_brand
+from traceback import print_exc
 
 
 auth = Blueprint("auth", __name__)
@@ -17,38 +20,18 @@ auth = Blueprint("auth", __name__)
 @validate_csrf
 async def signup():
     data = await request.get_json()
-    name=data.get('name')
-    number = data.get('number')
-    email = data.get('email')
-    password = data.get('password')
-    designation = data.get('designation')
+
+    accepted_and_mandatory_payload = ['name', 'number', 'email', 'password', 'designation']
+    if not (Payload.check_accepted_payload(data, accepted_and_mandatory_payload) and 
+        Payload.check_required_payload(data, accepted_and_mandatory_payload)):
+        return jsonify({'status': 'failed', 'message': 'All required field not provided'}), 400
     
-    if designation == None:
-        designation = 'Owner'
-
-    if number and email and password and designation and Validate.email(email) and Validate.in_phone_num(number):
-        # verify number and email
-        user_creds = {
-            'name': name,
-            'userid': create_userid(),
-            'number': str(number),
-            'email': email,
-            'hashed_password': hash_password(password),
-            'designation': designation,
-            }
-
-        response = await mariadb.Write.signup_user(user_creds)
-
-        if response != 'ok':
-            if response == 1062:
-                return jsonify({'status': 'failed', "mesasge": "user already registered"}), 409
-            else:
-                return jsonify({'status': 'failed', "mesasge": "could not signed up the user"}), 500
-        print('registered the user')
-    else:
-        return jsonify({'status': 'Bad Request', 'message': 'all required field not provided'}), 400
+    if not (Validate.email(data.get('email')) and Validate.in_phone_num(data.get('number'))):
+        return jsonify({'status': 'failed', 'message': 'Invalid email or password'}), 422
     
-    return jsonify({'status': 'ok'}), 200
+    service_response = await services.signup_user(data)
+    status_code = service_response.pop('code')
+    return jsonify(status_code), status_code
 
 
 
@@ -58,38 +41,29 @@ async def signup():
 async def login():
     data = await request.get_json()
     if not data:
-        return jsonify({'status': 'failed', 'message': 'json payload is not provided'}), 400
+        return jsonify({'status': 'failed', 'message': 'JSON payload is not provided'}), 400
 
     email = data.get('email')
     password = data.get('password')
 
     #checking if the data is coming or not
     if not email or not password:
-        return jsonify({'status': 'invalid request', 'message': 'email or password not provided'}), 400
+        return jsonify({'status': 'invalid request', 'message': 'Email or password not provided'}), 400
 
     if Validate.email(email):
-        userid = await mariadb.Fetch.userid_by_email(email)
+        try:
+            response = await services.login_user_with_email(email, password)
+            login_code = response.pop('code')
 
-        # if the userid is null then return then do not log in
-        if userid == None:
-            return jsonify({'status': 'unauthorized', 'message': 'user not found with this email'}), 401
-
-        hashed_password = await mariadb.Fetch.user_password(userid)
-        login_check = verify_hashed_password(password, hashed_password.get("user_password"))
-        
-        if login_check == True:
-            session.clear()
-            session['user'] = userid
-            session.permanent = False
-            
-            # a brand needs to link to the user
-            # if no brand is linnked to the user then redirect to register
-            brand_access = await connect_brand()
-            return jsonify({"login": {'status': 'ok', 'message': 'login successful'}, "brand_connection": await brand_access[0].get_json(brand_access)}), 200
-        else:
-            return jsonify({'status': 'unauthorized', 'message': 'incorrect password'}), 401
+            brand_access = await connect_brand(session.get('user'))
+            brand_access.pop('code')
+            return jsonify({'login': response, 'brand_connection': brand_access}), login_code
+        except Exception as e:
+            print(e)
+            print_exc()
+            return jsonify({'status': 'successful', 'message': 'Unexpected error occured while login and connecting the brand'}), 500
     else:
-        return jsonify({'status': 'bad request', 'message': 'invalid email'}), 401
+        return jsonify({'status': 'bad request', 'message': 'Invalid email'}), 401
 
 
 
