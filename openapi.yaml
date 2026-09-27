@@ -2685,13 +2685,15 @@ paths:
                         - pincode
                       properties:
                         house:
-                          type: string
-                          nullable: true
+                          type: 
+                            - string
+                            - "null"
                           example: "12A"
   
                         street:
-                          type: string
-                          nullable: true
+                          type: 
+                            - string
+                            - "null"
                           example: "MG Road"
   
                         locality:
@@ -2740,47 +2742,36 @@ paths:
             schema:
               type: object
               required:
+                - alias
                 - name
-                - number
+                - phone_number
                 - email
-                - locality
                 - city
                 - state
                 - pincode
               properties:
+                alias:
+                  type: string
+                  example: WH1
                 name:
                   type : string
                   example: Warehouse
-  
-                number:
+                phone_number:
                   type: string
                   example: "9518603545"
-  
                 email:
                   type: string
                   format: email
-                  example: warehouse@gmail.com
-  
-                house:
+                  example: warehouse@gmail.com  
+                address:
                   type: string
-                  example: "12A"
-  
-                street:
-                  type: string
-                  example: "MG Road"
-  
-                locality:
-                  type: string
-                  example: Sector 18
-  
+                  example: B225, random block, xyz colony
                 city:
                   type: string
                   example: Gurgaon
-  
                 state:
                   type: string
                   example: Haryana
-  
                 pincode:
                   type: integer
                   example: 122001
@@ -2916,13 +2907,15 @@ paths:
                       - pincode
                     properties:
                       house:
-                        type: string
-                        nullable: true
+                        type: 
+                          - string
+                          - "null"
                         example: "12A"
 
                       street:
-                        type: string
-                        nullable: true
+                        type: 
+                          - string
+                          - "null"
                         example: "MG Road"
 
                       locality:

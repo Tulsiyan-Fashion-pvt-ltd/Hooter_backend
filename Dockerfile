@@ -1,8 +1,14 @@
-FROM python:3.14-alpine3.24
+FROM python:3.14.7-trixie
 
 WORKDIR /app
 
-RUN apk add --no-cache linux-headers gcc musl-dev mariadb-dev
+RUN apt-get update && apt-get install -y \
+    gcc \
+    libc6-dev \
+    python3-dev \
+    libmariadb-dev \
+    linux-libc-dev \
+ && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
 
