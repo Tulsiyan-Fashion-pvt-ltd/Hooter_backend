@@ -43,6 +43,7 @@ async def get_warehouses():
     return jsonify(warehouses_response[0]), warehouses_response[1]
 
 
+
 @warehouse.get("/<warehouse_id>")
 @login_required
 @brand_required
@@ -54,6 +55,7 @@ async def get_warehouse(warehouse_id):
         print(warehouse)
         return jsonify({"status": "failed", "message": "Failed to fetch warehouse" }), 500
     return jsonify(warehouse)
+
 
 
 @warehouse.delete("/<warehouse_id>")
@@ -68,6 +70,7 @@ async def delete_warehouse(warehouse_id:str):
     logic_response = await services.delete_warehouse(warehouse_id)
 
     return jsonify(logic_response[0]), logic_response[1]
+
 
 
 @warehouse.put("/<warehouse_id>")
