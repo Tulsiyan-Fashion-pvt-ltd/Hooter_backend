@@ -327,12 +327,16 @@ async def get_uploaded_products(brand_id: str, status: str| None = None,
     except Exception as e:
         print(e)
         print_exc()
-        return {'status': 'failed', 'message': 'Invalid page', 'errors': e.errors()}, 422
+        return {'status': 'failed', 'message': 'Invalid page', 
+                'errors': [{
+                    'field': error.get('loc'), 
+                    'message': error.get('msg')
+                }for error in e.errors()]}, 422
 
     conditions = {'status': status,
                   'type_name': category,
-                  'offset': values.rows * (values.page -1),
-                  'limit': values.rows}
+                  'offset': values.rows * (values.page -1) if values.rows and values.page else 0,
+                  'limit': values.rows if values.rows else 10}
 
     catalog_data = await mariadb.Fetch.catalog_list(brand_id, conditions)        
     if catalog_data == "error":
