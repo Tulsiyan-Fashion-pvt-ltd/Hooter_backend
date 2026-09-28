@@ -1,8 +1,6 @@
 from inventory.warehouse import mariadb
-import json
-import indiapins
-from . import model
 from .authorize import warehouse_access_required
+
 
 async def delete_warehouse(warehouse_id: str) -> tuple[dict[str, str], int]:
     """Deletes the warehouse from rdbms(mariadb)

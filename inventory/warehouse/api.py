@@ -4,10 +4,9 @@ import inventory.routes as routes
 from . import services
 from utils.prerequirements import login_required, brand_required
 from inventory.warehouse import mariadb
-from utils.helper import Payload
 from inventory.warehouse.authorize import warehouse_api_access_required
 from security_extensions import validate_csrf
-from . import model
+from . import models
 
 warehouse = Blueprint("warehouse", __name__, url_prefix="/warehouse")
                 
@@ -18,7 +17,7 @@ warehouse = Blueprint("warehouse", __name__, url_prefix="/warehouse")
 async def add_warehouse():
     payload = await request.get_json()
     try:
-        payload = model.warehouse.model_validate(await request.get_json())
+        payload = models.warehouse.model_validate(await request.get_json())
     except Exception as e:
         return jsonify({'status': 'denied', 'message': "Invalid payload", 'errors': [
                 {
@@ -94,7 +93,7 @@ async def update_warehouse(warehouse_id: str):
             payload = {**payload, 'pincode': pincode}
 
         print(payload)
-        validated_payload = model.warehouse_update.model_validate(payload)
+        validated_payload = models.warehouse_update.model_validate(payload)
         data = validated_payload.model_dump(exclude_unset=True)
     except Exception as e:
         return jsonify({'status': 'failed', 'message': 'Invalid paylod', 

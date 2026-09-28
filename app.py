@@ -25,7 +25,6 @@ app = Quart(__name__)
 
 app = cors(app, allow_credentials=True,
     allow_origin=os.getenv("ALLOWED_ORIGINS").split(','),
-    # send_origin_wildcard=False,
     max_age=timedelta(days=1))
 
 '''Rate Limiter'''
@@ -35,6 +34,7 @@ limiter.init_app(app)
 app.secret_key = os.environ.get('HOOTER_SECRET_KEY')
 app.config["SECRET_KEY"] = os.environ.get('HOOTER_SECRET_KEY')
 app.config["SESSION_COOKIE_SAMESITE"] = "None"
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=1)
 app.config["SESSION_COOKIE_SECURE"] = bool(os.environ.get('SESSION_COOKIE_SECURE'))  # because you're using http locally
 
 '''SQL DB config'''
