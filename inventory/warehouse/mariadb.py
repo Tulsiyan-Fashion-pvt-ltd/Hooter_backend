@@ -1,20 +1,20 @@
 from quart import current_app, json
 from asyncmy.cursors import DictCursor
 from traceback import print_exc
-from datetime import datetime
 
 class Write:
     @staticmethod
-    async def warehouse(data: dict): 
+    async def warehouse(brand_id: str, data: dict): 
         pool = current_app.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor() as cursor:
                     query = '''
-                                insert into warehouse(name, brand_id, phone, address, email)
-                                values(%s, %s, %s, %s, %s)
+                                insert into warehouse(name, alias, brand_id, phone_number, email, address, city, state, pincode)
+                                values(%s, %s, %s, %s, %s, %s, %s, %s, %s)
                             '''
-                    values = (data.get("name"), data.get("brand_id"), data.get("number"), data.get("address"), data.get("email"))
+                    values = (data.get("name"), data.get("alias"), brand_id, data.get("phone_number"), data.get("email"),
+                               data.get("address"), data.get('city'), data.get('state'), data.get('pincode'))
                     
                     await cursor.execute(query, values)
                     warehouse_id = cursor.lastrowid
@@ -27,16 +27,18 @@ class Write:
 
 
     @staticmethod
-    async def delete_warehouse(warehouse_id:str): 
+    async def switch_warehouse_to_inactive(warehouse_id:str): 
         pool = current_app.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor() as cursor:
                     query = '''
-                                delete from warehouse where warehouse_id = %s
+                                UPDATE warehouse
+                                SET status='inactive'
+                                WHERE warehoue_id = %s
                             '''
                     
-                    await cursor.execute(query, (warehouse_id,))
+                    await cursor.execute(query, (warehouse_id, ))
                     await connection.commit()
                     return "ok"
             except Exception as e:
@@ -94,7 +96,7 @@ class Fetch:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
                     query = '''
-                            select warehouse_id, name, phone, address, email
+                            select warehouse_id, alias, name, phone_number, address, city, state, pincode, email, status
                             from warehouse where
                             brand_id = %s
                             '''
@@ -102,14 +104,6 @@ class Fetch:
                     await cursor.execute(query, values)
 
                     warehouses= await cursor.fetchall()
-
-                    warehouses = [{
-                        "warehouse_id": warehouse.get("warehouse_id"),
-                        "name": warehouse.get("name"),
-                        "number": warehouse.get("phone"),
-                        "email": warehouse.get("email"),
-                        "address": json.loads(warehouse.get("address"))
-                    } for warehouse in warehouses if warehouse]
 
                     return warehouses
             except Exception as e:
@@ -133,7 +127,7 @@ class Fetch:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
                     query = '''
-                            select warehouse_id, name, phone, address, email
+                            select warehouse_id, alias, name, phone_number, email, address, state, city, pincode, status
                             from warehouse where
                             warehouse_id = %s
                             '''
@@ -141,15 +135,6 @@ class Fetch:
                     await cursor.execute(query, values)
 
                     warehouse= await cursor.fetchone()
-
-                    warehouse = {
-                        "warehouse_id": warehouse.get("warehouse_id"),
-                        "name": warehouse.get("name"),
-                        "number": warehouse.get("phone"),
-                        "email": warehouse.get("email"),
-                        "address": json.loads(warehouse.get("address"))
-                    } 
-
                     return warehouse
             except Exception as e:
                 print(f"error occured while fetching the warehouse of the brand for the warehouseid=>{warehouse_id}\n{e}")

@@ -4,10 +4,9 @@ import inventory.routes as routes
 from . import services
 from utils.prerequirements import login_required, brand_required
 from inventory.warehouse import mariadb
-from utils.helper import Payload
 from inventory.warehouse.authorize import warehouse_api_access_required
-import re
 from security_extensions import validate_csrf
+from . import models
 
 warehouse = Blueprint("warehouse", __name__, url_prefix="/warehouse")
                 
@@ -16,42 +15,21 @@ warehouse = Blueprint("warehouse", __name__, url_prefix="/warehouse")
 @login_required
 @brand_required
 async def add_warehouse():
-    brand_id = session.get("brand")
-
     payload = await request.get_json()
+    try:
+        payload = models.warehouse.model_validate(await request.get_json())
+    except Exception as e:
+        return jsonify({'status': 'denied', 'message': "Invalid payload", 'errors': [
+                {
+                    "field": err["loc"],
+                    "message": err["msg"]
+                }
+                for err in e.errors(include_context=False)
+            ]}), 422
 
-    accepted_payload = ["name", "number", "email", "house", "street", "locality", "city", "state", "pincode"]
-    mandatory_payload = ["name", "number", "email", "locality", "city", "state", "pincode"]
-
-    if not (Payload.check_required_payload(payload, mandatory_payload) and
-            Payload.check_accepted_payload(payload,accepted_payload)):
-        return jsonify({"status": "denied", "message": "invalid payload"}), 400
+    response = await services.upload_warehouse(session.get('brand'), payload.model_dump())
+    return jsonify(response[0]), response[1]
     
-    pincode = str(payload.get("pincode"))
-    pincode_regex = r'^\d{6}$'
-
-    if not re.match(pincode_regex, pincode):
-        return jsonify({"status": "invalid request", "message": "pincode should be 6 digit integer value"}), 406
-    
-    data = {
-        "brand_id": brand_id,
-        "name": payload.get("name"),
-        "number": payload.get("number"),
-        "email": payload.get("email"),
-        "address": json.dumps({
-            "house": payload.get("house"),
-            "street": payload.get("street"),
-            "locality": payload.get("locality"),
-            "city": payload.get("city"),
-            "state": payload.get("state"),
-            "pincode": payload.get("pincode")
-        })
-    }
-
-    warehouse_id = await mariadb.Write.warehouse(data)
-    if warehouse_id == "error": 
-        return jsonify({"status": "failed", "message": "failed to add the warehouse"}), 500
-    return jsonify({"status": "successful", "message": "added the warehouse", "warehouse_id": warehouse_id}), 200
 
 
 @warehouse.get("")
@@ -60,10 +38,9 @@ async def add_warehouse():
 async def get_warehouses():
     brand_id = session.get("brand")
 
-    warehouses = await mariadb.Fetch.warehouses(brand_id)
-    if warehouses == "error":
-        return jsonify({"status": "failed", "message": "Failed to fetch warehouses" }), 500
-    return jsonify(warehouses)
+    warehouses_response = await services.get_warehouses(brand_id)
+    return jsonify(warehouses_response[0]), warehouses_response[1]
+
 
 
 @warehouse.get("/<warehouse_id>")
@@ -77,6 +54,7 @@ async def get_warehouse(warehouse_id):
         print(warehouse)
         return jsonify({"status": "failed", "message": "Failed to fetch warehouse" }), 500
     return jsonify(warehouse)
+
 
 
 @warehouse.delete("/<warehouse_id>")
@@ -93,6 +71,7 @@ async def delete_warehouse(warehouse_id:str):
     return jsonify(logic_response[0]), logic_response[1]
 
 
+
 @warehouse.put("/<warehouse_id>")
 @validate_csrf
 @login_required
@@ -103,16 +82,27 @@ async def update_warehouse(warehouse_id: str):
         return jsonify({"status": "invalid request", "message": "Warehouse ID not provided"}), 400
 
     payload = await request.get_json()
+    try:
+        if payload.get('pincode') and not payload.get('state'):
+            warehouse_address = await mariadb.Fetch.warehouse(warehouse_id)
+            state = warehouse_address.get('state')
+            payload = {**payload, 'state': state}
+        elif payload.get('state') and not payload.get('pincode'):
+            warehouse_address = await mariadb.Fetch.warehouse(warehouse_id)
+            pincode = warehouse_address.get('pincode')
+            payload = {**payload, 'pincode': pincode}
 
-    accepted_payload = ["name", "number", "email", "house", "street", "locality", "city", "state", "pincode"]
-    if not Payload.check_accepted_payload(payload, accepted_payload):
-        return jsonify({"status": "denied", "message": "Invalid payload"}), 400
+        print(payload)
+        validated_payload = models.warehouse_update.model_validate(payload)
+        data = validated_payload.model_dump(exclude_unset=True)
+    except Exception as e:
+        return jsonify({'status': 'failed', 'message': 'Invalid paylod', 
+                       'error': [{
+                            "field": error['loc'],
+                            "message": error['msg']
+                        }
+                        for error in e.errors(include_context=False)]}), 422
 
-    mandatory_payload = ["name", "number", "email", "locality", "city", "state", "pincode"]
-    for key in payload.keys():
-        if payload.get(key) in mandatory_payload and (payload.get(key)== None or len(payload.get(key)) == 0):
-            return jsonify({"status": "failed", "message": "Provided value can not be null"}), 400
-        
-    logic_response = await services.update_warehouse(warehouse_id, payload)
+    logic_response = await services.update_warehouse(warehouse_id, data)
 
     return jsonify(logic_response[0]), logic_response[1]

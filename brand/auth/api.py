@@ -117,7 +117,7 @@ async def connect_brand(brand_id=None) -> Response:
     if brand_id == None:
         response = await services.connect_brand(user_id)
     else:
-        response = await services.connect_brand_id(brand_id, user_id)
+        response = await services.connect_brand_id(brand_id)
 
     code = response.pop('code')
     return jsonify(response), code

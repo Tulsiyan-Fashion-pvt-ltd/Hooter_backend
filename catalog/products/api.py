@@ -6,7 +6,7 @@ from utils.prerequirements import login_required, brand_required
 from utils import helper
 from utils.helper import Payload
 import asyncio
-from catalog.providers.shopify import products as shopify_products
+# from catalog.providers.shopify import products as shopify_products
 from config import _platforms
 from . import services
 from traceback import print_exc
@@ -92,6 +92,7 @@ async def upload_single_catalog():
 #         return jsonify({"status": "failed", "message": db.get("error")}), 400
 
 #     return jsonify({"status": "successful", "message": db.get("message")}), 200
+
 
 
 @products.post('/bulk')
@@ -195,14 +196,15 @@ async def list_products():
     """
     SERVING THE LISTS OF UPLOADED CATALOG
     """
-    brand_id = session.get("brand")
+    args = request.args
+    status = args.get('status')
+    category = args.get('category')
+    rows = args.get('rows')
+    page = args.get('page')
 
-    catalog_data = await mariadb.Fetch.catalog_list(brand_id)
-    
-    if catalog_data == "error":
-        return jsonify({"status": "failed", "message": "could not fetch the catalog data"}), 500
-    
-    return jsonify({"catalog_list": catalog_data}), 200
+    brand_id = session.get("brand")
+    catalog_list_response = await services.get_uploaded_products(brand_id, status, category, rows, page)
+    return jsonify(catalog_list_response[0]), catalog_list_response[1]
 
 
 

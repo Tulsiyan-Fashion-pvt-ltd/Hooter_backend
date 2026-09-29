@@ -16,6 +16,9 @@ import s3
 from io import BytesIO
 from time import time
 from .authorize import product_access_required
+from . import models
+
+
 
 tasks = {} # object to store the tasks
 '''tasks STORES THE OBJECT WITH KEYS job_id: {}, 
@@ -299,3 +302,45 @@ def on_task_complete(task):
         tasks[job_id]["status"] = status
         tasks[job_id]["event"].set() # set the event flag as True
         # this will release the sse
+
+
+
+
+async def get_uploaded_products(brand_id: str, status: str| None = None, 
+                                category: str| None = None, rows: int = 10, page: int = 1) -> tuple[dict[str, str], int]:
+    """Returns the uploaded product's listing basic information
+    
+    Args:
+        brand_id:
+            Unique ID for the brand
+    
+    Returns:
+        tuple[]:
+            [0] -> dict with 
+                - on success -> `catalog_list`: dict[]
+                - on failure -> `status`, `message`
+            
+            [1] -> rest status code
+    """
+    try:
+        values = models.CatalogListPagitation(rows=rows, page=page)
+    except Exception as e:
+        print(e)
+        print_exc()
+        return {'status': 'failed', 'message': 'Invalid page', 
+                'errors': [{
+                    'field': error.get('loc'), 
+                    'message': error.get('msg')
+                }for error in e.errors()]}, 422
+
+    conditions = {'status': status,
+                  'type_name': category,
+                  'offset': values.rows * (values.page -1) if values.rows and values.page else 0,
+                  'limit': values.rows if values.rows else 10}
+
+    catalog_data = await mariadb.Fetch.catalog_list(brand_id, conditions)        
+    if catalog_data == "error":
+        return {"status": "failed", "message": "could not fetch the catalog data"}, 500
+    
+    return {"catalog_list": catalog_data}, 200
+    

@@ -2,6 +2,8 @@ from quart import current_app
 from asyncmy.cursors import DictCursor
 from datetime import datetime
 from traceback import print_exc
+from typing import Literal
+
 
 class Write:
     @staticmethod
@@ -307,14 +309,16 @@ class Fetch:
 
     
     @staticmethod
-    async def catalog_list(brand_id: str):
+    async def catalog_list(brand_id: str, conditions: dict[str, str|int]) -> list[dict[str, str|int]] | Literal["error"]:
         """Show the list of uploaded catalog"""
         pool = current_app.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor = DictCursor) as cursor:
                     query = '''select url.image_url, s.usku_id, s.sku_id,
-                    c.product_title, c.compared_price, c.price, c.purchasing_cost, s.status
+                    c.product_title, c.compared_price, c.price, c.purchasing_cost, s.status,
+                    s.type_id, s.type_name,
+                    s.created_at, c.updated_at
                     from usku_record as s
                     inner join catalog as c on s.usku_id = c.usku_id
                     left join product_images img on img.usku_id = s.usku_id
@@ -324,16 +328,23 @@ class Fetch:
                     and
                     url.image_variation = "webp_card"
                     where
-                    s.brand_id =  %s
+                    s.brand_id =  %s 
+                    AND (%s Is NULL OR s.type_name = %s)
+                    AND (%s Is NULL OR s.status = %s)
+                    ORDER BY c.updated_at
+                    LIMIT %s OFFSET %s 
                     '''
-                    await cursor.execute(query, (brand_id, ))
+                    values = (brand_id, conditions.get('type_name'), conditions.get('type_name'),
+                              conditions.get('status'), conditions.get('status'),
+                              conditions.get('limit', '8'), conditions.get('offset', '0'))
+                    await cursor.execute(query, values)
                     catalog_data = await cursor.fetchall()
                     
                     return catalog_data
             except Exception as e:
                 print(f"error occured while fetching the catalog lists\n{e}")
                 return "error"
-            
+
 
     @staticmethod
     async def catalog_upload_count(brand_id: str) -> dict| str:
