@@ -1320,6 +1320,13 @@ paths:
           schema:
             type: integer
             example: 1
+        - name: order
+          in: query
+          required: false
+          description: Order of the table by either create time or update time
+          schema:
+            type: string
+            enum: ['created_at', 'updated_at']
       responses:
         "200":
           description:  Successful request
@@ -1360,6 +1367,23 @@ paths:
                         updated_at:
                           type: string
                           format: date-time
+                  pagitation:
+                    type: object
+                    properties: 
+                      current_page:
+                        type: integer
+                      current_rows:
+                        type: integer
+                      has_next_page:
+                        type: boolean
+                      has_previous_pag":
+                        type: boolean
+                      rows_per_age:
+                        type: integer
+                      total_items:
+                        type: integer
+                      total_pages:
+                        type: integer
               example:
                 catalog_list:
                   - usku_id: USKU-1001
@@ -1386,6 +1410,14 @@ paths:
                     type_id: HOODIE042
                     created_at: Fri, 11 Sep 2026 05:52:26 GMT
                     updated_at: Fri, 11 Sep 2026 05:52:26 GMT
+                pagitation:
+                  current_page: 3
+                  current_rows: 2
+                  has_next_page:  false
+                  has_previous_page: true
+                  rows_per_page: 11
+                  total_items:  24
+                  total_pages: 2
         "500":
           description:
             Error fetching the catalog
