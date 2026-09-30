@@ -315,7 +315,17 @@ class Fetch:
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor = DictCursor) as cursor:
-                    query = '''select url.image_url, s.usku_id, s.sku_id,
+                    '''formatting order by input'''
+                
+                    if 'updated_at' == conditions.get('order') or not conditions.get('order'):
+                        conditions['order'] = 'c.updated_at'
+                    elif 'created_at' == conditions.get('order'):
+                        conditions['order'] = 's.created_at'
+                    else:
+                        "error"
+
+                    print(conditions.get('order'))
+                    items_query = f'''select url.image_url, s.usku_id, s.sku_id,
                     c.product_title, c.compared_price, c.price, c.purchasing_cost, s.status,
                     s.type_id, s.type_name,
                     s.created_at, c.updated_at
@@ -331,16 +341,36 @@ class Fetch:
                     s.brand_id =  %s 
                     AND (%s Is NULL OR s.type_name = %s)
                     AND (%s Is NULL OR s.status = %s)
-                    ORDER BY c.updated_at
+                    ORDER BY {conditions.get('order')}
                     LIMIT %s OFFSET %s 
                     '''
-                    values = (brand_id, conditions.get('type_name'), conditions.get('type_name'),
-                              conditions.get('status'), conditions.get('status'),
-                              conditions.get('limit', '8'), conditions.get('offset', '0'))
-                    await cursor.execute(query, values)
-                    catalog_data = await cursor.fetchall()
+
+                    items_values = (brand_id, conditions.get('type_name'), conditions.get('type_name'),
+                                    conditions.get('status'), conditions.get('status'),
+                                    conditions.get('limit', '8'), conditions.get('offset', '0'))
+
+                    print(conditions)
+                    '''fetch the page data
+                    for the pagitation we need to have more data of the page'''
+                    page_query = f'''SELECT count(usku_id) AS total_items
+                            FROM usku_record
+                            WHERE
+                            brand_id =  %s 
+                            AND (%s Is NULL OR type_name = %s)
+                            AND (%s Is NULL OR status = %s)
+                            '''
+
+                    page_value = (brand_id, conditions.get('type_name'), conditions.get('type_name'),
+                                    conditions.get('status'), conditions.get('status'))
                     
-                    return catalog_data
+                    
+                    await cursor.execute(items_query, items_values)
+                    catalog_data = await cursor.fetchall()
+
+                    await cursor.execute(page_query, page_value)
+                    page_data = await cursor.fetchone()
+
+                    return {"catalog_data": catalog_data, "page_data": page_data}
             except Exception as e:
                 print(f"error occured while fetching the catalog lists\n{e}")
                 return "error"

@@ -201,9 +201,10 @@ async def list_products():
     category = args.get('category')
     rows = args.get('rows')
     page = args.get('page')
+    order = args.get('order')
 
     brand_id = session.get("brand")
-    catalog_list_response = await services.get_uploaded_products(brand_id, status, category, rows, page)
+    catalog_list_response = await services.get_uploaded_products(brand_id, status, category, rows, page, order)
     return jsonify(catalog_list_response[0]), catalog_list_response[1]
 
 

@@ -17,7 +17,7 @@ from io import BytesIO
 from time import time
 from .authorize import product_access_required
 from . import models
-
+import math
 
 
 tasks = {} # object to store the tasks
@@ -307,7 +307,8 @@ def on_task_complete(task):
 
 
 async def get_uploaded_products(brand_id: str, status: str| None = None, 
-                                category: str| None = None, rows: int = 10, page: int = 1) -> tuple[dict[str, str], int]:
+                                category: str| None = None, 
+                                rows: int = 10, page: int = 1, order: str = 'updated_at') -> tuple[dict[str, str], int]:
     """Returns the uploaded product's listing basic information
     
     Args:
@@ -324,6 +325,8 @@ async def get_uploaded_products(brand_id: str, status: str| None = None,
     """
     try:
         values = models.CatalogListPagitation(rows=rows, page=page)
+        rows = values.rows if values.rows else 10
+        page =  values.page if values.page else 1
     except Exception as e:
         print(e)
         print_exc()
@@ -335,12 +338,25 @@ async def get_uploaded_products(brand_id: str, status: str| None = None,
 
     conditions = {'status': status,
                   'type_name': category,
-                  'offset': values.rows * (values.page -1) if values.rows and values.page else 0,
-                  'limit': values.rows if values.rows else 10}
+                  'offset': rows * (page -1) if rows and page else 0,
+                  'limit': rows,
+                  'order': order}
 
-    catalog_data = await mariadb.Fetch.catalog_list(brand_id, conditions)        
-    if catalog_data == "error":
+    sql_response = await mariadb.Fetch.catalog_list(brand_id, conditions)        
+    if sql_response == "error":
         return {"status": "failed", "message": "could not fetch the catalog data"}, 500
+
+    total_items = sql_response.get('page_data').get('total_items')
+    total_pages = math.ceil(total_items/rows)
+    pagigation = {
+        'total_items': total_items,
+        'current_page': page,
+        'rows_per_age': rows,
+        'current_rows': len(sql_response.get('catalog_data')),
+        'total_pages': total_pages,
+        'has_next_page': True if page < total_pages else False,
+        'has_previous_page': True if page > 1 else False,
+    }
     
-    return {"catalog_list": catalog_data}, 200
+    return {"catalog_list": sql_response.get('catalog_data'), "pagitation": pagigation}, 200
     
