@@ -1,89 +1,89 @@
-:root{
-    --max-height--: 7.19rem;
-    --header-font-size--: 1.125rem;
+.site-header {
+    background-color: var(--white);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
-header{
-      position: sticky;
-    top: 0px;
-    z-index: 100;
-    background: var(--main-color--);
-}
-
-div#logo{
-    height: var(--max-height--);
-    width: fit-content;
-}
-
-div#logo img{
-    height: 100%;
-  object-fit: contain;
-  object-position: center;
-}
-
-body header{
-    height: var(--max-height--);
-    max-height: var(--max-height--);
-    font-size: var(--header-font-size--);
+.header-container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 1rem 2rem;
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
-    box-shadow: 0px 4px 4px 0px #FFFFFF80;
 }
 
-
-header div#navbar-container{
+.logo a {
     display: flex;
-  justify-content: space-between;
-  max-height: 100%;
-  width: 78%;
+    align-items: center;
+    gap: 0.75rem;
 }
 
+.logo img {
+    height: 32px;
+    width: auto;
+}
 
-header ul#navigation-lists{
+.logo-text {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--navy);
+    letter-spacing: -0.5px;
+}
+
+.desktop-nav ul {
     display: flex;
-  justify-content: center;
-  align-content: center;
-  flex-flow: row nowrap;
-  gap: 2rem;
+    gap: 2.5rem;
 }
 
-header ul#navigation-lists li#homepage a{
-  color: var(--secondary-red-color-light--);
+.desktop-nav a {
+    color: var(--text-main);
+    font-weight: 500;
+    font-size: 0.95rem;
 }
 
-header ul#navigation-lists li.navigation{
-    font-family: 'DM Sans';
-    list-style: none;
+.desktop-nav a:hover {
+    color: var(--primary);
 }
 
-header ul#navigation-lists li.navigation a{
-    text-decoration: none;
-    color: white;
-    line-height: var(--max-height--);
-}
-
-header ul#navigation-lists li#contactus{
+.header-actions {
     display: flex;
+    gap: 1rem;
+    align-items: center;
 }
 
-header ul#navigation-lists li#contactus a{
-    color: var(--secondary-red-color-light--);
-    line-height: 2.9375rem;
-    max-height: 2.9375rem;
-  background: white;
-  display: flex;
-  width: 9.75rem;
-  justify-content: center;
-  align-content: center;
-  margin-top: auto;
-  margin-bottom: auto;
-  border-radius: 50rem;
-  font-weight: 700;
+.nav-btn {
+    padding: 0.5rem 1.25rem;
+    font-size: 0.9rem;
 }
 
-header ul#navigation-lists li#contactus a:hover{
-  animation: white-button-animation 0.1s linear 0s 1 forwards;
-  color: white;
-  opacity: 100%;
+.mobile-menu-btn {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+}
+
+.mobile-menu-btn span {
+    width: 25px;
+    height: 2px;
+    background-color: var(--navy);
+    transition: 0.3s;
+}
+
+@media (max-width: 1024px) {
+    .desktop-nav {
+        display: none;
+    }
+    .header-actions .nav-btn {
+        display: none;
+    }
+    .mobile-menu-btn {
+        display: flex;
+    }
 }

@@ -3,374 +3,477 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="All in one E commerce engine. Hooter provides a unified dashboard for all e commerce businesses">
-    <meta name="author" content="Hooter pvt ltd">
-    <meta name="keywords" content="Hooter, hooter, e commerce engine, ECE, ece, unified dashboard, unified platform, shopify, dashboard"> <!-- Ignored by Google -->
-
-
-    <!-- Open Graph for Facebook, LinkedIn, etc. -->
-    <meta property="og:title" content="Hooter">
-    <meta property="og:description" content="unified dashboard for all e commerce businesses, removing the clutter of dealing with bunch of dashboards">
-    <!-- <meta property="og:image" content="http://example.com/image.jpg">
-    <meta property="og:url" content="http://example.com/page.html"> -->
-
-    <!-- Twitter Cards for X (Twitter) -->
-    <meta name="twitter:card" content="Hooter is an e-commerce engine designed to replace 
-    fragmented tools and multiple dashboards with a single, unified platform. It centralizes 
-    all core e-commerce operations, eliminating operational silos and simplifying daily management.">
-    <meta name="twitter:title" content="Page Title">
-    <meta name="twitter:description" content="Page description for Twitter.">
-    <meta name="twitter:image" content="http://example.com/image.jpg">
-
-    <link rel="stylesheet" href="static/stylesheet/layout/universal_layout.css">
-    <link rel="stylesheet" href="static/stylesheet/layout/animations.css">
-    <link rel="stylesheet" href="static/stylesheet/pages/homepage.css">
-
-    <link rel="shortcut icon" href="static/favicon/favicon.ico" type="image/x-icon">
-    <title>Hooter</title>
+    <title>Hooter | E-commerce Operations Platform</title>
+    <meta name="description" content="Hooter brings your catalog, inventory, orders, shipping and analytics together so your entire commerce operation runs from one place.">
+    
+    <link rel="stylesheet" href="/static/stylesheet/layout/universal_layout.css">
+    <link rel="stylesheet" href="/static/stylesheet/pages/homepage.css">
+    <link rel="shortcut icon" href="/static/favicon/favicon.ico" type="image/x-icon">
 </head>
 <body>
-    <header>
-        {% include 'components/header.html' %}
-    </header>
+    {% include 'components/header.html' %}
 
-    <main>
-        <div id="art">
-            <div id="small-ball"></div>
-            <div id="medium-ball"></div>
-            <div id="enclosed-shape"></div>
-            <div id="mesh-art01"></div>
-            <div id="mesh-art02"></div>
-            <div id="mesh-art03"></div>
-            <div id="mesh-art04"></div>
-            <div id="mesh-art05"></div>
-            <div id="mesh-art06"></div>
-            <div id="mesh-art07"></div>
-            <div id="mesh-art08"></div>
-            <div id="mesh-art09"></div>
-            <div id="mesh-art10"></div>
-        </div>
-        <div id="thcontainer">
-            <div id="p-left">
-                <h3>Welcome to Hooter</h3>
-
-                <h2>
-                    Complete E-Commerce Engine (CECE) designed to replace fragmented tools and 
-                    <span>multiple dashboards with a single, unified platform</span>
-                </h2>
-
-                <p id="hero-para">
-                    At Hooter, we bring the power of Large Language Models, Machine Learning, 
-                    and AI Automation to help businesses thrive in the digital age. Our Agile 
-                    meeting management product ensures that your team stays on track, remains collaborative, 
-                    and efficiently tackles blockers and risks.
-                </p>
-
-                <button id="xplore">Explore Product</button>
-            </div>
-
-            <div id="p-right">
-                <img src="/static/images/hero-dashboard.png" alt="hooter dashboard pic">
-            </div>
-        </div>
-
-        <div id="short-intro-section">
-            <div id="left-box">
-                <p id="intro">We Are Hooter</p>
-
-                <p id="intro02">Your Global Partner for
-                Scalable Virtual Solutions</p>
-
-                <p id="intro03">Hooter is a trusted global leader in Virtual
-                Assistant services, delivering smart, scalable, and
-                specialized business support for over 17 years.</p>
-            </div>
-
-            <div id="right-box">
-                <p class="intro">hooter, founded in 2025 by entrepreneur Kunal Jaggi, is a 360°
-                    business solutions provider headquartered in India, with offices in the USA
-                    and a growing global presence.</p>
-                
-                <p class="intro">
-                    We empower entrepreneurs, startups, and enterprises with professionally
-                    trained virtual assistants skilled in Real Estate, Finance, Insurance, IT,
-                    Healthcare, Travel, E-Commerce, and more.
-                </p>
-                
-                <p class="intro">
-                    With a team of <span>500+ expert VAs serving 500+ businesses worldwide,</span>
-                    handle everything from admin, customer service, and call management to
-                    digital marketing, web development, and operations
-                </p>
-
-                <p class="intro">
-                    At Hooter, we go beyond support—we become your growth partner.
-                    This isn’t just outsourcing; it’s seamless, smart collaboration that frees your
-                    time and accelerates success.
-                </p>
-            </div>
-        </div>
-
-        <div id="how-it-works">
-            <div id="intro">
-                <p id="top-section">From First Click to Full Support,</p>
-                <p id="middle-section">We're With You.</p>
-                <p id="bottom-section">Discover how our streamlined step-by-step process connects you with the right virtual
-                    support — quickly and efficiently.</p>
-            </div>
+    <main class="page-content">
         
-            <div id="explaination">
-                <ul id="card-container">
-                    <li id="cards01">
-                        <p class="step">Step 01.</p>
-        
-                        <p class="task">Choose Your Plan</p>
-        
-                        <p class="explanation">We understand that each business has unique needs, which is
-                            why we offer Part-time and Full-time models to fit every
-                            budget. No matter the scale of your business, we have the
-                            right plan for you. Whether you need one assistant or a full
-                            team to handle a variety of tasks, you'll find a plan that suits
-                            your goals.</p>
-        
-                        <p class="summary-line">Pick the plan that's right for you
-                            and get started!</p>
-                    </li>
-                    <li id="cards02">
-                        <p class="step">Step 02.</p>
-        
-                        <p class="task">Meet Your
-                            Assistant</p>
-        
-                        <p class="explanation">We know how critical it is to find the perfect fit for your
-                            business. That's why we give you the opportunity to interview
-                            as many assistants as you need until you find the one that
-                            aligns perfectly with your business needs and culture. Our
-                            assistants are highly skilled, and we ensure they meet your
-                            specific requirements before you begin working together.</p>
-        
-                        <p class="summary-line">You Choose. We Deliver.</p>
-                    </li>
-                    <li id="cards03">
-                        <p class="step">Step 03.</p>
-        
-                        <p class="task">Schedule
-                            Meeting</p>
-        
-                        <p class="explanation">Once you've found your ideal assistant, we'll schedule a short
-                            conference call with your assistant's project manager and
-                            trainer. This kick-off meeting will be an opportunity to iron out
-                            the final details — whether it's task prioritization, workflows, or
-                            communication expectations.</p>
-        
-                        <p class="summary-line">Kickstart Collaboration with
-                            Clarity.</p>
-                    </li>
-                    <li id="cards04">
-                        <p class="step">Step 04.</p>
-        
-                        <p class="task">Breathe Easy</p>
-        
-                        <p class="explanation">At this point, it's all about you enjoying the relief of having a
-                            reliable professional team member who handles the little
-                            things, so you can focus on the bigger picture. We take care of
-                            the daily operational details, from administrative tasks to
-                            marketing support, so you can breathe easy knowing your
-                            business is in capable hands.</p>
-        
-                        <p class="summary-line">Exhale—Your VA's Got This.</p>
-                    </li>
-                </ul>
-            </div>
-        </div>
-
-        <div id="solution_section">
-            <div id="text-container">
-                <div id="left-section">
-                    <ul id="solution-list">
-                        <li class="solution">
-                            <div class="section-left">
-
-                            </div>
-
-                            <div class="section-right">
-                                <p class="title">Tailored Solutions for Every
-Need</p>
-
-                                <p class="summary">Services tailored to your unique business needs.</p>
-                            </div>
-                        </li>
-                        <hr>
-                        <li class="solution">
-                            <div class="section-left">
-
-                            </div>
-
-                            <div class="section-right">
-                                <p class="title">Expert Team of Professionals</p>
-
-                                <p class="summary">Reliable and trained Virtual Assistants.</p>
-                            </div>
-                        </li>
-                        <hr>
-                        <li class="solution">
-                            <div class="section-left">
-
-                            </div>
-
-                            <div class="section-right">
-                                <p class="title">Cost-Effective and Scalable</p>
-
-                                <p class="summary">Affordable, scalable support for your growth.</p>
-                            </div>
-                        </li>
-                        <hr>
-                        <li class="solution">
-                            <div class="section-left">
-
-                            </div>
-
-                            <div class="section-right">
-                                <p class="title">Focus on What Matters Most</p>
-
-                                <p class="summary">Delegate tasks and focus on what truly matters.</p>
-                            </div>
-                        </li>
-                        <hr>
-                    </ul>
-                </div>
-                
-                <div id="right-section">
-                    <p class="title">Here's how 
-                        <span style="color: var(--secondary-red-color-light--);">we nail it.</span>
+        <!-- 1. HERO -->
+        <section class="sect-hero bg-white animate-on-scroll">
+            <div class="container hero-grid">
+                <div class="hero-text">
+                    <h1 class="display-title">Every Sales Channel.<br><span class="text-primary">One Powerful Dashboard.</span></h1>
+                    <p class="body-large text-muted">
+                        Hooter brings your catalog, inventory, orders, shipping and analytics together so your entire commerce operation runs from one place.
                     </p>
-                
-                    <p class="strategy">From strategic planning to flawless execution, our case studies highlight the
-                        milestones.</p>
-                
-                    <a href="/contact" class="connect">TALK TO OUR EXPERTS AND START HIRING</a>
+                    <div class="btn-group">
+                        <a href="#get-started" class="btn btn-primary">Get Started</a>
+                        <a href="#explore" class="btn btn-outline">See How It Works</a>
+                    </div>
+                </div>
+                <div class="hero-visual">
+                    <div class="hero-composition">
+                        <!-- Mix of real commerce and product -->
+                        <div class="hc-bg-img" style="background-image: url('/static/images/shipping.jpg');"></div>
+                        <div class="hc-dashboard shadow-xl">
+                            <div class="mock-topbar"><div class="mt-dots"><span></span><span></span><span></span></div><div class="mt-url">app.hooter.com</div></div>
+                            <div class="mock-content">
+                                {% include 'components/hero_animation.html' %}
+                            </div>
+                        </div>
+                        <div class="hc-badge hc-orders shadow-md">
+                            <div class="hb-title">Orders Processing</div>
+                            <div class="hb-val">4,208</div>
+                        </div>
+                        <div class="hc-thumb shadow-md" style="background-image: url('/static/images/catalog.jpg');"></div>
+                    </div>
                 </div>
             </div>
+        </section>
 
-            <div id="img-container">
-                <img src="/static/images/man_at_desk.png" alt="section04-image">
+        <!-- 2. IMMEDIATELY EXPLAIN WHAT HOOTER IS -->
+        <section class="sect-intro bg-light animate-on-scroll">
+            <div class="container text-center">
+                <h2 class="sect-title">Your commerce operation, connected.</h2>
+                <p class="body-large text-muted">
+                    Selling across multiple channels shouldn't mean managing multiple disconnected systems. Hooter brings the operational side of your business together — from the products you sell to the orders you ship and the inventory you hold.
+                </p>
             </div>
-        </div>
-
-        <div id="plans">
-            <p class="title">Pricing Plan</p>
-            <p class="description">Choose The Plan</p>
-
-            <div class="plan-cards">
-                <ul class="cards-container">
-                    <li class="card">
-                        <div class="plan-container">
-                            <p class="amount">$99</p>
-                            <p class="duration">Per month</p>
-                        </div>
-
-                        <div class="plan-name">Lite</div>
-                        <p>Get Popular Plan From Us</p>
-                        <hr>
-
-                        <ul class="plan-desc">
-                            <li class="plan">Ad Management</li>
-                            <li class="plan">Multi-Language Content</li>
-                            <li class="plan">Conversational Bots</li>
-                            <li class="plan">SEO marketing</li>
-                            <li class="plan">UI/UX Design</li>
-                        </ul>
-
-                        <button class="choose-plan">Choose Plan</button>
-                    </li>
-
-                    <li class="card" id="featured">
-                        <div class="plan-container">
-                            <p class="amount">$99</p>
-                            <p class="duration">Per month</p>
-                        </div>
-
-                        <p class="featured">Featured</p>
-                        <div class="plan-name">Pro</div>
-                        <p>Get Popular Plan From Us</p>
-                        <hr>
-
-                        <ul class="plan-desc">
-                            <li class="plan">Ad Management</li>
-                            <li class="plan">Multi-Language Content</li>
-                            <li class="plan">Conversational Bots</li>
-                            <li class="plan">SEO marketing</li>
-                            <li class="plan">UI/UX Design</li>
-                        </ul>
-
-                        <button class="choose-plan">Choose Plan</button>
-                    </li>
-
-                    <li class="card">
-                        <div class="plan-container">
-                            <p class="amount">$99</p>
-                            <p class="duration">Per month</p>
-                        </div>
-
-                        <div class="plan-name">Enterprise</div>
-                        <p>Get Popular Plan From Us</p>
-                        <hr>
-
-                        <ul class="plan-desc">
-                            <li class="plan">Ad Management</li>
-                            <li class="plan">Multi-Language Content</li>
-                            <li class="plan">Conversational Bots</li>
-                            <li class="plan">SEO marketing</li>
-                            <li class="plan">UI/UX Design</li>
-                        </ul>
-
-                        <button class="choose-plan">Choose Plan</button>
-                    </li>
-                </ul>
-            </div>
-        </div>
-
-        <div id="focus-img">
-            <img src="/static/images/focus.png" alt="focus image">
-        </div>
-
-        <div id="foundation">
-            <h4>Milestones That Made Us</h4>
-
-            <div id="foundation-year">
-                <ul id="years">
-                    <li class="yrs">2026</li>
-                    <li class="yrs">2027</li>
-                    <li class="yrs">2028</li>
-                    <li class="yrs">2029</li>
-                    <li class="yrs">2030</li>
-                </ul>
-
-                <img src="/static/images/year-scale.png" alt="year scale" width="100%">
-            </div>
-
-            <div id="hooter-history">
-                <div id="section-left">
-                    <p class="year">2024</p>
-
-                    <p class="desc">Foundation of Hooter</p>
-                </div>
-
-                <div id="section-right">
-                    <p class="desc">Hooter was founded by Kunal with a vision to provide
-                        premium virtual assistant services that streamline business operations.
-                        Initially operating out of India, the company quickly recognized the
-                        growing demand for skilled remote support and set the foundation for
-                        becoming a global player in the virtual assistance industry.</p>
+            <div class="container flow-vis-container">
+                <div class="flow-vis">
+                    <div class="fv-top">
+                        <div class="fv-node">Amazon</div>
+                        <div class="fv-node">Shopify</div>
+                        <div class="fv-node">Flipkart</div>
+                        <div class="fv-node">Website</div>
+                    </div>
+                    <div class="fv-lines-in">
+                        <svg width="100%" height="80" preserveAspectRatio="none">
+                            <path d="M 12.5% 0 C 12.5% 40, 50% 40, 50% 80" stroke="#CBD5E1" stroke-width="2" fill="none" />
+                            <path d="M 37.5% 0 C 37.5% 40, 50% 40, 50% 80" stroke="#CBD5E1" stroke-width="2" fill="none" />
+                            <path d="M 62.5% 0 C 62.5% 40, 50% 40, 50% 80" stroke="#CBD5E1" stroke-width="2" fill="none" />
+                            <path d="M 87.5% 0 C 87.5% 40, 50% 40, 50% 80" stroke="#CBD5E1" stroke-width="2" fill="none" />
+                        </svg>
+                    </div>
+                    <div class="fv-center shadow-lg">HOOTER</div>
+                    <div class="fv-lines-out">
+                        <div class="fv-line-down"></div>
+                    </div>
+                    <div class="fv-bottom">
+                        <div class="fv-ops">Catalog &bull; Orders &bull; Inventory &bull; Shipping &bull; Returns &bull; Analytics</div>
+                    </div>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <img id="end-image" src="/static/images/a4ad5556ed1446252d87e82457d415cb6b3e4a89.jpg" alt="image" width="100%">
+        <!-- 3. INTRODUCE THE REAL-WORLD PROBLEM -->
+        <section class="sect-problem bg-deep-navy text-white animate-on-scroll p-0">
+            <div class="problem-wrapper">
+                <div class="pw-image" style="background-image: url('/static/images/warehouse.jpg');">
+                    <div class="pw-overlay"></div>
+                    <div class="pw-label pl-1">Orders</div>
+                    <div class="pw-label pl-2">Inventory</div>
+                    <div class="pw-label pl-3">Catalog</div>
+                    <div class="pw-label pl-4">Shipping</div>
+                </div>
+                <div class="pw-content text-center">
+                    <h2 class="sect-title text-white">Commerce gets complicated fast.</h2>
+                    <p class="body-large text-white" style="opacity: 0.9;">
+                        Products live in one system. Orders in another. Inventory somewhere else. Shipping has its own workflow. Reports live in spreadsheets. Hooter brings these operational pieces together.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. THE HOOTER DIFFERENCE -->
+        <section class="sect-difference bg-white animate-on-scroll">
+            <div class="container text-center">
+                <h2 class="sect-title">One operation. Not five separate workflows.</h2>
+            </div>
+            <div class="container diff-grid">
+                <div class="diff-side before">
+                    <div class="ds-title">Without Hooter</div>
+                    <div class="ds-mess">
+                        <div class="dsm-item">Amazon</div>
+                        <div class="dsm-item">Shopify</div>
+                        <div class="dsm-item">Flipkart</div>
+                        <div class="dsm-item">Warehouse</div>
+                        <div class="dsm-item">Courier</div>
+                        <div class="dsm-item">Spreadsheet</div>
+                        <div class="dsm-item">Website</div>
+                    </div>
+                </div>
+                <div class="diff-arrow text-muted">→</div>
+                <div class="diff-side after bg-light-blue">
+                    <div class="ds-title text-primary">With Hooter</div>
+                    <div class="ds-clean">
+                        <div class="dsc-top">Multiple systems</div>
+                        <div class="dsc-arrow">↓</div>
+                        <div class="dsc-hub shadow-md">HOOTER</div>
+                        <div class="dsc-arrow">↓</div>
+                        <div class="dsc-bot">One operational workflow</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. CHANNELS -->
+        <section class="sect-channels bg-light animate-on-scroll">
+            <div class="container text-center">
+                <h2 class="sect-title">Wherever you sell, keep your operations together.</h2>
+            </div>
+            <div class="container ch-grid">
+                <div class="ch-item shadow-sm">Amazon</div>
+                <div class="ch-item shadow-sm">Shopify</div>
+                <div class="ch-item shadow-sm">Flipkart</div>
+                <div class="ch-item shadow-sm">Your Website</div>
+            </div>
+        </section>
+
+        <!-- 6. CATALOG (Photography focused) -->
+        <section class="sect-catalog bg-white animate-on-scroll">
+            <div class="container feat-editorial">
+                <div class="fe-visual catalog-comp">
+                    <div class="cat-photo shadow-lg" style="background-image: url('/static/images/catalog.jpg');"></div>
+                    <div class="cat-ui-crop shadow-xl">
+                        <div class="cui-head">SKU: HD-BLK-M</div>
+                        <div class="cui-row">Stock <span>142</span></div>
+                        <div class="cui-row">MRP <span>$45.00</span></div>
+                        <div class="cui-row">Channels <span>Amz, Shp</span></div>
+                    </div>
+                </div>
+                <div class="fe-text">
+                    <h2 class="sect-title">One catalog for everything you sell.</h2>
+                    <p class="body-large text-muted">
+                        Create, organize and maintain the product information behind your commerce operation — SKUs, pricing, stock, images, specifications and channel-specific details.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 7. ORDERS (Journey focused) -->
+        <section class="sect-orders bg-light animate-on-scroll">
+            <div class="container feat-editorial reverse">
+                <div class="fe-visual order-journey-comp">
+                    <div class="oj-timeline">
+                        <div class="oj-step done">ORDER</div>
+                        <div class="oj-line done"></div>
+                        <div class="oj-step done">CONFIRMED</div>
+                        <div class="oj-line done"></div>
+                        <div class="oj-step current">QC</div>
+                        <div class="oj-line"></div>
+                        <div class="oj-step">PACKED</div>
+                        <div class="oj-line"></div>
+                        <div class="oj-step">READY TO SHIP</div>
+                        <div class="oj-line"></div>
+                        <div class="oj-step">SHIPPED</div>
+                        <div class="oj-line"></div>
+                        <div class="oj-step">DELIVERED</div>
+                    </div>
+                    <div class="oj-ui-crop shadow-md">
+                        <div class="ou-row">Order #10492 <span class="badge new">New</span></div>
+                        <div class="ou-row text-muted">Channel: Shopify</div>
+                    </div>
+                </div>
+                <div class="fe-text">
+                    <h2 class="sect-title">From order to doorstep.</h2>
+                    <p class="body-large text-muted">
+                        Bring orders from connected channels into one operational workflow and keep every step visible.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 8. INVENTORY (Warehouse focused) -->
+        <section class="sect-inventory bg-deep-navy text-white animate-on-scroll">
+            <div class="container feat-editorial">
+                <div class="fe-visual inv-warehouse-comp">
+                    <div class="iwc-structure">
+                        <div class="iwc-level l1">Warehouse <span class="qty">12,400</span></div>
+                        <div class="iwc-level l2">Zone A <span class="qty">8,100</span></div>
+                        <div class="iwc-level l3">Rack 01 <span class="qty">4,000</span></div>
+                        <div class="iwc-level l4 highlight">Shelf B <span class="qty">450</span></div>
+                        <div class="iwc-level l5">Pigeonhole 12 <span class="qty">24</span></div>
+                    </div>
+                    <div class="iwc-ui shadow-lg">
+                        <div class="iui-title text-navy">System Stock</div>
+                        <div class="iui-val text-primary">12,400</div>
+                    </div>
+                </div>
+                <div class="fe-text">
+                    <h2 class="sect-title text-white">Know what you have. Know where it is.</h2>
+                    <p class="body-large text-white" style="opacity:0.9;">
+                        Track physical stock against system stock and keep warehouse movement visible at every level.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 9. SHIPPING (Visual flow) -->
+        <section class="sect-shipping bg-white animate-on-scroll">
+            <div class="container text-center mb-5">
+                <h2 class="sect-title">Move every order forward.</h2>
+                <p class="body-large text-muted">
+                    Manage shipping allocation and operational visibility across couriers.
+                </p>
+            </div>
+            <div class="shipping-flow-vis" style="background-image: url('/static/images/shipping.jpg');">
+                <div class="sfv-overlay"></div>
+                <div class="container position-relative">
+                    <div class="sfv-track">
+                        <div class="sfv-node">Packed</div>
+                        <div class="sfv-arr">→</div>
+                        <div class="sfv-node">RTS</div>
+                        <div class="sfv-arr">→</div>
+                        <div class="sfv-node">Courier</div>
+                        <div class="sfv-arr">→</div>
+                        <div class="sfv-node">Pickup</div>
+                        <div class="sfv-arr">→</div>
+                        <div class="sfv-node">Transit</div>
+                        <div class="sfv-arr">→</div>
+                        <div class="sfv-node">Delivered</div>
+                    </div>
+                    <div class="sfv-exceptions">
+                        <div class="sfe err">Delayed</div>
+                        <div class="sfe err">Failed Pickup</div>
+                        <div class="sfe err">Lost</div>
+                        <div class="sfe err">RTO</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 10. RETURNS -->
+        <section class="sect-returns bg-light animate-on-scroll">
+            <div class="container feat-editorial reverse">
+                <div class="fe-visual text-center">
+                    <div class="ret-flow">
+                        Delivered <span class="arr">→</span> Return <span class="arr">→</span> RTO <span class="arr">→</span> QC <span class="arr">→</span> Refund
+                    </div>
+                    <div class="ret-chart shadow-sm">
+                        <div class="rc-title">Return Reasons</div>
+                        <div class="rc-bar"><div class="rc-fill" style="width: 60%"></div></div>
+                        <div class="rc-lbl">Size Issue</div>
+                    </div>
+                </div>
+                <div class="fe-text">
+                    <h2 class="sect-title">Returns are part of the operation.</h2>
+                    <p class="body-large text-muted">
+                        Track RTOs, cancellations, failed deliveries, refunds and the products most frequently coming back.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 11. ANALYTICS (The ONE big dashboard) -->
+        <section class="sect-analytics bg-light-blue animate-on-scroll">
+            <div class="container text-center">
+                <h2 class="sect-title">See the operation behind every order.</h2>
+                <p class="body-large text-muted">Compare channel orders, SKU performance, inventory health, shipping outcomes and RTO trends from one view.</p>
+            </div>
+            <div class="container">
+                <div class="analytics-giant-dashboard shadow-xl">
+                    <div class="agd-topbar">
+                        <div class="agd-title">Analytics Overview</div>
+                        <div class="agd-filter">Last 30 Days</div>
+                    </div>
+                    <div class="agd-content">
+                        <div class="agd-grid">
+                            <div class="agd-card span-2">
+                                <div class="agd-ctitle">Orders by Channel</div>
+                                <div class="agd-chart-bars">
+                                    <div class="abar" style="height:40%"></div><div class="abar" style="height:80%"></div><div class="abar" style="height:60%"></div><div class="abar" style="height:90%"></div>
+                                </div>
+                            </div>
+                            <div class="agd-card">
+                                <div class="agd-ctitle">Inventory Health</div>
+                                <div class="agd-chart-donut"></div>
+                            </div>
+                            <div class="agd-card span-3">
+                                <div class="agd-ctitle">Shipping Performance & RTO Trends</div>
+                                <div class="agd-chart-line"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 12. RECONCILIATION -->
+        <section class="sect-recon bg-white animate-on-scroll">
+            <div class="container feat-editorial">
+                <div class="fe-visual">
+                    <div class="recon-doc shadow-md">
+                        <div class="rd-head">Reconciliation Report</div>
+                        <div class="rd-table">
+                            <div class="rd-th">Order</div><div class="rd-th">Channel</div><div class="rd-th">Expected</div><div class="rd-th">Received</div><div class="rd-th">Diff</div><div class="rd-th">Status</div>
+                            <div class="rd-td">#102</div><div class="rd-td">Amazon</div><div class="rd-td">$149.00</div><div class="rd-td">$149.00</div><div class="rd-td">$0.00</div><div class="rd-td text-success">Matched</div>
+                            <div class="rd-td">#103</div><div class="rd-td">Shopify</div><div class="rd-td">$89.00</div><div class="rd-td">$89.00</div><div class="rd-td">$0.00</div><div class="rd-td text-success">Matched</div>
+                            <div class="rd-td">#104</div><div class="rd-td">Amazon</div><div class="rd-td">$210.00</div><div class="rd-td">$0.00</div><div class="rd-td text-danger">-$210.00</div><div class="rd-td text-warning">Pending</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="fe-text">
+                    <h2 class="sect-title">Know what you sold. Know what you received.</h2>
+                    <p class="body-large text-muted">
+                        Track settlement and payment reconciliation across your channels to ensure every order is accounted for.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 13. AMAZON -->
+        <section class="sect-amazon bg-light animate-on-scroll">
+            <div class="container feat-editorial reverse">
+                <div class="fe-visual text-center">
+                    <div class="amz-conn">
+                        <div class="ac-logo shadow-sm text-amz">Amazon Seller</div>
+                        <div class="ac-link">⇄</div>
+                        <div class="ac-logo shadow-sm text-primary">Hooter</div>
+                    </div>
+                    <div class="ac-ui shadow-md mt-4">
+                        <div class="acu-row">Order #114-8921</div>
+                        <div class="acu-row text-muted">Fulfillment: Merchant</div>
+                    </div>
+                </div>
+                <div class="fe-text">
+                    <h2 class="sect-title">Your Amazon business, inside Hooter.</h2>
+                    <p class="body-large text-muted">
+                        Connect your Amazon Seller account and bring supported catalog, inventory, order, shipping and reporting workflows into the same operational platform as your other sales channels.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 14. REAL COMMERCE / HUMAN -->
+        <section class="sect-human bg-deep-navy text-white animate-on-scroll p-0">
+            <div class="human-wrapper">
+                <div class="hw-image" style="background-image: url('/static/images/warehouse.jpg');"></div>
+                <div class="hw-content">
+                    <h2 class="sect-title text-white">Behind every order is an operation.</h2>
+                    <p class="body-large text-white" style="opacity:0.9;">
+                        Hooter connects the systems and processes that keep that operation moving.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 15. ONE PLATFORM (Metaphor) -->
+        <section class="sect-one-platform bg-white animate-on-scroll">
+            <div class="container text-center">
+                <h2 class="sect-title">One platform instead of multiple dashboards.</h2>
+                <div class="op-metaphor">
+                    <div class="op-streams">
+                        <div class="ops-item">Orders</div>
+                        <div class="ops-item">Inventory</div>
+                        <div class="ops-item">Catalog</div>
+                        <div class="ops-item">Shipping</div>
+                        <div class="ops-item">Returns</div>
+                        <div class="ops-item">Channels</div>
+                    </div>
+                    <div class="op-flow-down">
+                        <div class="ofd-line"></div>
+                        <div class="ofd-arrow">↓</div>
+                    </div>
+                    <div class="op-center-system shadow-lg bg-primary text-white">
+                        HOOTER
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 16. HOW HOOTER WORKS -->
+        <section class="sect-how bg-light animate-on-scroll">
+            <div class="container">
+                <div class="how-flow">
+                    <div class="hw-step">
+                        <div class="hws-num">01</div>
+                        <div class="hws-title">Connect</div>
+                        <div class="hws-desc">Connect your channels.</div>
+                    </div>
+                    <div class="hw-line"></div>
+                    <div class="hw-step">
+                        <div class="hws-num">02</div>
+                        <div class="hws-title">Synchronize</div>
+                        <div class="hws-desc">Bring supported data together.</div>
+                    </div>
+                    <div class="hw-line"></div>
+                    <div class="hw-step">
+                        <div class="hws-num">03</div>
+                        <div class="hws-title">Operate</div>
+                        <div class="hws-desc">Manage daily commerce workflows.</div>
+                    </div>
+                    <div class="hw-line"></div>
+                    <div class="hw-step">
+                        <div class="hws-num">04</div>
+                        <div class="hws-title">Analyze</div>
+                        <div class="hws-desc">Understand performance.</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 17. TRUST -->
+        <section class="sect-trust bg-white animate-on-scroll">
+            <div class="container text-center">
+                <h2 class="sect-title">Built for the complexity of modern commerce.</h2>
+                <div class="trust-grid">
+                    <div class="tg-item">Secure access</div>
+                    <div class="tg-item">Controlled data access</div>
+                    <div class="tg-item">Operational visibility</div>
+                    <div class="tg-item">Reliable workflows</div>
+                    <div class="tg-item">Privacy-conscious design</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 18. FINAL CTA -->
+        <section class="sect-cta bg-primary text-white text-center animate-on-scroll">
+            <div class="container">
+                <h2 class="sect-title text-white">Run your commerce operation from one place.</h2>
+                <p class="body-large text-white mx-auto" style="opacity:0.9;">
+                    Connect your channels. Organize your operations. Ship with confidence.
+                </p>
+                <div class="btn-group cta-group justify-content-center mt-4">
+                    <a href="#get-started" class="btn btn-white">Get Started</a>
+                    <a href="#sales" class="btn btn-outline-white">Talk to Sales</a>
+                </div>
+            </div>
+        </section>
+
     </main>
 
-    <footer>
-        {% include 'components/footer.html' %}
-    </footer>
+    {% include 'components/footer.html' %}
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('in-view');
+                    }
+                });
+            }, { threshold: 0.1 });
+            const sections = document.querySelectorAll('.animate-on-scroll');
+            sections.forEach(sec => observer.observe(sec));
+        });
+    </script>
 </body>
 </html>

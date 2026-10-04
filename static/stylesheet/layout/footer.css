@@ -1,129 +1,113 @@
-footer{
-    background-color: #220A01;
-    padding-bottom: 1rem;
+.site-footer {
+    background-color: #0B2545; /* var(--deep-navy) from homepage */
+    border-top: none;
+    padding: 6rem 0 2rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-family: 'Inter', system-ui, sans-serif;
 }
 
-footer #top-section{
+.footer-container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+.footer-grid {
+    display: grid;
+    grid-template-columns: 2fr repeat(5, 1fr);
+    gap: 3rem;
+    margin-bottom: 4rem;
+}
+
+.footer-brand .logo-text {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #FFFFFF;
+    display: block;
+    margin-bottom: 1rem;
+    letter-spacing: 0.1em;
+}
+
+.footer-desc {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    max-width: 300px;
+    margin: 0;
+}
+
+.footer-column h4 {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #FFFFFF;
+    margin: 0 0 1.5rem 0;
+    letter-spacing: 0.05em;
+}
+
+.footer-column ul {
     display: flex;
-  flex-flow: row wrap;
-  justify-content: space-between;
-  align-content: center;
-  padding: 4rem 7rem;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
 }
 
-footer #top-section .section{
-    width: 15%;
+.footer-column a {
+    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    transition: color 0.2s;
 }
 
-footer #top-section #brand{
-    width: 30%;
+.footer-column a:hover {
+    color: #0176D3;
 }
 
-footer #top-section #brand .title{
-    font-family: "DM Sans";
-/* font-weight: 700; */
-font-style: Bold;
-font-size: 2.5rem;
-line-height: 100%;
-letter-spacing: 0%;
-color: var(--secondary-red-color-light--);
-}
-
-footer #top-section #brand .desc{
-font-family: "Barlow-regular";
-font-weight: 500;
-font-style: Medium;
-font-size: 1rem;
-line-height: 100%;
-letter-spacing: 0%;
-width: 90%;
-}
-
-footer #top-section .title{
-    font-family: "Barlow";
-/* font-weight: 700; */
-font-style: Bold;
-font-size: 1.25rem;
-line-height: 1.75rem;
-letter-spacing: 0%;
-}
-
-footer #top-section .item a{
-    font-family: "Barlow-regular";
-/* font-weight: 400; */
-/* font-style: Regular; */
-font-size: 1rem;
-line-height: 1.3125rem;
-letter-spacing: 0%;
-color: white;
-}
-
-footer #top-section .container{
-    display: flex;
-  flex-flow: column nowrap;
-  gap: 1rem;
-  margin-top: 2rem;
-}
-
-footer #bottom-section #rights-n-links {
-    width: 88%;
-    height: 3.9375rem;
-    border-width: 1px;
-    opacity: 1;
-    border-radius: 5px;
-    border: 1px solid white;
-    background-color: #494949;
+.footer-bottom {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0rem 2rem;
-    margin: 0rem auto 2rem auto;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.9rem;
 }
 
-footer #bottom-section #left-section .content-desc{
-    font-family: "DM Sans";
-font-weight: 500;
-font-style: Medium;
-font-size: 1rem;
-line-height: 100%;
-letter-spacing: 0%;
-
+.footer-bottom p {
+    margin: 0;
 }
 
-
-footer #bottom-section #social-media #links{
+.footer-socials {
     display: flex;
-  justify-content: center;
-  align-content: center;
-  gap: 1rem;
+    gap: 1.5rem;
 }
 
-footer #bottom-section #social-media #links li a{
-    width: 1.5rem;
-    height: 1.5rem;
-    /* border: 1px solid white; */
-    display: inline-block;
-    background-position: center;
-    background-size: contain;
-    background-repeat: no-repeat;
+.footer-socials a {
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s;
 }
 
-footer #bottom-section #social-media #links li#twitter a{
-    background-image: url(/static/icons/twitter.png);
+.footer-socials a:hover {
+    color: #0176D3;
 }
 
-footer #bottom-section #social-media #links li#facebook a{
-    background-image: url(/static/icons/facebook.png);
+@media (max-width: 1024px) {
+    .footer-grid {
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+    .footer-brand {
+        grid-column: 1 / -1;
+    }
 }
 
-footer #bottom-section #social-media #links li#insta a{
-    background-image: url(/static/icons/insta.png);
-}
-
-footer #bottom-section #social-media #links li#youtube a{
-    background-image: url(/static/icons/youtube.png);
-}
-
-footer #bottom-section #social-media #links li#linkedin a{
-    background-image: url(/static/icons/linkedin.png);
+@media (max-width: 768px) {
+    .footer-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+    .footer-bottom {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
 }
