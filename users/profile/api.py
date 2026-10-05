@@ -8,7 +8,6 @@ profile = Blueprint("profile", __name__, url_prefix="/profile")
 
 @profile.get('')
 @login_required
-@validate_csrf
 async def fetch_user_creds():
     user = session.get('user')
     

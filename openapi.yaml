@@ -338,8 +338,6 @@ paths:
       description: Sends the logged in user credentials
       security:
         - cookieAuth: []
-      parameters:
-        - $ref: '#/components/parameters/csrf'
       responses:
         "200":
           description: Current authenticated user
