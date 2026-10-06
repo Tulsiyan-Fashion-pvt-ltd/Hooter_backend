@@ -63,6 +63,7 @@ section { padding: 100px 0; position: relative; overflow: hidden; }
 .mb-5 { margin-bottom: 40px; }
 .mt-4 { margin-top: 24px; }
 .text-center { text-align: center; }
+.text-center .body-large { margin-left: auto; margin-right: auto; }
 .mx-auto { margin-left: auto; margin-right: auto; }
 .justify-content-center { justify-content: center; }
 .position-relative { position: relative; }
