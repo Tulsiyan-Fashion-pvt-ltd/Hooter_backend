@@ -1,7 +1,5 @@
 import logging
-from utils.encryption import TokenEncryption
-from .mariadb import Fetch
-from .graphql import ShopifyGraphQLClient
+from ..client import ShopifyGraphQLClient
 from shopify_archives.exceptions import AuthorizationError, ShopifyAPIError
 import hmac
 import hashlib

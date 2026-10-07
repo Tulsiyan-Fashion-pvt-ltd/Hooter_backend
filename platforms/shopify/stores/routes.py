@@ -1,18 +1,18 @@
 from quart import Blueprint, request, jsonify, session, abort, redirect
 import requests
-from .. import mariadb
-from ..helper import validate_shopify_token, ShopifyAPIError, verify_hmac
+from . import mariadb
+from ..auth.utils import validate_shopify_token, ShopifyAPIError, verify_hmac
 from utils.prerequirements import login_required, brand_required
 import os
 from dotenv import load_dotenv
 from urllib.parse import urlencode
 import secrets
 import aiohttp
-from .. import shopify
+# from .. import shopify
 load_dotenv()
 
 
-@shopify.route("/shopify/stores", methods=["GET"])
+# @shopify.route("/shopify/stores", methods=["GET"])
 @login_required
 @brand_required
 async def list_stores():
@@ -40,7 +40,7 @@ async def list_stores():
         }), 500
     
 
-@shopify.route("/shopify/stores/<int:store_id>", methods=["DELETE"])
+# @shopify.route("/shopify/stores/<int:store_id>", methods=["DELETE"])
 async def delete_store(store_id):
     """
     Delete a store (soft delete - marks as inactive).

@@ -324,7 +324,7 @@ class Fetch:
                     else:
                         "error"
 
-                    print(conditions.get('order'))
+                    
                     items_query = f'''select url.image_url, s.usku_id, s.sku_id,
                     c.product_title, c.compared_price, c.price, c.purchasing_cost, s.status,
                     s.type_id, s.type_name,
@@ -349,7 +349,7 @@ class Fetch:
                                     conditions.get('status'), conditions.get('status'),
                                     conditions.get('limit', '8'), conditions.get('offset', '0'))
 
-                    print(conditions)
+                    
                     '''fetch the page data
                     for the pagitation we need to have more data of the page'''
                     page_query = f'''SELECT count(usku_id) AS total_items

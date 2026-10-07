@@ -1,4 +1,4 @@
-from platforms.shopify.graphql import ShopifyGraphQLClient
+from platforms.shopify.client import ShopifyGraphQLClient
 
 async def upload_product(store_id: int, product: dict):
     query = """

@@ -1,4 +1,4 @@
-from platforms.shopify.graphql import ShopifyGraphQLClient
+from platforms.shopify.client import ShopifyGraphQLClient
 
 async def upload_product_to_shopify(shop_name: str, access_token: str, product_data: dict) -> dict:
     """Upload a product to Shopify using GraphQL."""

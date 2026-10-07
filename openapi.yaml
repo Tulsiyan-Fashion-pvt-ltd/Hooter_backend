@@ -30,6 +30,8 @@ tags:
   - name: CSRF Token
     description: CSRF token API
     
+  - name: Shopify
+    description: shopify auth and platform api
 
 paths:
   /users/signup:
@@ -3180,6 +3182,111 @@ paths:
                 csrf_token: 8771267dc1e86235b5f2e28a5bd8bfeff75ca9f6ec40d1a56e5da4e759b03393
         "default":
           $ref: "#/components/responses/default"
+
+  /platforms/shopify/auth/install-store:
+    post:
+      summary:  Install the shopify store
+      description:  Install shopify store from the passed data through shopify OAuth
+      tags:
+        - Shopify
+      security:
+        - cookieAuth: []
+      requestBody:
+        description: OAuth information from shopify
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: 
+                hmac:
+                  type: string
+                  description: hmac value
+                shop:
+                  type: string
+                  description: Shopify shop name
+                state:
+                  type: string
+                  description: unique hex code to include in comparing hmac value
+      responses:
+        "200":
+          description: Successful api response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: 
+                  status:
+                    type: string
+                    example: acquired the shop name
+                  redirect:
+                    type: string
+                    example: https://{shop}/admin/oauth/authorize?{urlencode(params)}
+
+  /platforms/shopify/auth/callback:
+    get:
+      summary:  Shopify callback api
+      description: Shopify uses this url to redirect and pass the access_token, refresh_token and other credentials
+      tags:
+        - Shopify
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: hmac
+          in: query
+          required: true
+          description: Hash-based Message Authentication Code 
+          schema:
+            type: string
+        - name: code
+          in: query
+          required: true
+          description: Authorization code to exchange for refresh and access token
+          schema:
+            type: string
+        - name: shop
+          in: query
+          required: true
+          description: Shopify shop name
+          schema:
+            type: string
+        - name: state
+          in: query
+          required: true
+          description: Unique hex value
+          schema:
+            type: string
+        - name: timestamp
+          in: query
+          required: true
+          description: Timestamp
+          schema:
+            type: integer
+      responses:
+        "302":
+          description: Successfully retreived refresh token and access token
+          headers:
+            Location:
+              description: Workspace redirect
+              schema:
+                type: string
+                format: uri
+                example: https://workspace.h0oter.com
+
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 components:

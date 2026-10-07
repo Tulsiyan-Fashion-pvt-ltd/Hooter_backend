@@ -135,7 +135,6 @@ async def delete_product(usku_id: str) -> tuple[dict[str, str], int]:
 
     """
     images = await imagesql.Fetch.image(usku_id) # image object keys for s3
-    print(images)
     
     db_query = await asyncio.gather(mariadb.Write.delete_catalog(usku_id), 
                                     mongodb.Write.delete_catalog(usku_id)

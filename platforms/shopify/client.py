@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 import aiohttp
-from . import mariadb
+from .stores import mariadb
 
 load_dotenv()
 
