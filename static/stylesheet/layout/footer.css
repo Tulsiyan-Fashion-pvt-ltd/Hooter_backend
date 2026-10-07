@@ -14,10 +14,12 @@
 
 .footer-grid {
     display: grid;
-    grid-template-columns: 2fr repeat(5, 1fr);
+    grid-template-columns: 2fr repeat(5, 0fr);
     gap: 3rem;
     margin-bottom: 4rem;
 }
+
+
 
 .footer-brand .logo-text {
     font-size: 1.5rem;
