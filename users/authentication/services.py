@@ -2,7 +2,8 @@ from quart import session
 from . import mariadb
 from .utils import create_userid, hash_password, verify_hashed_password
 from utils.helper import Validate
-
+from utils.encryption import TokenEncryption
+import hashlib
 
 
 
@@ -17,12 +18,13 @@ async def signup_user(user_data: dict) -> dict[str, str|int]:
         - on failure, 409, 500
     '''
     user_creds = {
-        'name': user_data.get('name'),
+        'name': TokenEncryption.encrypt_token(user_data.get('name')),
         'userid': create_userid(),
-        'number': user_data.get('number'),
-        'email': user_data.get('email'),
+        'number': TokenEncryption.encrypt_token(user_data.get('number')),
+        'email': TokenEncryption.encrypt_token(user_data.get('email')),
+        'email_lookup': hashlib.sha256(user_data.get('email').strip().lower().encode()).hexdigest(),
         'hashed_password': hash_password(user_data.get('password')),
-        'designation': user_data.get('designation').capitalize() if user_data.get('designation') else 'Director',
+        'designation': TokenEncryption.encrypt_token(user_data.get('designation').capitalize() if user_data.get('designation') else 'Director'),
     }
 
     response = await mariadb.Write.signup_user(user_creds)
