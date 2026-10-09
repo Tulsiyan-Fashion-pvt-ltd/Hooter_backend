@@ -57,8 +57,9 @@ security = Blueprint('security', __name__, url_prefix = "/security")
 
 async def rate_limit_key():
     """Generates key based upon the user session if not then client IP address"""
-    if getattr(g, "user_id", None):
-        return f"brand:{g.user_id}"      # logged-in user
+    user_id = session.get('user')
+    if user_id:
+        return f"user:{user_id}"      # logged-in user
 
     return f"ip:{request.headers.get('CF-Connecting-IP', request.remote_addr)}"
 

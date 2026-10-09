@@ -6,6 +6,10 @@ Uses Fernet (AES-128 + HMAC) for secure encryption.
 from cryptography.fernet import Fernet
 import os
 from dotenv import load_dotenv
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.hazmat.backends import default_backend
+import base64
 
 load_dotenv()  # Load environment variables from .env file
 
@@ -20,10 +24,6 @@ class TokenEncryption:
         secret = os.environ.get('HOOTER_SECRET_KEY', 'default-key')
         # Fernet requires a 32-byte base64 key
         # We'll derive it from the secret
-        from cryptography.hazmat.primitives import hashes
-        from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-        from cryptography.hazmat.backends import default_backend
-        import base64
 
         # Use PBKDF2 to derive a proper key
         kdf = PBKDF2HMAC(

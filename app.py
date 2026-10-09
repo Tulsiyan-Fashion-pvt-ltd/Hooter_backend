@@ -112,7 +112,7 @@ if __name__ == "__main__":
     """OPENAPI DOCS"""
     api_doc(
         app,
-        config_path="./openapi.yaml",
+        config_path="./resource/openapi.yaml",
         url_prefix="/docs",
         title="Hooter internal APIs",
         editor=True
