@@ -290,9 +290,11 @@ class Fetch:
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
-                    query = '''select u.sku_id, c.product_title, c.price, c.compared_price,
-                    c.purchasing_cost, c.vendor, c.ean, c.hsn, c.net_weight_kg, c.dead_weight_kg, c.volumetric_weight_kg,
-                    c.brand_name
+                    query = '''select u.sku_id, u.type_name, u.created_at, u.status, 
+                    c.product_title, c.product_desc, c.price, c.compared_price,
+                    c.purchasing_cost, c.vendor, c.ean, c.hsn, c.gtin, c.upc, c.isbn,
+                    c.net_weight_kg, c.dead_weight_kg, c.volumetric_weight_kg, 
+                    c.brand_name, c.updated_at
                     from usku_record as u
                     inner join catalog as c on u.usku_id=c.usku_id
                     where u.usku_id = %s'''
