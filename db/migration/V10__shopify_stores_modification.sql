@@ -8,4 +8,4 @@ ALTER TABLE `shopify_stores`
     MODIFY COLUMN updated_at TIMESTAMP NOT NULL DEFAULT current_timestamp()
         ON UPDATE current_timestamp(),
     add column status enum('active', 'inactive') not null default 'active' 
-        after "refresh_token_expires_in_seconds";
+        after refresh_token_expires_in_seconds;

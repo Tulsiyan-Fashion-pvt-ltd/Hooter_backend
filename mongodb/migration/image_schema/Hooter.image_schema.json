@@ -10,4 +10,65 @@
       "required": true
     }
   ]
+},
+{
+  "type_id": "gid://shopify/TaxonomyCategory/aa-1-23-2-1",
+  "attributes": [
+    {
+      "name": "main",
+      "handle": "main",
+      "field": "main",
+      "description": "main view image of the product.",
+      "order": 1,
+      "required": true
+    },
+    {
+      "name": "Front",
+      "handle": "front",
+      "field": "front",
+      "description": "Front view image of the product.",
+      "order": 2,
+      "required": true
+    },
+    {
+      "name": "Back",
+      "handle": "back",
+      "field": "back",
+      "description": "Back view image of the product.",
+      "order": 3,
+      "required": false
+    },
+    {
+      "name": "Pallu",
+      "handle": "pallu",
+      "field": "pallu",
+      "description": "Image showing the pallu of the saree.",
+      "order": 4,
+      "required": false
+    },
+    {
+      "name": "Border",
+      "handle": "border",
+      "field": "border",
+      "description": "Image highlighting the border of the saree.",
+      "order": 5,
+      "required": false
+    },
+    {
+      "name": "Blouse",
+      "handle": "blouse",
+      "field": "blouse",
+      "description": "Image of the blouse piece included with the saree.",
+      "order": 6,
+      "required": false
+    },
+    {
+      "name": "Zoomed",
+      "handle": "zoomed",
+      "field": "zoomed",
+      "description": "Close-up image showing the product details or fabric texture.",
+      "order": 7,
+      "required": true
+    }
+  ]
 }]
