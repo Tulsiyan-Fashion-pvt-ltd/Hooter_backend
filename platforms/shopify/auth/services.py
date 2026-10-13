@@ -54,6 +54,7 @@ async def exchange_token(code) -> dict[str, str]:
 
 
 def auth_redirect():
+    """Making redirection url for seller authorization"""
     shop = session.get("shopify_shop_name")
     session["shopify_state"] = secrets.token_urlsafe(32)
     params = {

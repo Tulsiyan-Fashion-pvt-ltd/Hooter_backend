@@ -1,16 +1,24 @@
-from quart import request, jsonify, session, abort, redirect
+"""The path for the urls are going to be /platforms/amazon/auth/<endpoints>"""
+
+from quart import Blueprint, request, jsonify, session, abort, redirect
 from dotenv import load_dotenv
 from urllib.parse import urlencode
 import os
 from utils.prerequirements import login_required, brand_required
-from . import amazon
-from . import mariadb
+# from .. import amazon
+from ..stores import mariadb
 from .helper import generate_state, build_amazon_authorization_url, exchange_authorization_code
 
 load_dotenv()
 
 
-@amazon.get("/amazon/authorize")
+auth = Blueprint("amazon_auth", __name__, url_prefix="/auth")
+
+
+
+
+
+@auth.get("/amazon/authorize")
 @login_required
 @brand_required
 async def authorize_amazon():
@@ -21,7 +29,7 @@ async def authorize_amazon():
     return redirect(authorization_url)
 
 
-@amazon.get("/amazon/login")
+@auth.get("/amazon/login")
 async def amazon_login():
     amazon_callback_uri = request.args.get("amazon_callback_uri")
     amazon_state = request.args.get("amazon_state")
@@ -46,7 +54,7 @@ async def amazon_login():
     return redirect(f"{amazon_callback_uri}?{urlencode(params)}")
 
 
-@amazon.get("/amazon/callback")
+@auth.get("/amazon/callback")
 @login_required
 @brand_required
 async def amazon_callback():

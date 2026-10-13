@@ -6,11 +6,11 @@ import aiohttp
 from botocore.auth import SigV4Auth
 from botocore.awsrequest import AWSRequest
 from botocore.credentials import Credentials
-from . import mariadb
-from .helper import get_access_token
-from utils.encryption import TokenEncryption
+from .auth.helper import get_access_token
 
 load_dotenv()
+
+
 
 class AmazonAPIClient:
     """AMAZON CLIENT FOR SP-API REQUESTS"""
@@ -80,16 +80,4 @@ class AmazonAPIClient:
 
         return aws_request
 
-    async def store_credentials(self):
-        store = await mariadb.Fetch.get_store(self.brand_id, self.selling_partner_id)
-        if not store:
-            raise Exception("Amazon store not found")
-
-        encrypted_refresh_token = store.get(
-            "amazon_refresh_token_encrypted"
-        )
-
-        if not encrypted_refresh_token:
-            raise Exception("Amazon refresh token not found")
-
-        self.refresh_token = (TokenEncryption.decrypt_token(encrypted_refresh_token))
+    

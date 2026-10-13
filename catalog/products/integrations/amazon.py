@@ -1,4 +1,4 @@
-from platforms.amazon.api import AmazonAPIClient
+from platforms.amazon.client import AmazonAPIClient
 
 async def upload_product(brand_id: str, selling_partner_id: str, product: dict,) -> dict:
 
