@@ -7,6 +7,7 @@ from catalog.routes import catalog
 from brand.routes import brand
 from users.routes import users
 from platforms.routes import platforms
+from platforms import shopify, amazon
 from dotenv import load_dotenv
 import asyncmy
 from datetime import timedelta
@@ -57,6 +58,8 @@ app.register_blueprint(catalog)
 app.register_blueprint(inventory)
 app.register_blueprint(users)
 app.register_blueprint(platforms)
+app.register_blueprint(shopify.shopify)
+app.register_blueprint(amazon.amazon)
 
 
 # creating and closing of the connection pool
