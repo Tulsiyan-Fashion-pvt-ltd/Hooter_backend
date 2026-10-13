@@ -4,7 +4,7 @@
 """
 
 from quart import Blueprint, request, jsonify, session, abort, redirect
-from .utils import validate_shopify_token, ShopifyAPIError, verify_hmac
+from .utils import verify_hmac
 from utils.prerequirements import login_required, brand_required
 import os
 from dotenv import load_dotenv
@@ -15,7 +15,7 @@ from . import services
 
 load_dotenv()
 
-auth = Blueprint("auth", __name__, url_prefix = "/auth")
+auth = Blueprint("shopify_auth", __name__, url_prefix = "/auth")
 
 
 
