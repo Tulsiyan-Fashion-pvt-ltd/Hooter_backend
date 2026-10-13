@@ -218,8 +218,10 @@ async def show_product(usku_id: str):
     product_data = await asyncio.gather(mariadb.Fetch.catalog_product(usku_id),
                                         mongodb.Fetch.catalog_product(usku_id))
     
-    if product_data[0].get("error") or product_data[1].get("error"):
+    if product_data[0].get("error"):
         return jsonify({"status": "failed", "message": "request failed"}), 400
+    elif product_data[1].get('error'):
+        return jsonify(product_data[0]| {"error": "Could not fetch product details"}), 202
     else:
         # print(product_data[1])
         product_data = product_data[0] | product_data[1]
