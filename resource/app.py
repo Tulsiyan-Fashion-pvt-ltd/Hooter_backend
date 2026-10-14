@@ -68,7 +68,7 @@ async def sql_connection_startup():
         except Exception as e:
             connection = False
             count += 1
-            print(e)
+            print(e, flush=True)
             await asyncio.sleep(2)
 
 
@@ -108,8 +108,8 @@ async def login_validation():
     try:
         user = models.UserModel(account_id=account_id, password=password)
     except ValueError as e:
-        print(e)
-        print(print_exc)
+        print(e, flush=True)
+        print_exc()
         return e.errors()
 
     '''sql fetch password for the account_id'''
@@ -127,7 +127,7 @@ async def login_validation():
                 hashed_password = await cursor.fetchone()
                 hashed_password = hashed_password.get('password_encrypted') if hashed_password else None
         except Exception as e:
-            print(e)
+            print(e, flush=True)
             print_exc()
 
             return abort(500)
@@ -149,7 +149,10 @@ api_doc(
         config_path="./openapi.yaml",
         url_prefix="/docs",
         title="Hooter internal APIs",
-        editor=True
+        editor=True,
+        parameters={
+            "withCredentials": "true"
+        }
     )
 
 

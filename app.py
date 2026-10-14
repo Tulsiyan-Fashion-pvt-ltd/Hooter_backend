@@ -16,6 +16,7 @@ import aiofiles
 import json
 from swagger_ui import api_doc
 from security_extensions import limiter, security
+import logging
 
 
 load_dotenv()  # Load environment variables from .env file
@@ -103,9 +104,9 @@ async def list_taxonomy():
         app.taxonomy = json.loads(contents)
         app.taxonomy = app.taxonomy.get('verticals')
 
-    print("*********************************")
-    print("shopify taxonomy loaded")
-    print("*********************************")
+    print("*********************************", flush=True)
+    print("shopify taxonomy loaded", flush=True)
+    print("*********************************", flush=True)
 
 
 if __name__ == "__main__":
@@ -118,5 +119,5 @@ if __name__ == "__main__":
         editor=True
     )
     
-    print('''>>>\nuse @login_required when the login is required and use\nfrom utils.prerequirements import login_required''')
+    print('''>>>\nuse @login_required when the login is required and use\nfrom utils.prerequirements import login_required''', flush=True)
     app.run(debug=True, host='0.0.0.0', port=os.getenv('HOOTER_APPLICATION_PORT'))
