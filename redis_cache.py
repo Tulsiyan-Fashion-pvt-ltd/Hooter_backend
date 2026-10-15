@@ -6,14 +6,14 @@ from traceback import print_exc
 load_dotenv()
 
 r = redis.Redis(
-    host="localhost", 
+    host=os.environ.get('HOOTER_REDIS_HOST'), 
     port= int(os.environ.get("HOOTER_REDIS_PORT")), 
     password=os.environ.get("HOOTER_REDIS_PASSWORD"),
     decode_responses=True
 )
 
 
-async def store(key: str| int, value: any) -> bool:
+async def set(key: str| int, value: any, expires_in: int|None = None) -> bool:
     """It stores the the data in the redis in key, value pair. 
     The key and value eventually get pass in redis in string so the arguments should be serialized.
     
@@ -27,7 +27,10 @@ async def store(key: str| int, value: any) -> bool:
     """
     global r
     try:
-        await r.set(f"{key}", f"{value}")
+        if expires_in:
+            await r.set(f"{key}", f"{value}", ex=expires_in)
+        else:
+            await r.set(f"{key}", f"{value}")
         return True
     except Exception as e:
         print_exc()

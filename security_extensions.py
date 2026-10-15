@@ -50,6 +50,7 @@ from datetime import timedelta
 import secrets
 import hmac
 from functools import wraps
+import redis_cache
 
 security = Blueprint('security', __name__, url_prefix = "/security")
 
@@ -89,7 +90,8 @@ async def get_csrf_token() -> Response:
 async def verify_csrf() -> bool:
     '''Verfy csrf token'''
     token = request.headers.get("X-CSRF-Token", "")
-
+    print(token)
+    print(session.get('csrf_token'))
     if token == "" or not session.get('csrf_token'):
         return False
 

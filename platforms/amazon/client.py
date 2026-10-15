@@ -6,7 +6,7 @@ import aiohttp
 from botocore.auth import SigV4Auth
 from botocore.awsrequest import AWSRequest
 from botocore.credentials import Credentials
-from .auth.helper import get_access_token
+from .auth.services import get_access_token
 
 load_dotenv()
 
