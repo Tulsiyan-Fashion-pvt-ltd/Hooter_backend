@@ -1,0 +1,138 @@
+services:
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    # networks:
+    #   hooter-network:
+    ports:
+      - "9100:9000"   # S3 API
+      - "9101:9001"   # Web Console
+
+    environment:
+      MINIO_ROOT_USER: ${HOOTERS3_ACCESS_KEY_ID}
+      MINIO_ROOT_PASSWORD: ${HOOTERS3_SECRET_ACCESS_KEY}
+
+    volumes:
+      - ./data/minio:/data
+
+    command: server /data --console-address ":9001"
+
+    restart: unless-stopped
+
+  minio-init:
+    image: minio/mc:latest
+    # networks:
+    #   hooter-network:
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set myminio http://minio:9000 ${HOOTERS3_ACCESS_KEY_ID} ${HOOTERS3_SECRET_ACCESS_KEY}; do
+        sleep 1;
+      done;
+      mc mb --ignore-existing myminio/product-images;
+      exit 0;
+      "
+
+  mariadb:
+    image: mariadb:11.8
+    container_name: hooter-db
+    # networks:
+    #   hooter-network:
+    ports:
+      - "3308:3306"
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${HOOTER_DB}
+      MARIADB_USER: ${HOOTER_DB_USER}
+      MARIADB_PASSWORD: ${HOOTER_DB_PASSWORD}
+
+    volumes:
+      - ./data/mariadb:/var/lib/mysql
+
+    restart: unless-stopped
+
+  flyway:
+    image: flyway/flyway:latest
+    # networks:
+    #   hooter-network:
+    command: >
+      -connectRetries=60
+      -locations=filesystem:/flyway/sql
+      migrate
+    volumes:
+      - ./db/migration:/flyway/sql
+    environment:
+      FLYWAY_URL: jdbc:mariadb://mariadb:3306/${HOOTER_DB}
+      FLYWAY_USER: ${HOOTER_DB_USER}
+      FLYWAY_PASSWORD: ${HOOTER_DB_PASSWORD}
+    depends_on:
+      - mariadb
+
+  mongodb:
+    image: mongo:8.2
+    container_name: hooter-mongo
+    # networks:
+    #   hooter-network:
+    ports:
+      - "27000:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_DB}
+    volumes:
+      - ./data/mongodb:/data/db
+    restart: unless-stopped
+
+  redis:
+    image: redis:8.10.2
+    container_name: hooter_redis
+    # networks:
+    #   hooter-network:
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass ${HOOTER_REDIS_PASSWORD} --appendonly yes
+    volumes:
+      - ./redis_data:/data
+    restart: unless-stopped
+
+  hooter:
+    build: .
+    container_name: hooter-backend
+    # networks:
+    #   hooter-network:
+    volumes:
+      - .:/app
+    depends_on:
+      - mongodb
+      - mariadb
+      - minio
+      - redis
+    env_file:
+      - .env
+    ports:
+      - ${HOOTER_APPLICATION_PORT}:${HOOTER_APPLICATION_PORT}
+    restart: unless-stopped
+
+  hooter_docs:
+    build: resource/.
+    container_name: hooter_openapi_docs
+    # networks:
+    #   hooter-network: 
+    volumes:
+      - ./resource:/app
+    depends_on:
+      - hooter
+    env_file:
+      - resource/.env
+    ports:
+      - 5503:5503
+    restart: unless-stopped
+
+
+# networks:
+#   hooter-network:
+#     name: hooter-dev-network
