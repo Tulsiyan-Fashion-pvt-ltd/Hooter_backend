@@ -1,3 +1,5 @@
+# UNCOMMENT NETWORK IF YOU WANT TO EXPOSE THIS NETWORK FOR OUTSIDE CONNECTION, ESPECIALLY FOR DB
+
 services:
   minio:
     image: minio/minio:latest

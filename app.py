@@ -23,7 +23,7 @@ load_dotenv()  # Load environment variables from .env file
 
 app = Quart(__name__)
 
-print(bool(os.environ.get('SESSION_COOKIE_SECURE')), flush=True)
+
 app = cors(
     app, 
     allow_credentials=True,

@@ -90,8 +90,7 @@ async def get_csrf_token() -> Response:
 async def verify_csrf() -> bool:
     '''Verfy csrf token'''
     token = request.headers.get("X-CSRF-Token", "")
-    print(token)
-    print(session.get('csrf_token'))
+
     if token == "" or not session.get('csrf_token'):
         return False
 
@@ -103,7 +102,7 @@ async def verify_csrf() -> bool:
 
 def validate_csrf(func: function) -> function | Response:
     '''Wrapper to verify the CSRF token'''
-
+    
     @wraps(func)
     async def wrapper(*args, **kwargs):
         if await verify_csrf():
