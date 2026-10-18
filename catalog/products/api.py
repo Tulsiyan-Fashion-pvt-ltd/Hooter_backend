@@ -50,13 +50,12 @@ async def upload_single_catalog():
     payload = await request.get_json()
     listing_attributes = dict(payload.get('listing_attributes'))
     product_attributes = dict(payload.get("category_attributes"))
-    print(payload)
+    # print(payload)
     # variants = list(payload.get("variants"))
 
     product_attribute = await get_product_attributes(category_id, vertical=1)
 
     try:
-        print(product_attribute)
         ProductDetailsModel = models.buildProductAttributeModel(product_attribute[0].get('category_attributes'))
 
         listing_attributes = models.ListingAttributesModel.model_validate(listing_attributes).model_dump()

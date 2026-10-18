@@ -1775,8 +1775,8 @@ paths:
                   type: string
                   description:  meta contains the metadata of the images according to their image types in 
                     the serielized JSON formate mapping `image_type` to `image_order` formate
-                  example:  '{"front":3,"zoomed":6}'
-                front:
+                  example:  '{"main":1,"zoomed":7}'
+                main:
                   type: string
                   format: binary
                 zoomed:

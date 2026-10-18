@@ -344,6 +344,7 @@ class Fetch:
                     AND (%s Is NULL OR s.type_name = %s)
                     AND (%s Is NULL OR s.status = %s)
                     ORDER BY {conditions.get('order')}
+                    DESC
                     LIMIT %s OFFSET %s 
                     '''
 
@@ -435,7 +436,7 @@ class Fetch:
 
                     await cursor.execute(query, values)
                     id = await cursor.fetchone()
-                    return id
+                    return id.get('type_id') if id else None
             except Exception as e:
                 print(f"error occured while fetching the category ID for the product {usku_id}\n", e)
                 print_exc()
