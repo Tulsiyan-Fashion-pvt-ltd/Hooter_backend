@@ -16,8 +16,7 @@ auth = Blueprint("amazon_auth", __name__, url_prefix="/auth")
 
 
 
-
-@auth.get("/amazon/authorize")
+@auth.get("/authorize")
 @login_required
 @brand_required
 async def authorize_amazon():
@@ -28,7 +27,7 @@ async def authorize_amazon():
     return redirect(authorization_url)
 
 
-@auth.get("/amazon/login")
+@auth.get("/login")
 async def amazon_login():
     amazon_callback_uri = request.args.get("amazon_callback_uri")
     amazon_state = request.args.get("amazon_state")
@@ -53,7 +52,7 @@ async def amazon_login():
     return redirect(f"{amazon_callback_uri}?{urlencode(params)}")
 
 
-@auth.get("/amazon/callback")
+@auth.get("/callback")
 @login_required
 @brand_required
 async def amazon_callback():
