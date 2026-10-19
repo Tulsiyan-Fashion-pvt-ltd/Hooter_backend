@@ -8,6 +8,7 @@ import aiofiles
 import s3
 from config import _brand_image_bucket, _brand_image_root_key
 from . import mariadb
+from quart import url_for
 
 async def save_temp_image(image: FileStorage):
     """Save image to a temporary file to use it later on.
@@ -45,7 +46,7 @@ async def upload_profile_image_task(brand_id: str, image_path: Path) -> tuple[di
         Path(image_path).unlink(missing_ok=True)  # removing tempfile is ultra important
     except Exception as e:
         print(e)
-        return {"code": "9a4b457b", "message":  "Image compression failed", "status": "failed"}
+        return {"code": "9a4b457b", "message":  "Image compression failed", "status": "failed"}, 500
 
 
     '''upload to s3 and store key in the db'''
@@ -85,5 +86,6 @@ async def get_brand_profile(brand_id: str) -> tuple[dict[str, str], int]:
     elif response.get('error'):
         return {'status': 'failed', 'message': 'Could not fetch the brand profile', 'code': response.get('code')}, 500
 
-    # remove the image key witht he image url
-    
+    # replace the image key with the image url
+    response['image_url'] = f"{url_for('brand.brand_profile.get_brand_profile_image', key=response.pop('profile_img_key'))}"
+    return response, 200

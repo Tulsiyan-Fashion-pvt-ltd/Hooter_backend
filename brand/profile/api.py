@@ -3,16 +3,16 @@ These apis offers profile creation, deletion, deta retreival
 """
 
 
-from quart import Blueprint, request, jsonify, current_app, session
+from quart import Blueprint, request, jsonify, current_app, session, Response
 from utils.prerequirements import login_required, brand_required
 from security_extensions import validate_csrf
 from . import models, services
 from pathlib import Path
-import asyncio
-import secrets
-import tempfile
+import s3
 from pathlib import Path
 import aiofiles
+from config import _brand_image_bucket
+import asyncio
 
 brand_profile = Blueprint("brand_profile", __name__, url_prefix="/profile")
 
@@ -24,9 +24,18 @@ brand_profile = Blueprint("brand_profile", __name__, url_prefix="/profile")
 @login_required
 @brand_required
 async def get_brand_profile():
-    """Get brand data  name and profilepic"""
-    ...
+    """Get brand data  name and profile image"""
+    profile = await services.get_brand_profile(session.get('brand'))
+    return jsonify(profile[0]), profile[1]
 
+
+
+@brand_profile.get('/image/<path:key>')
+@login_required
+@brand_required
+async def get_brand_profile_image(key):
+    s3_response = await asyncio.to_thread(s3.read_object, _brand_image_bucket, key)
+    return Response(s3_response, mimetype="image/*")
 
 
 
@@ -59,4 +68,5 @@ async def upload_brand_profile_image():
 
      # running the background image compression and upload
     service_response = await services.upload_profile_image_task(session.get('brand'), temp_filename)
-    return jsonify(service_response[0]), services[1]
+    print(service_response)
+    return jsonify(service_response[0]), service_response[1]
