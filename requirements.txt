@@ -9,6 +9,7 @@ annotated-types==0.7.0
 anyio==4.14.2
 argon2-cffi==25.1.0
 argon2-cffi-bindings==25.1.0
+arq==0.28.0
 asgiref==3.11.0
 async-lru==2.3.0
 asyncmy==0.2.11
@@ -36,6 +37,7 @@ geographiclib==2.1
 graphql-core==3.2.11
 h11==0.16.0
 h2==4.3.0
+hiredis==3.5.0
 hpack==4.1.0
 Hypercorn==0.18.0
 hyperframe==6.1.0
@@ -63,6 +65,7 @@ propcache==0.5.2
 pycparser==3.0
 pydantic==2.12.5
 pydantic_core==2.41.5
+PyJWT==2.15.1
 pymongo==4.16.0
 python-dateutil==2.9.0.post0
 python-dotenv==1.2.1
@@ -72,7 +75,7 @@ Quart==0.20.0
 quart-cors==0.8.0
 quart-mongo==0.1.2
 quart-rate-limiter==0.12.1
-redis==8.1.0
+redis==5.3.1
 referencing==0.37.0
 requests==2.32.5
 rpds-py==2026.6.3

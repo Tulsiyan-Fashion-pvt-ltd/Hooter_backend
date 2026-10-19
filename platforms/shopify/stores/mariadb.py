@@ -1,6 +1,8 @@
 from quart import current_app, session
 from asyncmy.cursors import DictCursor
 from utils.encryption import TokenEncryption
+from typing import Literal
+from traceback import print_exc
 
 
 class Write:
@@ -37,58 +39,31 @@ class Write:
                 
 
     @staticmethod
-    async def update_store(store_id: int, user_id: str, **kwargs) -> dict:
-        """Update store details."""
+    async def update_refresh_token(store_id: int, refresh_token: str, refresh_token_expires_in: int|None = None) -> dict[Literal["status"]| Literal["message"], str| int]:
+        """Update shopify store refresh token."""
 
         pool = current_app.pool
         async with pool.acquire() as conn:
-            async with conn.cursor(cursor=DictCursor) as cursor:
-                try:
-                    # Verify ownership
-                    await cursor.execute('SELECT user_id FROM stores WHERE store_id = %s', (store_id,))
-                    result = await cursor.fetchone()
-                    if not result or result['user_id'] != user_id:
-                        return {'status': 'error', 'message': 'Unauthorized access'}
+            try:
+                encrypted_shopify_refresh_token = TokenEncryption.encrypt_token(refresh_token)
+                async with conn.cursor(cursor=DictCursor) as cursor:
+                    query = f'''
+                    UPDATE shopify_stores
+                    SET
+                    encrypted_shopify_refresh_token=%s
+                    {"refresh_token_expires_in_seconds=%s" if refresh_token_expires_in else ""}
+                    WHERE store_id=%s
+                    '''
+                    values = (encrypted_shopify_refresh_token, refresh_token_expires_in, store_id) if refresh_token_expires_in else (encrypted_shopify_refresh_token, store_id) 
 
-                    # Build update query
-                    updates = []
-                    params = []
-                    allowed_fields = ['shopify_shop_name', 'shopify_access_token', 'store_name', 'is_primary']
-
-                    for key, value in kwargs.items():
-                        if key in allowed_fields:
-                            if key == 'shopify_access_token':
-                                encrypted_token = TokenEncryption.encrypt_token(value)
-                                updates.append('shopify_access_token_encrypted = %s')
-                                params.append(encrypted_token)
-                            else:
-                                updates.append(f'{key} = %s')
-                                params.append(value)
-
-                    if not updates:
-                        return {'status': 'error', 'message': 'No valid fields to update'}
-
-                    params.append(store_id)
-                    params.append(user_id)
-
-                    # If setting as primary, unset others
-                    if 'is_primary' in kwargs and kwargs['is_primary']:
-                        await cursor.execute('''
-                            UPDATE stores SET is_primary = FALSE 
-                            WHERE user_id = %s AND is_primary = TRUE AND store_id != %s
-                        ''', (user_id, store_id))
-
-                    query = f"UPDATE stores SET {', '.join(updates)} WHERE store_id = %s AND user_id = %s"
-                    await cursor.execute(query, params)
+                    await cursor.execute(query, values)
                     await conn.commit()
+                    return {'status': 'successul'}
+            except Exception as e:
+                await conn.rollback()
+                print(f'Error updating store: {str(e)}')
+                return {'status': 'error', 'message': f'Unable to update store: {str(e)}'}
 
-                    store = await Fetch.get_store_by_id(store_id, user_id)
-                    return {'status': 'ok', 'message': 'Store updated successfully', 'store': store}
-
-                except Exception as e:
-                    await conn.rollback()
-                    print(f'Error updating store: {str(e)}')
-                    return {'status': 'error', 'message': f'Unable to update store: {str(e)}'}
 
     @staticmethod
     async def delete_store(store_id: int) -> dict:
@@ -237,7 +212,7 @@ class Write:
 
 class Fetch:
     @staticmethod
-    async def get_brand_stores() -> list:
+    async def get_brand_stores(brand_id: str) -> list:
         """Fetch all stores assigned to a brand."""
         pool = current_app.pool
         async with pool.acquire() as conn:
@@ -246,9 +221,9 @@ class Fetch:
                     await cursor.execute('''
                         SELECT s.store_id, s.shopify_shop_name
                         FROM shopify_stores s
-                        WHERE s.brand_id = %s
+                        WHERE s.brand_id = %s and status='active'
                         ORDER BY s.created_at DESC
-                    ''', (session.get("brand"),))
+                    ''', (brand_id,))
 
                     stores = await cursor.fetchall()
                     return {"stores": stores} if stores else {"stores": []}
@@ -258,45 +233,127 @@ class Fetch:
 
 
     @staticmethod
-    async def get_store_by_id(store_id: int) -> dict:
-        """Fetch a specific store. Optionally verify user ownership.
-            Returns: shopify_shop_name, shopify_access_token_encrypted
+    async def store_creds(store_id: str) -> dict[Literal["error"]| str, int| str]:
+        """Get store ID for the brand
+        
+        Args:
+            store_creds:
+                Unique ID for shopify store
+                
+        Returns:
+            - on success: store_id| None
+            - on failure: dict[`Literal["error"]`, int] 
+        """
+        pool = current_app.pool
+        async with pool.acquire() as connection:
+            try:
+                async with connection.cursor(cursor=DictCursor) as cursor:
+                    query = '''
+                        SELECT shopify_shop_name, encrypted_shopify_refresh_token, created_at, updated_at, refresh_token_expires_in_seconds
+                        FROM shopify_stores
+                        WHERE store_id = %s
+                        '''
+                    values = (store_id, )
+                    await cursor.execute(query, values)
+                    creds = await cursor.fetchone()
+
+                    if not creds:
+                        return {'error': 'Could not fetch the refresh_token'}
+
+                    encrypted_refresh_token = creds.pop('encrypted_shopify_refresh_token')
+                    creds = creds["refresh_token"] = TokenEncryption.decrypt_token(encrypted_refresh_token) if encrypted_refresh_token else None
+                    return creds
+            except Exception as e:
+                print("Could not fetch the encrypted_shopify_refresh_token")
+                print(e)
+                print_exc()
+                return {"error", e.args[0]}
+
+
+
+    @staticmethod
+    async def shope_name(store_id: str) -> str| dict[Literal["error"], int| str]:
+        """Fetch the store name for a brand.
+        
+        Args:
+            brand_id: Unique Id for brand
+
+        Returns:
+            On success: store_name 
+            On failure: `dict[Literal["error"]: int| str]`
         """
         pool = current_app.pool
         async with pool.acquire() as conn:
             async with conn.cursor(cursor=DictCursor) as cursor:
+                store = None
                 try:
                     await cursor.execute('''
-                        SELECT shopify_shop_name, status, created_at, updated_at
-                        FROM stores
+                        SELECT shopify_shop_name
+                        FROM shopify_stores
                         WHERE store_id = %s
-                    ''', (store_id, ))
+                    ''', (store_id,))
 
                     store = await cursor.fetchone()
-                    return store
                 except Exception as e:
-                    print(f'Error fetching store: {str(e)}')
-                    return {'status': 'failed', 'error': e.args[0]}
+                    print(f'Error fetching primary store: {str(e)}')
+                return store
+
+
 
     # @staticmethod
-    # async def get_primary_store(user_id: str) -> dict:
-    #     """Fetch the primary store for a user."""
+    # async def get_store_by_id(store_id: int) -> dict:
+    #     """Fetch a specific store. Optionally verify user ownership.
+    #         Returns: shopify_shop_name, shopify_access_token_encrypted
+    #     """
     #     pool = current_app.pool
     #     async with pool.acquire() as conn:
     #         async with conn.cursor(cursor=DictCursor) as cursor:
-    #             store = None
     #             try:
     #                 await cursor.execute('''
-    #                     SELECT store_id, user_id, shopify_shop_name, shopify_access_token_encrypted, store_name, is_primary
+    #                     SELECT shopify_shop_name, status, created_at, updated_at
     #                     FROM stores
-    #                     WHERE user_id = %s AND is_primary = TRUE AND is_active = TRUE
-    #                     LIMIT 1
-    #                 ''', (user_id,))
+    #                     WHERE store_id = %s
+    #                 ''', (store_id, ))
 
     #                 store = await cursor.fetchone()
+    #                 return store
     #             except Exception as e:
-    #                 print(f'Error fetching primary store: {str(e)}')
-    #             return store
+    #                 print(f'Error fetching store: {str(e)}')
+    #                 return {'status': 'failed', 'error': e.args[0]}
+
+
+    # @staticmethod
+    # async def store_id(brand_id: str) -> str| None| dict[Literal["error"], int]:
+    #     """Get store ID for the brand
+        
+    #     Args:
+    #         brand_id:
+    #             Unique ID for brands
+                
+    #     Returns:
+    #         - on success: store_id| None
+    #         - on failure: dict[`Literal["error"]`, int] 
+    #     """
+    #     pool = current_app.pool
+    #     async with pool.acquire() as connection:
+    #         try:
+    #             async with connection.cursor(cursor=DictCursor) as cursor:
+    #                 query = '''
+    #                     SELECT store_id FROM shopify_stores
+    #                     WHERE brand_id = %s
+    #                     '''
+    #                 values = (brand_id, )
+    #                 await cursor.execute(query, values)
+    #                 store_id = await cursor.fetchone()
+    #                 store_id = store_id.get('store_id') if store_id else None
+    #         except Exception as e:
+    #             print("Could not fetch the store_id")
+    #             print(e)
+    #             print_exc()
+    #             return {"error", e.args[0]}
+
+
+
 
 
     # @staticmethod

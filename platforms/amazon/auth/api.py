@@ -6,7 +6,7 @@ from urllib.parse import urlencode
 import os
 from utils.prerequirements import login_required, brand_required
 from ..stores import mariadb
-from .helper import generate_state, build_amazon_authorization_url, exchange_authorization_code
+from .services import generate_state, build_amazon_authorization_url, exchange_authorization_code
 
 load_dotenv()
 

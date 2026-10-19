@@ -91,7 +91,7 @@ async def upload_image_type(image_file: FileStorage| str, image_type: str, image
     Returns:
         None
     """
-    if type(image_file) == str:       # if image_file is a path
+    if type(image_file) == str:       # if image_file is a temp path
         image_name = Path(image_file).name
         async with aiofiles.open(image_file, "rb") as file:
             image = await file.read()
@@ -127,7 +127,8 @@ async def upload_image_type(image_file: FileStorage| str, image_type: str, image
     
     s3_upload_response = await image_variants_upload(image, image_path_object.get("url"))
     if s3_upload_response == "error":
-        raise Exception("Could not import image")
+        await mariadb.Delete.all_image(usku_id)  # try to delte the unuploaded images
+        raise Exception("Could not upload image")
     return None
 
 

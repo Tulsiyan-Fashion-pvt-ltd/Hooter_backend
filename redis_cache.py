@@ -5,15 +5,15 @@ from traceback import print_exc
 
 load_dotenv()
 
-r = redis.Redis(
-    host="localhost", 
+redis_client = redis.Redis(
+    host=os.environ.get('HOOTER_REDIS_HOST'), 
     port= int(os.environ.get("HOOTER_REDIS_PORT")), 
     password=os.environ.get("HOOTER_REDIS_PASSWORD"),
     decode_responses=True
 )
 
 
-async def store(key: str| int, value: any) -> bool:
+async def set(key: str| int, value: any, expires_in: int|None = None) -> bool:
     """It stores the the data in the redis in key, value pair. 
     The key and value eventually get pass in redis in string so the arguments should be serialized.
     
@@ -25,9 +25,12 @@ async def store(key: str| int, value: any) -> bool:
         - `True` on success
         - `False` on failure
     """
-    global r
+    global redis_client
     try:
-        await r.set(f"{key}", f"{value}")
+        if expires_in:
+            await redis_client.set(f"{key}", f"{value}", ex=expires_in)
+        else:
+            await redis_client.set(f"{key}", f"{value}")
         return True
     except Exception as e:
         print_exc()
@@ -48,9 +51,9 @@ async def get(key: str) -> str| bool:
             - string/ serialized data
             - `False` on failure
     """
-    global r
+    global redis_client
     try:
-        value = await r.get(f"{key}")
+        value = await redis_client.get(f"{key}")
         return value
     except Exception as e:
         print_exc()
@@ -70,9 +73,9 @@ async def delete(key: str| int) -> bool:
         - `True` on success
         - `False` on failure
     """
-    global r
+    global redis_client
     try:
-        await r.delete(f"s{key}")
+        await redis_client.delete(f"s{key}")
         return True
     except Exception as e:
         print_exc()
@@ -94,12 +97,12 @@ async def set_many(object: dict) -> bool:
             - `True` on success
             - `False` on failure
     """
-    global r
+    global redis_client
     try:
         if not object or type(object) != dict:
            raise ValueError
 
-        await r.mset({
+        await redis_client.mset({
             f"{key}": f"{object.get(key)}"
             for key in object if type(object) is dict
         })
@@ -123,13 +126,13 @@ async def get_many(keys: list) -> list:
             - value: list of values in the same order
             - `False` on failure
     """
-    global r
+    global redis_client
     try:
         if type(keys) != list:
             raise ValueError
 
 
-        values = await r.mget(
+        values = await redis_client.mget(
             f"{key}"
             for key in keys if keys
         )
@@ -154,12 +157,12 @@ async def delete_many(keys: list) -> bool:
             - `True`  | on success
             - `False` |  on failure
     """
-    global r
+    global redis_client
     try:
         if type(keys) != list:
             raise ValueError
 
-        await r.delete(f"{key}" for key in keys)
+        await redis_client.delete(f"{key}" for key in keys)
         return True
     except Exception as e:
         print_exc()
@@ -173,7 +176,7 @@ if __name__ == "__main__":
     async def check_connection():
         try:
           # Ping the Redis server
-          response = await r.ping()
+          response = await redis_client.ping()
           if response:
             print("Successfully connected to Redis!")
         except Exception as e:

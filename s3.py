@@ -1,13 +1,34 @@
 import os
-from config import _s3
 from werkzeug.datastructures import FileStorage
 from io import BytesIO
 import traceback
 from botocore.exceptions import ClientError
+import os
+import boto3
+from botocore.config import Config
+from dotenv import load_dotenv
+from typing import Literal
+
+load_dotenv()
+
+
+_s3 = boto3.client(
+    "s3",
+    endpoint_url=os.environ.get("HOOTERS3_ENDPOINT_URL"),  # MinIO
+    aws_access_key_id=os.environ.get("HOOTERS3_ACCESS_KEY_ID"),
+    aws_secret_access_key=os.environ.get("HOOTERS3_SECRET_ACCESS_KEY"),
+    region_name="us-east-1",
+    config=Config(
+        signature_version="s3v4",
+        s3={
+            "addressing_style": "path"
+        }
+    )
+)
 
 
 
-def upload_object(bucket: str, key: str, object: bytes = None, file: FileStorage = None)-> str:
+def upload_object(bucket: str, key: str, object: bytes = None, file: FileStorage = None)-> Literal["ok"]| Literal["error"]:
     """
     :UPLOAD OBJECT FILE:
     Uploads object file to s3 server
@@ -28,6 +49,7 @@ def upload_object(bucket: str, key: str, object: bytes = None, file: FileStorage
             bucket,
             key
         )
+        return "ok"
     except Exception as e:
         traceback.print_exc()
         print(f"error encountered while uploading object {key} to the object bucket {bucket}\n{e}")

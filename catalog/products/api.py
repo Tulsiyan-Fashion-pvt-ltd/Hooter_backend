@@ -1,6 +1,7 @@
 from quart import Blueprint, session, request, jsonify, Response, abort, url_for
 from catalog.products import mariadb
 from catalog.categories import mongodb as categories
+from catalog.categories.services import get_product_attributes
 from catalog.products import mongodb 
 from utils.prerequirements import login_required, brand_required
 from utils import helper
@@ -14,6 +15,7 @@ from uuid import uuid4
 from .sse import product_sse
 from .authorize import product_api_access_required
 from security_extensions import validate_csrf
+from . import models
 
 
 products = Blueprint("products", __name__, url_prefix = "/products")
@@ -48,25 +50,20 @@ async def upload_single_catalog():
     payload = await request.get_json()
     listing_attributes = dict(payload.get('listing_attributes'))
     product_attributes = dict(payload.get("category_attributes"))
+    # print(payload)
     # variants = list(payload.get("variants"))
 
-    # checking the payload
-    system_keys = await asyncio.gather(categories.Fetch.Attributes.Catalog.all(),
-                                       categories.Fetch.Attributes.Catalog.mandatory(),
-                                       categories.Fetch.Attributes.Category(category_id).mandatory())
+    product_attribute = await get_product_attributes(category_id, vertical=1)
 
+    try:
+        ProductDetailsModel = models.buildProductAttributeModel(product_attribute[0].get('category_attributes'))
 
-    catalog_accepted_keys = system_keys[0]
-    catalog_mandatory_keys = system_keys[1]
-    category_mandatory_keys = system_keys[2]
+        listing_attributes = models.ListingAttributesModel.model_validate(listing_attributes).model_dump()
+        product_attributes = ProductDetailsModel.model_validate(product_attributes).model_dump()
+    except Exception as e:
+        print(e)
+        return {'status': 'failed', 'message': 'Invalid payload', 'code': '24cca3b7'}, 400
 
-    if not (Payload.check_accepted_payload(listing_attributes, catalog_accepted_keys) and 
-            Payload.check_required_payload(listing_attributes, catalog_mandatory_keys)):
-        return jsonify({"status": "bad request", "message": "invalid listing attributes"}), 400
-
-    if category_mandatory_keys != [] and Payload.check_required_payload(product_attributes, category_mandatory_keys):
-        # we're not checking the accepted once because there could be custom attributes
-        return jsonify({"status": "bad request", "message": "invalid category attributes"}), 400
 
     """creating product in the system"""
     response = await services.create_product(listing_attributes = listing_attributes,

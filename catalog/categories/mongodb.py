@@ -133,14 +133,14 @@ class Fetch:
 
             # to fetch all the attribute schema any niche id
             #there is no point of checking all the fields since category fields an be many there is no way to cross check what data fields are getting stored
-            # async def all(self):
-            #     doc = await Fetch.category_schema(self.type_id)                               
-            #     if not doc:
-            #       return None
+            async def all(self):
+                doc = await Fetch.category_schema(self.type_id)                               
+                if not doc:
+                  return None
                
-            #     attributes = doc.get("attributes")
-            #     category_keys = [attribute.get("field") for attribute in attributes if attributes] if attributes else []
-            #     return category_keys
+                attributes = doc.get("attributes")
+                category_keys = [attribute.get("field") for attribute in attributes if attributes] if attributes else []
+                return category_keys
 
 
         class Catalog():
@@ -179,7 +179,9 @@ class Fetch:
 
             async def mandatory(self):
                 """fetch only mandatory attribute keys for images"""
+                print(self.type_id)
                 doc = await Fetch.image_schema(self.type_id)
+                
 
                 if doc.get('error'):
                    doc = await Fetch.image_schema("default")

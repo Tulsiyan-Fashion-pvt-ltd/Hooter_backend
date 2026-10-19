@@ -16,7 +16,9 @@ import aiofiles
 import json
 from swagger_ui import api_doc
 from security_extensions import limiter, security
-import logging
+from arq.connections import RedisSettings
+from arq import create_pool
+
 
 
 load_dotenv()  # Load environment variables from .env file
@@ -24,7 +26,9 @@ load_dotenv()  # Load environment variables from .env file
 app = Quart(__name__)
 
 
-app = cors(app, allow_credentials=True,
+app = cors(
+    app, 
+    allow_credentials=True,
     allow_origin=os.getenv("ALLOWED_ORIGINS").split(','),
     max_age=timedelta(days=1))
 
@@ -37,6 +41,8 @@ app.config["SECRET_KEY"] = os.environ.get('HOOTER_SECRET_KEY')
 app.config["SESSION_COOKIE_SAMESITE"] = "None"
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=1)
 app.config["SESSION_COOKIE_SECURE"] = bool(os.environ.get('SESSION_COOKIE_SECURE'))  # because you're using http locally
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+
 
 '''SQL DB config'''
 app.config['MYSQL_HOST'] = os.environ.get('HOOTER_DB_HOST')
@@ -86,10 +92,22 @@ async def sql_connection_startup():
             await asyncio.sleep(2)
 
 
+@app.before_serving
+async def create_arq_pool():
+    app.arq = await create_pool(
+        RedisSettings(host=os.environ.get('HOOTER_REDIS_HOST'), port=os.environ.get('HOOTER_REDIS_PORT'), password=os.environ.get('HOOTER_REDIS_PASSWORD'))
+    )
+
+
 @app.after_serving
 async def sql_connection_shutdown():
     app.pool.close()
     await app.pool.wait_closed()
+
+
+@app.after_serving
+async def close_arq_pool():
+    await app.arq.aclose()
 
 
 

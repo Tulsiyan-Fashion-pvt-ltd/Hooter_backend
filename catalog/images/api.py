@@ -47,6 +47,7 @@ async def upload_image(usku_id):
     if type_id:
         try:
             img_mandatory_keys = await categories_mongodb.Fetch.Attributes.Images(type_id).mandatory()
+            
             '''upload need to check for all the mandatory keys whether provided or not'''
             if not Payload.check_required_payload(metadata, img_mandatory_keys):
                 return jsonify({'status': 'failed', 'message': 'mandatory image attributes not provided'}), 400

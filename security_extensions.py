@@ -50,6 +50,7 @@ from datetime import timedelta
 import secrets
 import hmac
 from functools import wraps
+import redis_cache
 
 security = Blueprint('security', __name__, url_prefix = "/security")
 
@@ -101,7 +102,7 @@ async def verify_csrf() -> bool:
 
 def validate_csrf(func: function) -> function | Response:
     '''Wrapper to verify the CSRF token'''
-
+    
     @wraps(func)
     async def wrapper(*args, **kwargs):
         if await verify_csrf():

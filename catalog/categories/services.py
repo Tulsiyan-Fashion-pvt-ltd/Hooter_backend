@@ -103,9 +103,9 @@ async def next_level_attributes(id: str, vertical: int) -> list:
 
 
 
-@alru_cache(maxsize=128, ttl=900)
 @check_taxonomy
-async def get_product_attributes(category_id, vertical):
+@alru_cache(maxsize=128, ttl=900)
+async def get_product_attributes(category_id: str, vertical: int| None = None):
     """Get the object of product attributes including `listing_attributes`, `category_attributes`
     and `image_attributes`. 
 
@@ -134,6 +134,10 @@ async def get_product_attributes(category_id, vertical):
     if catalog_schema.get('error') is not None:
         return {"status": "interrupted", "message": "attributes are not available for this product"}, 500
 
+
+    if category_schema.get("attributes") == None and vertical == None:
+        return {'status': 'failed', 'message': 'Vertical is required for this product'}, 400
+    
     category_attributes = category_schema.get("attributes")  if category_schema.get("attributes") != None else await get_taxonomy_attributes(vertical, category_id)
 
     if category_attributes[0] == "error":
