@@ -33,6 +33,7 @@ services:
         sleep 1;
       done;
       mc mb --ignore-existing myminio/product-images;
+      mc mb --ignore-existing myminio/assets;
       exit 0;
       "
 
@@ -100,6 +101,12 @@ services:
     volumes:
       - ./redis_data:/data
     restart: unless-stopped
+
+  arq_worker:
+    build: .
+    # networks:
+    #   hooter-network:
+    command: arq tasks.WorkerSettings
 
   hooter:
     build: .

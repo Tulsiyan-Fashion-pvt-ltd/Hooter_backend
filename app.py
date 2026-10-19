@@ -16,7 +16,9 @@ import aiofiles
 import json
 from swagger_ui import api_doc
 from security_extensions import limiter, security
-import logging
+from arq.connections import RedisSettings
+from arq import create_pool
+
 
 
 load_dotenv()  # Load environment variables from .env file
@@ -90,10 +92,22 @@ async def sql_connection_startup():
             await asyncio.sleep(2)
 
 
+@app.before_serving
+async def create_arq_pool():
+    app.arq = await create_pool(
+        RedisSettings(host=os.environ.get('HOOTER_REDIS_HOST'), port=os.environ.get('HOOTER_REDIS_PORT'), password=os.environ.get('HOOTER_REDIS_PASSWORD'))
+    )
+
+
 @app.after_serving
 async def sql_connection_shutdown():
     app.pool.close()
     await app.pool.wait_closed()
+
+
+@app.after_serving
+async def close_arq_pool():
+    await app.arq.aclose()
 
 
 
