@@ -104,9 +104,10 @@ class Fetch:
                     await cursor.execute(query, values)
 
                     warehouses= await cursor.fetchall()
-
+                    await connection.commit()
                     return warehouses
             except Exception as e:
+                await connection.rollback()
                 print(f"error occured while fetching the warehouse of the brand for the brandid=>{brand_id}\n{e}")
                 return {"error": e.args[0]}
 
@@ -135,8 +136,10 @@ class Fetch:
                     await cursor.execute(query, values)
 
                     warehouse= await cursor.fetchone()
+                    await connection.commit()
                     return warehouse
             except Exception as e:
+                await connection.rollback()
                 print(f"error occured while fetching the warehouse of the brand for the warehouseid=>{warehouse_id}\n{e}")
                 print_exc()
                 return {"error": e.args[0]}

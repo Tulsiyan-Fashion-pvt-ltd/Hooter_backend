@@ -87,5 +87,6 @@ async def get_brand_profile(brand_id: str) -> tuple[dict[str, str], int]:
         return {'status': 'failed', 'message': 'Could not fetch the brand profile', 'code': response.get('code')}, 500
 
     # replace the image key with the image url
-    response['image_url'] = f"{url_for('brand.brand_profile.get_brand_profile_image', key=response.pop('profile_img_key'))}"
+    image_key  = response.pop('profile_img_key')
+    response['image_url'] = f"{url_for('brand.brand_profile.get_brand_profile_image', key=image_key)}" if image_key else None
     return response, 200

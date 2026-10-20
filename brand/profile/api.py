@@ -68,5 +68,4 @@ async def upload_brand_profile_image():
 
      # running the background image compression and upload
     service_response = await services.upload_profile_image_task(session.get('brand'), temp_filename)
-    print(service_response)
     return jsonify(service_response[0]), service_response[1]

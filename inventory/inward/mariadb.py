@@ -136,6 +136,7 @@ class Update:
                     await connection.commit()
                     return grn_id
             except Exception as e:
+                await connection.rollback()
                 print(f"Error countered while updating the inward for brand {brand_id}\n {e}")
                 return "error"
             
@@ -158,8 +159,10 @@ class Fetch:
                     values = (brand_id, )
                     await cursor.execute(query, values)
                     count = await cursor.fetchone()
+                    await connection.commit()
                     return count if count else {}
             except Exception as e:
+                await connection.rollback()
                 print(f"error encountered whie fetching the inward count for {brand_id}\n{e}")
                 return "error"
     
@@ -198,7 +201,8 @@ class Fetch:
                         '''
                         values = await cursor.execute(query, values)
                         inward_items = await cursor.fetchall() 
-
+                        await connection.commit()
+                        
                         if not inward or not inward_items:
                             return "error"
                         else:
@@ -242,8 +246,9 @@ class Fetch:
                     #     items = await cursor.fetchall()
 
                     #     inwards[index]["items"] = items if items else {}
-
+                    await connection.commit()
                     return inwards
             except Exception as e:
+                await connection.rollback()
                 print(f"error encountered whie fetching the inward for {brand_id}\n{e}")
                 return "error"

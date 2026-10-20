@@ -115,6 +115,7 @@ class Write:
                     return "ok"
                 
             except Exception as e:
+                await connection.rollback()
                 print(e)
                 print_exc()
                 return {"error": e.args[0]} 
@@ -138,8 +139,10 @@ class Fetch:
                     await cursor.execute(query, (user_id, ))
 
                     brand_access = await cursor.fetchall()
+                    await connection.commit()
                     return brand_access
                 except Exception as e:
+                    await connection.rollback()
                     print(f"error occured during fetching brand access of the user {user_id}\n{e}")
                     return None
                 
@@ -154,9 +157,11 @@ class Fetch:
 
                     await cursor.execute(query, (brand_id, ))
                     result = await cursor.fetchone() 
+                    await connection.commit()
                     return "available" if result and result.get('1') == 1 else "unavailable"
                 except Exception as e:
-                    print(f"error during checking the brand availability")
+                    await connection.rollback()
+                    print(f"error during checking the brand availability", e)
                     return ("error", "unable to fulfill the request")
 
 
@@ -174,7 +179,9 @@ class Fetch:
                     result = await cursor.fetchone()
                     brand_name = result.get('brand_name')
                     # print(brand_name)
+                    await connection.commit()
                     return brand_name
                 except Exception as e:
+                    await connection.rollback()
                     print(f"error during fetching the brand_name from the brand table in brand_name_by_id\n{e}")
                     return ("error", "unable to fulfill the request")

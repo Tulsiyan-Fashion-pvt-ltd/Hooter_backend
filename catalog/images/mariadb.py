@@ -58,6 +58,7 @@ class Delete:
                     await connection.commit()
                     return {"error": None}
             except Exception as e:
+                await connection.rollback()
                 print(f"error occured while deleting the images of {usku_id}\n{e}")
                 return {"error": e.args[0]}
 
@@ -76,6 +77,7 @@ class Delete:
                     await connection.commit()
                     return {"error": None}
             except Exception as e:
+                await connection.rollback()
                 print(f"error occured while deleting the images of {usku_id}\n{e}")
                 return {"error": e.args[0]}
 
@@ -129,8 +131,10 @@ class Fetch:
                         values = (usku_id, )
                         await cursor.execute(query, values)
                         urls = await cursor.fetchall()
-                    
+
+                    await connection.commit()
                     return urls
             except Exception as e:
+                await connection.rollback()
                 print(f"error occured while fetching the image urls\n{e}")
                 return "error"

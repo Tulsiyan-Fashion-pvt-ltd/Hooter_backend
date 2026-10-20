@@ -224,8 +224,10 @@ class Fetch:
 
                     await cursor.execute(query)
                     count = await cursor.fetchone()
+                    await connection.commit()
                     return count.get('count') if count else 0
             except Exception as e:
+                await connection.rollback()
                 print(f"error encountered during fetching catalog counts\n{e}")
                 return ("error", "error in count_catalogs")
 
@@ -242,12 +244,13 @@ class Fetch:
 
                     await cursor.execute(query, values) 
                     sku = await cursor.fetchone()
-                    
+                    await connection.commit()
                     if sku:
                         return sku
                     else:
                         return {}
             except Exception as e:
+                await connection.rollback()
                 print(f"error occured while fetching the sku_id from the brand {brand_id}\n{e}")
                 return None
 
@@ -262,8 +265,10 @@ class Fetch:
 
                     await cursor.execute(query, (brand_id, ))
                     catalog_available = await cursor.fetchone()
+                    await connection.commit()
                     return True if catalog_available and catalog_available.get('1') else False
             except Exception as e:
+                await connection.rollback()
                 print(f"error occured while fetching the catalog on is_exists_catalog function\n{e}")
                 return ("error", "could not fetch the availability from the usku_record")
                 
@@ -277,8 +282,10 @@ class Fetch:
 
                     await cursor.execute(query, (usku_id, ))
                     usku = await cursor.fetchone()
+                    await connection.commit()
                     return True if usku and usku.get('1') else False
             except Exception as e:
+                await connection.rollback()
                 print(f"error occured while fetching the usku_record on is_usku_id_exists function\n{e}")
                 return ("error", "could not fetch the availability from the usku_record")
 
@@ -303,8 +310,10 @@ class Fetch:
 
                     await cursor.execute(query, values)
                     catalog = await cursor.fetchone()
+                    await connection.commit()
                     return catalog if catalog else {}
             except Exception as e:
+                await connection.rollback()
                 print(f"error occured while fetching the catalog data for {usku_id}\n{e}")
                 return {"error": e.args[0]}
 
@@ -335,7 +344,7 @@ class Fetch:
                     inner join catalog as c on s.usku_id = c.usku_id
                     left join product_images img on img.usku_id = s.usku_id
                     and
-                    img.image_type="front"
+                    img.image_type="main"
                     left join image_urls url on url.image_id = img.id
                     and
                     url.image_variation = "webp_card"
@@ -372,9 +381,10 @@ class Fetch:
 
                     await cursor.execute(page_query, page_value)
                     page_data = await cursor.fetchone()
-
+                    await connection.commit()
                     return {"catalog_data": catalog_data, "page_data": page_data}
             except Exception as e:
+                await connection.rollback()
                 print(f"error occured while fetching the catalog lists\n{e}")
                 return "error"
 
@@ -410,8 +420,10 @@ class Fetch:
                     
                     await cursor.execute(query, (brand_id, ))
                     catalog_data = await cursor.fetchone()
+                    await connection.commit()
                     return catalog_data
             except Exception as e:
+                await connection.rollback()
                 print(f"error occured while fetching the catalog upload counts\n{e}")
                 return "error"
 
@@ -436,8 +448,10 @@ class Fetch:
 
                     await cursor.execute(query, values)
                     id = await cursor.fetchone()
+                    await connection.commit()
                     return id.get('type_id') if id else None
             except Exception as e:
+                await connection.rollback()
                 print(f"error occured while fetching the category ID for the product {usku_id}\n", e)
                 print_exc()
                 return None
@@ -464,10 +478,12 @@ class Fetch:
                             '''
                     value = (brand_id, )
                     await cursor.execute(query, value)
+                    await connection.commit()
                     categories = await cursor.fetchall()
                     return {"categories": categories, "error": None}                    
                     
             except Exception as e:
+                await connection.rollback()
                 print(e)
                 print_exc()
                 return {"error": e.args[0]}

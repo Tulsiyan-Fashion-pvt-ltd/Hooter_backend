@@ -226,8 +226,10 @@ class Fetch:
                     ''', (brand_id,))
 
                     stores = await cursor.fetchall()
+                    await conn.commit()
                     return {"stores": stores} if stores else {"stores": []}
                 except Exception as e:
+                    await conn.rollback()
                     print(f'Error fetching brand stores: {str(e)}')
                     return {'status': 'failed', 'error': e.args[0]}
 
@@ -256,7 +258,7 @@ class Fetch:
                     values = (store_id, )
                     await cursor.execute(query, values)
                     creds = await cursor.fetchone()
-
+                    await connection.commit()
                     if not creds:
                         return {'error': 'Could not fetch the refresh_token'}
 
@@ -264,6 +266,7 @@ class Fetch:
                     creds = creds["refresh_token"] = TokenEncryption.decrypt_token(encrypted_refresh_token) if encrypted_refresh_token else None
                     return creds
             except Exception as e:
+                await connection.rollback()
                 print("Could not fetch the encrypted_shopify_refresh_token")
                 print(e)
                 print_exc()
@@ -294,7 +297,10 @@ class Fetch:
                     ''', (store_id,))
 
                     store = await cursor.fetchone()
+                    await conn.commit()
+                    return store.get('shopify_shop_name') if store else None
                 except Exception as e:
+                    await conn.rollback()
                     print(f'Error fetching primary store: {str(e)}')
                 return store
 

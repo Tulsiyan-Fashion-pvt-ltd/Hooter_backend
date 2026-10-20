@@ -45,5 +45,6 @@ class Fetch:
                     await connection.commit()
                     return count.get("count") if count else "error"
             except Exception as e:
+                await connection.rollback()
                 print(f"error occured while fetching the grn count for the inward {inward_id}\n{e}")
                 return {"error", e.args[0]}
