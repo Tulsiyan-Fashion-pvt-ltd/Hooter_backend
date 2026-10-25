@@ -20,7 +20,7 @@ class CatalogListPagitation(BaseModel):
 
 
 class ListingAttributesModel(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
 
     sku_id: str = Field(..., max_length=100)
     product_title: str = Field(..., max_length=200)

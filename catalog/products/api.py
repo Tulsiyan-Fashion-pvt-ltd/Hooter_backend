@@ -4,8 +4,6 @@ from catalog.categories import mongodb as categories
 from catalog.categories.services import get_product_attributes
 from catalog.products import mongodb 
 from utils.prerequirements import login_required, brand_required
-from utils import helper
-from utils.helper import Payload
 import asyncio
 # from catalog.providers.shopify import products as shopify_products
 from config import _platforms
