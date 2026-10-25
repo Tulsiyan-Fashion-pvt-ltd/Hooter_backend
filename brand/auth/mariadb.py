@@ -3,6 +3,7 @@ from quart import current_app
 from asyncmy.cursors import DictCursor
 from traceback import print_exc
 from .authorize import brand_access_required
+from utils.encryption import TokenEncryption
 
 # handling the database quiries related to brands to handle brands
 
@@ -29,29 +30,27 @@ class Write:
                             brand_id,
                             entity_name,
                             brand_name,
-                            gstin,
+                            gtin,
                             hooter_plan,
                             address,
                             city,
                             state,
                             pincode,
-                            established_year,
-                            poc
-                        ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s, %s, %s)
+                            established_year
+                        ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s, %s)
                     """
 
                     values = (
                         brand_data.get('brand_id'),
                         brand_data.get('entity_name'),
                         brand_data.get('brand_name'),
-                        brand_data.get('gstin') if brand_data.get('gstin') and brand_data.get('gstin') != "" else None,
+                        brand_data.get('gtin') if brand_data.get('gtin') and brand_data.get('gtin') != "" else None,
                         brand_data.get('plan'),
                         brand_data.get('address'),
                         brand_data.get('city'),
                         brand_data.get('state'),
                         brand_data.get('pincode'),
-                        brand_data.get('estyear'),
-                        user_id
+                        brand_data.get('estyear')
                     )
                     await cursor.execute(query, values)
 
@@ -65,6 +64,44 @@ class Write:
                     print_exc()
                     await connection.rollback()
                     return {"error": e.args[0]}
+
+
+    @staticmethod
+    async def add_poc(brand_id: str, data: dict) -> dict[str, str|int]:
+        """Add new poc for the brand
+        
+        Args:
+            brand_id: Unique ID for brand
+            data: dict object for poc containing poc name, number, email and title(optional)
+            
+        Returns:
+            Returns dict with `status` successful or failed and `poc_id` and if failed then `code` and `error` in the dict
+        """
+        pool = current_app.pool
+        async with pool.acquire() as connection:
+            try:
+                async with connection.cursor(cursor=DictCursor) as cursor:
+                    query = '''INSERT INTO brand_poc(
+                        brand_id, name, number, email, title)
+                        VALUES (%s, %s, %s, %s, %s)'''
+
+                    values = (  
+                                brand_id, 
+                                TokenEncryption.encrypt_token(data.get('name')),
+                                TokenEncryption.encrypt_token(str(data.get('number'))),
+                                TokenEncryption.encrypt_token(data.get('email')),
+                                data.get('title')
+                            )
+                    await cursor.execute(query, values)
+                    poc_id = cursor.lastrowid
+                    await connection.commit()
+                    return {'status': 'successful', poc_id: poc_id}
+            except Exception as e:
+                await connection.rollback()
+                print(f"Error occured while adding the brand poc, code: a9ff7ec4", e)
+                print_exc()
+                return {'status': 'failed', 'code': 'a9ff7ec4', 'error': e.args[0]}
+
 
 
     @staticmethod
@@ -87,38 +124,49 @@ class Write:
 
     @staticmethod
     @brand_access_required
-    async def update_poc(brand_id: str, poc_id: str) -> str| dict[str, int]:
+    async def update_poc(brand_id: str, data: dict) -> str| dict[str, int]:
         '''Updates the POC for the given brand_id if the brand belongs to the user else raise an exception
         
         Args:
             - brand_id - Unique ID for brand
-            - poc_id - Unique ID for the user who is going to be the poc for the brand
+            - data - dict with key and value pair for the attribute for update
         
         Returns:
             - on success - literal[ok]
             - on failure - dict[literal[error], int]
         '''
         pool = current_app.pool
+        attrs = []
+        values = []
+
+        '''extracting key and value pairs'''
+        for attr in data.keys():
+            attrs.append(f"{attr} = %s")
+
+            if attr in ('name', 'number', 'email', 'title'):
+                values.append(TokenEncryption.encrypt_token(data.get(attr)))
+            else:
+                values.append(data.get(attr))
+
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
-                    query = """
-                                UPDATE brand
-                                SET poc = %s
+                    query = f"""
+                                UPDATE brand_poc
+                                SET {(', ').join(attrs)}
                                 WHERE brand_id = %s
                             """
-
-                    values = (poc_id, brand_id)
+                    
+                    values.append(brand_id)
 
                     await cursor.execute(query, values)
                     await connection.commit()
-                    return "ok"
+                    return {'status': 'successful'}
                 
             except Exception as e:
                 await connection.rollback()
-                print(e)
-                print_exc()
-                return {"error": e.args[0]} 
+                print('code: 70fc35f4', e)
+                return {'status': 'failed', 'code': '70fc35f4', 'error': e.args[0]} 
 
 
                 

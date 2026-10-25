@@ -436,7 +436,7 @@ paths:
                     brand_name:
                       type: string
                       example: ABC Fashion
-                    gstin:
+                    gtin:
                       type: string
                       example: 29ABCDE1234F1Z5
                     plan:
@@ -457,7 +457,6 @@ paths:
                     estyear:
                       type: integer
                       example: 2023
-
                 poc:
                   type: object
                   required:
@@ -473,15 +472,8 @@ paths:
                     email:
                       type: string
                       format: email
-                    designation:
+                    title:
                       type: string
-                    access:
-                      type: string
-                      enum: [brand_admin, brand_member]
-                    password:
-                      type: string
-                      format: password
-
             examples:
               self_poc:
                 summary: Current user is POC
@@ -516,9 +508,7 @@ paths:
                     name: John Doe
                     number: "9876543210"
                     email: john@example.com
-                    designation: Manager
-                    access: brand_member
-                    password: secret123
+                    title: Technical person
 
       responses:
         "200":
@@ -530,10 +520,28 @@ paths:
                 properties:
                   status:
                     type: string
-                    example: ok
-                  message:
-                    type: string
-                    example: brand registered successfully
+                    example: successful
+                  brand:
+                    type: object
+                    properties: 
+                      brand_id:
+                        type: string
+                        example: brand-5194b438-4cca-20261025
+                      status:
+                        type: string
+                        example: successful
+                      message:
+                        type: string
+                        example:  Successfully registered the brand
+                  poc:
+                    type: object
+                    properties: 
+                      status: 
+                        type: string
+                        example: successful
+                      message:
+                        type: string
+                        example: Successfully added the poc
         "401":
           $ref: "#/components/responses/login_required"
         "403":
@@ -679,6 +687,111 @@ paths:
           $ref: "#/components/responses/500"
         "default":
           $ref: "#/components/responses/default"
+
+  /brand/profile:
+    get:
+      summary:  Get brand profile
+      description: Get signed in brand profile name and profile image
+      tags:
+        - Brand
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Successful request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: 
+                  entity_name:
+                    type: string
+                  brand_name:
+                    type: string
+                  image_url:
+                    type: string
+              example:
+                entity_name: ABC Pvt Ltd
+                brand_name: ABC Fashion
+                image_url: /brand/profile/image/profile/brand_35a8be64-cd68-20260911.jpg
+        "default":
+          $ref: '#/components/responses/default'
+
+  /brand/profile/image/profile/{key}:
+    get:
+      summary: Get brand profile image object
+      description: Get brand profile bytes image object
+      security:
+        - cookieAuth: []
+      tags:
+        - Brand
+      parameters:
+        - name: key
+          in: path
+          required: true
+          description: Profile image s3 object key
+          schema:
+            type: string
+            format: path
+            example: brand_35a8be64-cd68-20260911.jpg
+      responses:
+        "200":
+          description: Successful request
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+        "default":
+          $ref: '#/components/responses/default'
+
+  /brand/profile/image:
+    put:
+      summary: Upload brand profile image
+      description: Upload brand profile image
+      tags:
+        - Brand
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/csrf'
+        - name: X-Filename
+          in: header
+          required: true
+          description: File name header
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        "200":
+          description: Successfully uploaded the image
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/default'
+              example:
+                status: successful
+                message: Uploaded successfully
+        "500":
+          description: Internal server error in the service
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: 
+                  status:
+                    type: string
+                  message:
+                    type: string
+                  code:
+                    type: string
+        "default":
+          $ref: '#/components/schemas/default'
 
   /catalog/categories/top:
     get:
@@ -893,8 +1006,8 @@ paths:
 
         - name: vertical
           in: query
-          required: true
-          description: Vertical index returned by the category endpoints.
+          required: false
+          description: Vertical index returned by the category endpoints. Not needed if the product is already uploaded with this category id
           schema:
             type: integer
             example: 1

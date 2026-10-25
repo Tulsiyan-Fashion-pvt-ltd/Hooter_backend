@@ -73,25 +73,11 @@ async def add_new_poc(brand_id: str, poc_data: str):
         - user_id - Unique ID for the user
         
     Returns:
-
+        tuple[dict[str, str], int]
     '''
-    '''sign up the new user for poc'''
-    signup_response = await signup_user(poc_data)
-    if signup_response.get('code') != 200:
-        return signup_response
-
-    '''map poc user to brand'''
-    poc_id = signup_response.get('userid')
-    access_query = await mariadb.Write.map_user_brand(brand_id, poc_id, 'brand_member')
-    if access_query != 'ok':
-        if access_query == 1062:
-            return {'status': 'failed', 'message': 'User already belongs to the brand', 'code': 409}
-        else:
-            return {'status': 'error', 'message': 'Error occured while adding the brand poc', 'code': 500}
-
     '''update poc for brand'''
-    update_resposne = await mariadb.Write.update_poc(brand_id, poc_id)
-    if update_resposne != "ok":
-        return {'status': 'error', 'message': 'Could not update the poc but the poc has registered', 'code': 201}
+    poc_response = await mariadb.Write.add_poc(brand_id, poc_data)
+    if poc_response.get('status') != "successful":
+        return {'status': 'failed', 'message': 'Could not add the poc', 'code': '8baa68bc'}, 500
 
-    return {'status': 'successful', 'message': 'Successfully added the new user as poc', 'code': 200}
+    return {'status': 'successful', 'message': 'Successfully added the poc'}, 200

@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 import aiohttp
 from .stores import mariadb
+from .auth.services import get_access_token
 
 load_dotenv()
 
@@ -17,6 +18,7 @@ class ShopifyGraphQLClient:
             "X-Shopify-Access-Token": self.access_token
         }
 
+
     async def query(self, query: str, variables: dict = None) -> dict:
         """Execute a GraphQL query against the Shopify API."""
 
@@ -29,8 +31,8 @@ class ShopifyGraphQLClient:
                 response.raise_for_status()
                 return await response.json()
 
+
     async def store_credentials(self):
-        store = await mariadb.Fetch.get_store_by_id(self.store_id)
-        self.shop_name = store.get("shopify_shop_name")
-        self.access_token = store.get("shopify_access_token_encrypted")
+        self.shop_name = await mariadb.Fetch.shope_name(self.store_id)
+        self.access_token = await get_access_token()
         return

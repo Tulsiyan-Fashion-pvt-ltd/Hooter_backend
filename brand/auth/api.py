@@ -1,13 +1,12 @@
 from quart import Blueprint, session, request, jsonify, Response
-from utils.helper import Payload
-from brand.auth import mariadb
 from utils.prerequirements import login_required, super_admin_required
-import config
 from traceback import print_exc
 from .authorize import brand_api_access_required
 from quart_rate_limiter import rate_limit, timedelta
 from security_extensions import validate_csrf
 from . import services
+from users.profile import mariadb as user_profile_maraidb
+from .models import BrandRegisterModel
 
 
 
@@ -16,34 +15,30 @@ auth = Blueprint('auth', __name__)
 
 @auth.route('/register', methods=['POST'])
 @rate_limit(20, timedelta(minutes=60))
-@validate_csrf
+# @validate_csrf
 @login_required
 # @super_admin_required
 async def register_entity() -> Response:
     """Registers a new brand. If `poc.self` is `true`, 
     the authenticated user becomes the Point of Contact. Otherwise, 
     a new POC account is created as per the given poc details"""
-    response = await request.get_json()    
+    payload = await request.get_json()    
 
     '''payload check'''
-    required_payload = ['brand', 'poc']
-    accepted_payload = required_payload
-    valid_payload = (Payload.check_required_payload(response, required_payload) and 
-                    Payload.check_accepted_payload(response, accepted_payload))
-    if not valid_payload:
-        return jsonify({'status': 'error', 'message': 'payload does not provide necessary values brand and poc'}), 400
+    try:
+        payload = BrandRegisterModel.model_validate(payload)
+        payload = payload.model_dump()
 
-    brand_data = response.get('brand')
-    poc_data = response.get('poc')
-
-    accepted_brand_payload = ['entity_name', 'brand_name', 'gstin', 'plan', 'address', 'city', 'state', 'pincode', 'estyear']
-    required_brand_payload = ['entity_name', 'brand_name', 'plan', 'address', 'city', 'state', 'pincode', 'estyear']
-    
-    valid_payload = (Payload.check_required_payload(brand_data, required_brand_payload) and
-                     Payload.check_accepted_payload(brand_data, accepted_brand_payload))
-
-    if not valid_payload:
-        return jsonify({'status': 'error', 'message': 'payload does not provide necessary values brand data'}), 400
+        poc_data = payload.get('poc')
+        brand_data = payload.get('brand')
+    except ValueError as e:
+        print(e)
+        return jsonify({'status': 'failed', 'message': 'Invalid payload', 'error': [{"loc": error.get('loc'),
+                                                                                    "msg": error.get('msg')
+                                                                                    }for error in e.errors()]}), 400
+    except AttributeError as e:
+        print(e)
+        return jsonify({'status': 'failed', 'message': 'Error while validating payload', 'error': str(e)}), 500
 
     '''after checking payload for business trying to register the brand''' 
     user_id = session.get('user')
@@ -57,36 +52,27 @@ async def register_entity() -> Response:
         if 200 != brand_returned_code:
             return jsonify(brand_response), brand_returned_code
 
-        '''set another poc account'''
-        if poc_data.get('self') == False:
-            #checking if all the requied field is there
-            accepted_poc_payload = ['self', 'name', 'number', 'email', 'designation', 'access', 'password']
-            required_poc_payload = accepted_poc_payload
-
-            if not Payload.check_accepted_payload(poc_data, accepted_poc_payload):
-                return jsonify({"status": "failed", "message": "Unrecognised poc payload"}), 400
-            if not Payload.check_required_payload(poc_data, required_poc_payload):
-                return jsonify({'status': 'failed', 'message': 'payload does not provide necessary values for poc'}), 400
-
-            # fetch access allower access_specifiers
-            access_specifier = config._access
-            if poc_data['access'] not in access_specifier:
-                return jsonify({'status': 'invalid input', 'message': 'access specifiers are not valid'}), 422
-
-            '''Adding new poc'''
-            poc_response = await services.add_new_poc(brand_id, poc_data)
-            poc_response = response.get('code')
-            return {'brand': brand_response, 'poc': poc_response}, 200 if 200 in (brand_returned_code, poc_response) else 201
+        if poc_data.get('self') == True:
+            user_data = await user_profile_maraidb.Fetch.user_details(session.get('user'))
+            poc_data = {
+                "name": user_data.get('user_name'),
+                "number": user_data.get('phone_number'),
+                "email": user_data.get('user_email'),
+                "title": "Brand admin"
+            }
             
-        return jsonify({
-            'status': 'ok',
-            'message': 'brand registered successfully'
-        }), 200
-
+        '''Adding new poc'''
+        poc_response = await services.add_new_poc(brand_id, poc_data)
+        poc_response_data = poc_response[0]
+        poc_response_code = poc_response[1]
+        return {'status': 'successful', 'brand': brand_response, 'poc': poc_response_data}, 200 if 200 in (brand_returned_code, poc_response_code) else 201
+        
     except Exception as e:
         print(f'error encountered while registering the brand\n{e}')
         print_exc()
         return jsonify({'status': 'error', 'message': 'server error'}), 500
+
+
 
 
 

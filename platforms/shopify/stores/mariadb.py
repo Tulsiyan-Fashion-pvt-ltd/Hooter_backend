@@ -90,38 +90,6 @@ class Write:
                     print(f'Error deleting store: {str(e)}')
                     return {'status': 'error', 'message': f'Unable to delete store: {str(e)}'}
 
-    # @staticmethod
-    # async def create_brand(brand_name: str, user_id: str, brand_logo: str = None, brand_description: str = None) -> dict:
-    #     """Create a new brand and assign it to the user."""
-    #     pool = current_app.pool
-    #     async with pool.acquire() as conn:
-    #         async with conn.cursor(cursor=DictCursor) as cursor:
-    #             try:
-    #                 await cursor.execute('''
-    #                     INSERT INTO brand (brand_name, brand_logo, brand_description)
-    #                     VALUES (%s, %s, %s)
-    #                 ''', (brand_name, brand_logo, brand_description))
-
-    #                 brand_id = cursor.lastrowid
-
-    #                 await cursor.execute('''
-    #                     INSERT INTO brand_access (brand_id, user_id, permission_level)
-    #                     VALUES (%s, %s, %s)
-    #                 ''', (brand_id, user_id, 'owner'))
-
-    #                 await conn.commit()
-
-    #                 brand = await Fetch.get_brand_by_id(brand_id)
-    #                 return {'status': 'ok', 'message': 'Brand created successfully', 'brand': brand}
-
-    #             except Exception as e:
-    #                 await conn.rollback()
-    #                 print(f'Error creating brand: {str(e)}')
-
-    #                 if hasattr(e, 'args') and e.args[0] == 1062:
-    #                     return {'status': 'error', 'message': 'Brand already exists'}
-
-    #                 return {'status': 'error', 'message': f'Unable to create brand: {str(e)}'}
 
     # @staticmethod
     # async def create_product(uid: str, brand_id: int, title: str, description: str, **kwargs) -> dict:
@@ -171,6 +139,7 @@ class Write:
     #                     return {'status': 'error', 'message': 'Product UID already exists'}
 
     #                 return {'status': 'error', 'message': f'Unable to create product: {str(e)}'}
+
 
     # @staticmethod
     # async def update_product(uid: str, brand_id: int, **kwargs) -> dict:
@@ -275,14 +244,14 @@ class Fetch:
 
 
     @staticmethod
-    async def shope_name(store_id: str) -> str| dict[Literal["error"], int| str]:
+    async def shope_name(store_id: str) -> str| dict[Literal["error"]| str, int| str]:
         """Fetch the store name for a brand.
         
         Args:
             brand_id: Unique Id for brand
 
         Returns:
-            On success: store_name 
+            On success: store_name `str`
             On failure: `dict[Literal["error"]: int| str]`
         """
         pool = current_app.pool

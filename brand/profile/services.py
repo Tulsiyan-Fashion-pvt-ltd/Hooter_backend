@@ -66,7 +66,7 @@ async def upload_profile_image_task(brand_id: str, image_path: Path) -> tuple[di
         await mariadb.Write.delete_profile_img_key(brand_id)        # optimistic deletion
         return {'status': 'failed', 'message': 'Could not upload the profile image', 'code': 'b6dc22f7'}, 500
     else:
-        return {'status': 'successful', 'message': 'uploaded successfully'}, 200
+        return {'status': 'successful', 'message': 'Uploaded successfully'}, 200
     
 
 

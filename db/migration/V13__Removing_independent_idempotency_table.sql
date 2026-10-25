@@ -1,0 +1,1 @@
+DROP TABLE catalogue_idempotency;
