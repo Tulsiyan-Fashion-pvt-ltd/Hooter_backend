@@ -15,9 +15,9 @@ auth = Blueprint('auth', __name__)
 
 @auth.route('/register', methods=['POST'])
 @rate_limit(20, timedelta(minutes=60))
-# @validate_csrf
+@validate_csrf
 @login_required
-# @super_admin_required
+@super_admin_required
 async def register_entity() -> Response:
     """Registers a new brand. If `poc.self` is `true`, 
     the authenticated user becomes the Point of Contact. Otherwise, 

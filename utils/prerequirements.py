@@ -29,7 +29,7 @@ def super_admin_required(func):
     @wraps(func)
     async def wrapper(*args, **kwargs):
         user_access = await Fetch.user_access(session.get('user'))
-        if (user_access == None or user_access != 'super_admin'):
+        if (user_access == None or user_access != 'hooter_admin'):
             return jsonify({'status': 'access denied', 'message': 'you do not have the access kindly contact Hooter super admins'}), 405
         else:
             return await func(*args, **kwargs)
