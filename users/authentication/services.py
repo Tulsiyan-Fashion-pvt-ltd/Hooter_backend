@@ -3,7 +3,7 @@ from . import mariadb
 from .utils import create_userid, hash_password, verify_hashed_password
 from utils.helper import Validate
 from utils.encryption import TokenEncryption
-import hashlib
+from utils.lookup_hash import create_hash
 
 
 
@@ -18,13 +18,14 @@ async def signup_user(user_data: dict) -> dict[str, str|int]:
         - on failure, 409, 500
     '''
     user_creds = {
-        'name': TokenEncryption.encrypt_token(user_data.get('name')),
-        'userid': create_userid(),
-        'number': TokenEncryption.encrypt_token(user_data.get('number')),
-        'email': TokenEncryption.encrypt_token(user_data.get('email')),
-        'email_lookup': hashlib.sha256(user_data.get('email').strip().lower().encode()).hexdigest(),
+        'user_name': TokenEncryption.encrypt_token(user_data.get('name')),
+        'user_id': create_userid(),
+        'phone_number': TokenEncryption.encrypt_token(user_data.get('number')),
+        'phone_number_lookup': create_hash(user_data.get('number')),
+        'user_email': TokenEncryption.encrypt_token(user_data.get('email')),
         'hashed_password': hash_password(user_data.get('password')),
-        'designation': TokenEncryption.encrypt_token(user_data.get('designation').capitalize() if user_data.get('designation') else 'Director'),
+        'email_lookup': create_hash(user_data.get('email').strip().lower()),
+        'user_designation': user_data.get('designation').capitalize() if user_data.get('designation') else 'Admin',
     }
 
     response = await mariadb.Write.signup_user(user_creds)

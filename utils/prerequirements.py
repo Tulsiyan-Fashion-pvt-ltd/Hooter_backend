@@ -1,7 +1,6 @@
 from functools import wraps
-from quart import session, jsonify, current_app
-from asyncmy.cursors import DictCursor
-from users.authorization.mariadb import Fetch
+from quart import session, jsonify
+# from users.authorization.mariadb import Fetch
 
 
 def login_required(func):
@@ -25,13 +24,13 @@ def brand_required(func):
     return wrapper
 
 
-def super_admin_required(func):
-    @wraps(func)
-    async def wrapper(*args, **kwargs):
-        user_access = await Fetch.user_access(session.get('user'))
-        if (user_access == None or user_access != 'hooter_admin'):
-            return jsonify({'status': 'access denied', 'message': 'you do not have the access kindly contact Hooter super admins'}), 405
-        else:
-            return await func(*args, **kwargs)
+# def super_admin_required(func):
+#     @wraps(func)
+#     async def wrapper(*args, **kwargs):
+#         user_access = await Fetch.user_access(session.get('user'))
+#         if (user_access == None or user_access != 'hooter_admin'):
+#             return jsonify({'status': 'access denied', 'message': 'you do not have the access kindly contact Hooter super admins'}), 405
+#         else:
+#             return await func(*args, **kwargs)
     
-    return wrapper
+#     return wrapper

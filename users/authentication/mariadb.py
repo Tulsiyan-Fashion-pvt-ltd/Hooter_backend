@@ -2,6 +2,7 @@ from quart import current_app
 from datetime import datetime
 from asyncmy.cursors import DictCursor
 from traceback import print_exc
+from utils.lookup_hash import create_hash
 
 class Write:
     @staticmethod
@@ -59,8 +60,8 @@ class Fetch:
                 userid = None
                 try:          
                     await cursor.execute('''
-                                   select user_id from user_creds where user_email=%s
-                                   ''', (email, ))
+                                   select user_id from user_creds where email_lookup=%s
+                                   ''', (create_hash(email), ))
                     userid = await cursor.fetchone()
                     userid = userid.get('user_id')
                     # userid = userid[0] if userid and len(userid) != 0 else None

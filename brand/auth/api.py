@@ -1,5 +1,5 @@
 from quart import Blueprint, session, request, jsonify, Response
-from utils.prerequirements import login_required, super_admin_required
+from utils.prerequirements import login_required
 from traceback import print_exc
 from .authorize import brand_api_access_required
 from quart_rate_limiter import rate_limit, timedelta
@@ -17,7 +17,7 @@ auth = Blueprint('auth', __name__)
 @rate_limit(20, timedelta(minutes=60))
 @validate_csrf
 @login_required
-@super_admin_required
+# @super_admin_required
 async def register_entity() -> Response:
     """Registers a new brand. If `poc.self` is `true`, 
     the authenticated user becomes the Point of Contact. Otherwise, 

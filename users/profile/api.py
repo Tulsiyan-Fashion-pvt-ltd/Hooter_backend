@@ -16,18 +16,11 @@ async def fetch_user_creds():
         return jsonify({'status': 'unauthorised access', 'message': 'no loged in user found'}), 401
     _ = await mariadb.Fetch.user_details(user)
 
-    try:
-        user_data = {
-                    'name': TokenEncryption.decrypt_token(_.get('user_name')),
-                    'number': TokenEncryption.decrypt_token(_.get('phone_number')),
-                    'email': TokenEncryption.decrypt_token(_.get('user_email')),
-                    'designation': TokenEncryption.decrypt_token(_.get('user_designation'))
-                    }
-    except Exception as e:
-        user_data = {
-                    'name': _.get('user_name'),
-                    'number': _.get('phone_number'),
-                    'email': _.get('user_email'),
-                    'designation': _.get('user_designation')
-                    }
+    user_data = {
+                'name': TokenEncryption.decrypt_token(_.get('user_name')),
+                'number': TokenEncryption.decrypt_token(_.get('phone_number')),
+                'email': TokenEncryption.decrypt_token(_.get('user_email')),
+                'designation': _.get('user_designation')
+                }
+
     return jsonify({'status': 'ok', 'user_data': user_data}), 200
