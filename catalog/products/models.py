@@ -20,7 +20,7 @@ class CatalogListPagitation(BaseModel):
 
 
 class ListingAttributesModel(BaseModel):
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="forbid")
 
     sku_id: str = Field(..., max_length=100)
     product_title: str = Field(..., max_length=200)
@@ -59,7 +59,7 @@ def buildProductAttributeModel(attributes: dict[str, str|bool]):
     fields = {}
 
     for attr in attributes:
-        attr_type = attr["type"]
+        attr_type = attr.get("type", "string")
 
         if attr_type == "enum":
             values = attr.get("options", [])
@@ -73,19 +73,19 @@ def buildProductAttributeModel(attributes: dict[str, str|bool]):
         else:
             python_type = TYPE_MAP[attr_type]
 
-        if not attr["required"]:
-            python_type = python_type | None
+        # if not attr.get("required"):
+        #     python_type = python_type | None
 
-        default = ... if attr["required"] else None
+        default = ... if attr.get("required", False) else None
 
         constraints = {}
 
         if attr_type == "string" and "max_length" in attr:
-            constraints["max_length"] = attr["max_length"]
+            constraints["max_length"] = attr.get("max_length")
 
         fields[attr["field"]] = (
             python_type,
             Field(default, **constraints)
         )
 
-    return create_model("ListingAttributesModel", **fields)
+    return create_model("ListingAttributesModel", **fields, __config__=ConfigDict(extra="allow"))

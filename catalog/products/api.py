@@ -59,7 +59,8 @@ async def upload_single_catalog():
         listing_attributes = models.ListingAttributesModel.model_validate(listing_attributes).model_dump()
         product_attributes = ProductDetailsModel.model_validate(product_attributes).model_dump()
     except Exception as e:
-        print(e)
+        print('code: 24cca3b7', "error", e)
+        print_exc()
         return {'status': 'failed', 'message': 'Invalid payload', 'code': '24cca3b7'}, 400
 
 

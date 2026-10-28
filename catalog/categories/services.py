@@ -130,7 +130,6 @@ async def get_product_attributes(category_id: str, vertical: int| None = None):
     catalog_schema = product_attributes[0]
     category_schema = product_attributes[1]
     image_attributes = product_attributes[2]
-    print("image attr", image_attributes)
 
     if catalog_schema.get('error') is not None:
         return {"status": "interrupted", "message": "attributes are not available for this product"}, 500
