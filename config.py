@@ -12,7 +12,7 @@ _product_image_bucket = "product-images"
 _brand_image_bucket = "assets"
 
 _product_image_root_key = "catalog/images"
-_brand_image_root_key = "/profile"
+_brand_image_root_key = "profile"
 
 '''IMAGE CONFIGS'''
 _image_types = ["original", "high_resol_webp", "low_resol_webp", "webp_card"]
