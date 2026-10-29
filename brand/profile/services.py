@@ -50,7 +50,7 @@ async def upload_profile_image_task(brand_id: str, image_path: Path) -> tuple[di
 
 
     '''upload to s3 and store key in the db'''
-    suffix = Path(image_path).suffix
+    suffix = ".webp"
     s3_image_key = f"{_brand_image_root_key}/{brand_id}{suffix}"
     task_response = await asyncio.gather(asyncio.to_thread(s3.upload_object, _brand_image_bucket, s3_image_key, file=compressed_image_file),
                          mariadb.Write.profile_img_key(brand_id, s3_image_key))

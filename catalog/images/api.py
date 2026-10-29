@@ -130,7 +130,7 @@ async def get_image_url(usku_id):
         formatted_image_urls = {}
         for value in image_urls:
             if formatted_image_urls.get(value.get('image_type')) is None:
-                formatted_image_urls[value.get('image_type')] = {"image_order": value.get('image_order'), "image_urls": {}}
+                formatted_image_urls[value.get('image_type')] = {"image_order": value.get('image_order'), "image_urls": {value.get('image_variation'): value.get('image_url')}}
             else:
                 formatted_image_urls[value.get('image_type')]["image_urls"][value.get('image_variation')] = value.get('image_url')
         

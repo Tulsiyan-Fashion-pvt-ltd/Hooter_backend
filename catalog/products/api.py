@@ -241,8 +241,7 @@ async def delete_product(usku_id: str):
 
 
 
-'''THIS FUNCTION REQUIRE SOME CORRECTION'''
-@products.put("/<usku_id>")
+@products.patch("/<usku_id>")
 @validate_csrf
 @login_required
 @brand_required
@@ -278,9 +277,6 @@ async def update_catalog_data(usku_id):
     if not (all([listing_attributes.get(key) for key in mandatory_listing_keys ]) and 
             all([category_attributes.get(key) for key in mandatory_category_keys])):
         return jsonify({'status': "failed", "message": "Mandatory attribute can not be null"}), 422
-
-
-    
     
     response = await services.update_product(usku_id, listing_attributes, category_attributes)
     return jsonify(response[0]), response[1]
