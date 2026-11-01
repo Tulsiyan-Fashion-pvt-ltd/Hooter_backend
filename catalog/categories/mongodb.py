@@ -96,6 +96,8 @@ class Fetch:
         try:
             doc = await mongo.db.image_schema.find_one({"type_id": type_id}, {"_id": 0, "type_id": 0})
             if not doc:
+                doc = await Fetch.image_schema("default")
+            if not doc:
                 return {"error": "Not found"}
             
             return doc
@@ -179,14 +181,11 @@ class Fetch:
 
             async def mandatory(self):
                 """fetch only mandatory attribute keys for images"""
-                print(self.type_id)
                 doc = await Fetch.image_schema(self.type_id)
                 
 
                 if doc.get('error'):
                    doc = await Fetch.image_schema("default")
-                if doc.get('error'):
-                    return []
                 
                 attributes = doc.get("attributes")
                 

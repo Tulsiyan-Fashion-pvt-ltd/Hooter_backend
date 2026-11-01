@@ -126,25 +126,22 @@ async def get_image_url(usku_id):
     if type is None:
         if image_urls == None:
             return jsonify({"status": "failed", "message": "Invalid image type or Image does not exists"}), 409
-            
-        image_urls = {value.get("image_type"): 
-            {
-                "image_urls": {
-                    _.get('image_variation'): _.get('image_url')
-                    for _ in image_urls
-                }, 
-                "image_order": value.get("image_order")
-            } 
-            for  value in image_urls}
+
+        formatted_image_urls = {}
+        for value in image_urls:
+            if formatted_image_urls.get(value.get('image_type')) is None:
+                formatted_image_urls[value.get('image_type')] = {"image_order": value.get('image_order'), "image_urls": {value.get('image_variation'): value.get('image_url')}}
+            else:
+                formatted_image_urls[value.get('image_type')]["image_urls"][value.get('image_variation')] = value.get('image_url')
         
     else:
         if image_urls == None:
             return jsonify({"status": "failed", "message": "Image does not exists"}), 409
 
-        image_urls = {"image_urls": {image_url.get('image_variation'): image_url.get("image_url") for image_url in image_urls}, 
+        formatted_image_urls = {"image_urls": {image_url.get('image_variation'): image_url.get("image_url") for image_url in image_urls}, 
                       "image_order": image_urls[0].get("image_order")}
 
-    return jsonify(image_urls)
+    return jsonify(formatted_image_urls)
 
 
 @images.put("/<usku_id>")
@@ -155,6 +152,8 @@ async def get_image_url(usku_id):
 async def update_image(usku_id):
     """Upload images of the product. Takes USKU ID params in path"""
     files = await request.files
+    form = await request.form
+    metadata = json.loads(form.get('meta'))
 
     image_dict_object = {}      # stores image `path`, `order` on key `image_type`
     for key in files.keys():
@@ -180,7 +179,7 @@ async def update_image(usku_id):
 
         '''Else store in the temp path for background upload'''
         path = await services.save_image_temp(file)
-        image_dict_object[key] = {"path": path} # metadata stores image_type as key and image_order as value
+        image_dict_object[key] = {"path": path, "order":metadata.get(key)} # metadata stores image_type as key and image_order as value
 
     try:
         '''Run backgroun job'''

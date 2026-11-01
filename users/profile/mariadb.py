@@ -21,7 +21,10 @@ class Fetch:
                         ''',
                         (userid,)
                     )
-                    return await cursor.fetchone()
+                    user_data = await cursor.fetchone()
+                    await conn.commit()
+                    return user_data
                 except Exception as e:
+                    await conn.rollback()
                     print(f'encountered error while fetching user credentials\n{e}')
                     return None

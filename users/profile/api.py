@@ -20,6 +20,7 @@ async def fetch_user_creds():
                 'name': TokenEncryption.decrypt_token(_.get('user_name')),
                 'number': TokenEncryption.decrypt_token(_.get('phone_number')),
                 'email': TokenEncryption.decrypt_token(_.get('user_email')),
-                'designation': TokenEncryption.decrypt_token(_.get('user_designation'))
+                'designation': _.get('user_designation')
                 }
+
     return jsonify({'status': 'ok', 'user_data': user_data}), 200

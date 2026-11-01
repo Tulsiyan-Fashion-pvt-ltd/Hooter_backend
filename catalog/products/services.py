@@ -111,11 +111,17 @@ async def create_product(listing_attributes: dict, category_attributes: dict, ca
 
 
 async def update_product(usku_id: str, listing_attributes: dict, category_attributes: dict) -> tuple[dict[str, str], int]:
-    response = await asyncio.gather(mariadb.Write.update_catalog(usku_id, listing_attributes), 
-                                    mongodb.Write.update_catalog(usku_id, category_attributes))
-    
-    if response[0] != "ok" or response[1] != "ok": 
-        return {"status": "failed", "message": "error occured while updating the catalog"}, 500
+    tasks = []
+    if listing_attributes:
+        tasks.append(mariadb.Write.update_catalog(usku_id, listing_attributes))
+    if category_attributes:
+        tasks.append(mongodb.Write.update_catalog(usku_id, category_attributes))
+
+    responses = await asyncio.gather(*tasks)
+
+    for response in responses:
+        if response != "ok": 
+            return {"status": "failed", "message": "error occured while updating the catalog"}, 500
 
     return {"status": "successful", "message": "successfully updated the catalog product"}, 200
 
@@ -135,16 +141,13 @@ async def delete_product(usku_id: str) -> tuple[dict[str, str], int]:
 
     """
     images = await imagesql.Fetch.image(usku_id) # image object keys for s3
-    
     db_query = await asyncio.gather(mariadb.Write.delete_catalog(usku_id), 
                                     mongodb.Write.delete_catalog(usku_id)
                                     )
-    
+
     if db_query[0] != "ok" or db_query[1] != "ok" or images == "error":
         return {"status": "request failed", "message": "error occured while deleting from the catalog"}, 500
     else:
-        # print(images)
-        # todo
         '''iterate over each image names and sepeate with their file paths acc to the image type
             and send to the image delete function from imageio
         '''
@@ -152,7 +155,7 @@ async def delete_product(usku_id: str) -> tuple[dict[str, str], int]:
         for image_details in images if images else []:
             '''we have deleted the image records from the dbms so we are calling the s3 bucket 
             rather the delete image service from the catalog.images'''
-            tasks.append(asyncio.to_thread(s3.delete_bulk_objects, _product_image_bucket, keys=json.loads(image_details.get("image_url")).values()))
+            tasks.append(asyncio.to_thread(s3.delete_object, _product_image_bucket, key=image_details.get("image_url")))
         try:
             s3_response = await asyncio.gather(*tasks)
             if "error" in s3_response:

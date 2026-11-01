@@ -50,7 +50,7 @@ async def upload_profile_image_task(brand_id: str, image_path: Path) -> tuple[di
 
 
     '''upload to s3 and store key in the db'''
-    suffix = Path(image_path).suffix
+    suffix = ".webp"
     s3_image_key = f"{_brand_image_root_key}/{brand_id}{suffix}"
     task_response = await asyncio.gather(asyncio.to_thread(s3.upload_object, _brand_image_bucket, s3_image_key, file=compressed_image_file),
                          mariadb.Write.profile_img_key(brand_id, s3_image_key))
@@ -66,7 +66,7 @@ async def upload_profile_image_task(brand_id: str, image_path: Path) -> tuple[di
         await mariadb.Write.delete_profile_img_key(brand_id)        # optimistic deletion
         return {'status': 'failed', 'message': 'Could not upload the profile image', 'code': 'b6dc22f7'}, 500
     else:
-        return {'status': 'successful', 'message': 'uploaded successfully'}, 200
+        return {'status': 'successful', 'message': 'Uploaded successfully'}, 200
     
 
 
@@ -87,5 +87,6 @@ async def get_brand_profile(brand_id: str) -> tuple[dict[str, str], int]:
         return {'status': 'failed', 'message': 'Could not fetch the brand profile', 'code': response.get('code')}, 500
 
     # replace the image key with the image url
-    response['image_url'] = f"{url_for('brand.brand_profile.get_brand_profile_image', key=response.pop('profile_img_key'))}"
+    image_key  = response.pop('profile_img_key')
+    response['image_url'] = f"{url_for('brand.brand_profile.get_brand_profile_image', key=image_key)}" if image_key else None
     return response, 200

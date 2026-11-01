@@ -37,6 +37,7 @@ class Write:
                     await connection.commit()
                     return {'status': 'ok'}
             except Exception as e:
+                await connection.rollback()
                 print(e)
                 return {'status': 'failed', 'code': 'ed37ed2d', 'error': e.args[0]}
 
@@ -71,6 +72,7 @@ class Write:
                     await connection.commit()
                     return {'status': 'ok'}
             except Exception as e:
+                await connection.rollback()
                 print(e)
                 return {'status': 'failed', 'code': 'ed37ed2d', 'error': e.args[0]}
 
@@ -93,7 +95,9 @@ class Fetch:
                     values = (brand_id, )
                     await cursor.execute(query, values)
                     brand_profile = await cursor.fetchone()
+                    await connection.commit()
                     return brand_profile
             except Exception as e:
+                await connection.rollback()
                 print(e)
                 return {'status': 'failed', 'error': e.args[0], 'code': 'cb02df09'}

@@ -32,8 +32,10 @@ class Write:
 
                     await cursor.execute(collection_query, collection_value)
                     collection_id = cursor.lastrowid
+                    await connection.commit()
                     return collection_id
             except Exception as e:
+                await connection.rollback()
                 print(e)
                 print_exc()
                 return None
@@ -77,6 +79,7 @@ class Write:
                     await connection.commit()
                     return "ok"
             except Exception as e:
+                await connection.rollback()
                 print(e)
                 print_exc
                 return None
@@ -123,6 +126,7 @@ class Write:
                 return "ok"
 
             except Exception as e:
+                await connection.rollback()
                 print(e)
                 print_exc()
                 return None
@@ -161,6 +165,7 @@ class Write:
                     await connection.commit()
                     return "ok"
             except Exception as e:
+                await connection.rollback()
                 print(e)
                 print_exc()
                 return None
@@ -195,10 +200,11 @@ class Fetch:
                 async with connection.cursor(cursor=DictCursor) as cursor:
                     await cursor.execute(query, (collection_id,))
                     result = await cursor.fetchone()
-
+                    await connection.commit()
                 return result.get('collection_name') if result else None
 
             except Exception as e:
+                await connection.rollback()
                 print(e)
                 print_exc()
                 return None

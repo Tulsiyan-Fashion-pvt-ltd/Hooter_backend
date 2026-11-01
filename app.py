@@ -1,4 +1,4 @@
-from quart import Quart
+from quart import Quart, request
 from quart_cors import cors
 from pages import page # importing the page blueprint for the page routes
 import os

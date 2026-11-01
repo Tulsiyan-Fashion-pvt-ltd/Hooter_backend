@@ -4,8 +4,6 @@ from catalog.categories import mongodb as categories
 from catalog.categories.services import get_product_attributes
 from catalog.products import mongodb 
 from utils.prerequirements import login_required, brand_required
-from utils import helper
-from utils.helper import Payload
 import asyncio
 # from catalog.providers.shopify import products as shopify_products
 from config import _platforms
@@ -61,7 +59,8 @@ async def upload_single_catalog():
         listing_attributes = models.ListingAttributesModel.model_validate(listing_attributes).model_dump()
         product_attributes = ProductDetailsModel.model_validate(product_attributes).model_dump()
     except Exception as e:
-        print(e)
+        print('code: 24cca3b7', "error", e)
+        print_exc()
         return {'status': 'failed', 'message': 'Invalid payload', 'code': '24cca3b7'}, 400
 
 
@@ -242,8 +241,7 @@ async def delete_product(usku_id: str):
 
 
 
-'''THIS FUNCTION REQUIRE SOME CORRECTION'''
-@products.put("/<usku_id>")
+@products.patch("/<usku_id>")
 @validate_csrf
 @login_required
 @brand_required
@@ -253,10 +251,7 @@ async def update_catalog_data(usku_id):
     UPDATES THE CATALOG PRODUCT DATA
     """
     payload = await request.get_json()
-
     type_id = request.args.get("type-id")
-    listing_attributes = payload.get("listing_attributes")
-    category_attributes = payload.get("category_attributes")
 
     if type_id == None:
         return jsonify({"status": "failed", "message": "invalid payload"}), 400
@@ -264,24 +259,32 @@ async def update_catalog_data(usku_id):
     '''Need to check if the altered data is a mandatory field and the value is none.
     If so then the operation can not happen
     '''
-    payload_list = await asyncio.gather(categories.Fetch.Attributes.Catalog.all(),
-                                  categories.Fetch.Attributes.Catalog.mandatory(),
-                                  categories.Fetch.Attributes.Category(type_id).mandatory())
+    try:
+        payload = models.productUpdatePayloadModel.model_validate(payload).model_dump(exclude_unset=True)
+
+        listing_attributes = payload.get('listing_attributes')
+        category_attributes = payload.get('category_attributes')
+    except ValueError as e:
+        return jsonify({'status': 'failed', "message": "Invalid Payload", "errors": e.errors(), "code": "ca6d51ad"}), 422
+    except Exception as e:
+        print(e)
+        return jsonify({'status': 'failed', "message": "Unexpected Error while checking payload", "errors": str(e), "code": "22ff45ba"}), 422
     
-    accepted_listing_keys = payload_list[0]
-    mandatory_listing_keys = payload_list[1]
-    mandatory_category_keys = payload_list[2]
-
-    '''Checking if there any unknown attribute for listing'''
-    if not set(listing_attributes.keys()).issubset(accepted_listing_keys):
-        return jsonify({'status': "failed", "message": "Invalid value listing attribute"}), 422
-
-    if not (all([listing_attributes.get(key) for key in mandatory_listing_keys ]) and 
-            all([category_attributes.get(key) for key in mandatory_category_keys])):
-        return jsonify({'status': "failed", "message": "Mandatory attribute can not be null"}), 422
-
-
+    payload_schema = await asyncio.gather(categories.Fetch.listing_schema(),
+                                      categories.Fetch.category_schema(type_id))
     
+    try:
+        ListingAttributeModel = models.createUpdateProductAttributeModel(payload_schema[0].get('attributes'))
+        CategoryAttributeModel = models.createUpdateProductAttributeModel(payload_schema[1].get('attributes'))
+        
+        listing_attributes = ListingAttributeModel.model_validate(listing_attributes).model_dump(exclude_unset=True) if listing_attributes is not None else {}
+        category_attributes = CategoryAttributeModel.model_validate(category_attributes).model_dump(exclude_unset=True) if category_attributes is not None else {}
+    except ValueError as e:
+        return jsonify({'status': 'failed', "message": "Invalid Payload", "errors": e.errors(), "code": "74fb7ffd"}), 422
+    except Exception as e:
+        print(e)
+        print_exc()
+        return jsonify({'status': 'failed', "message": "Unexpected Error while checking payload", "errors": str(e), "code": "623a8238"}), 422
     
     response = await services.update_product(usku_id, listing_attributes, category_attributes)
     return jsonify(response[0]), response[1]
