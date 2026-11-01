@@ -33,6 +33,9 @@ tags:
   - name: Shopify
     description: shopify auth and platform api
 
+  - name : Flipkart
+    description: flipkart auth and platform api
+
 paths:
   /users/signup:
     post:
@@ -3273,15 +3276,181 @@ paths:
                 format: uri
                 example: https://workspace.h0oter.com
 
-                
 
+  /platforms/flipkart/auth/authorize:
+    get:
+      summary: Authorize Flipkart account
+      description: Starts Flipkart OAuth authorization for the currently selected brand.Each brand can connect only one Flipkart account. 
+      tags:
+        - Flipkart
+  
+      security:
+        - cookieAuth: []
+  
+      responses:
+        "200":
+          description: Authorization URL generated successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  authorization_url:
+                    type: string
+                    format: uri
+                    description: URL to which the frontend redirects the user.
+  
+        "400":
+          description: Missing or invalid brand ID.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: error
+                  message:
+                    type: string
+                    enum:
+                      - Brand ID is missing from the session
+                      - Invalid brand ID
+  
+        "409":
+          description: A Flipkart account is already connected to this brand.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: error
+                  message:
+                    type: string
+                    example: This brand already has a Flipkart account connected
+  
+        "500":
+          description: Unable to start Flipkart authorization.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: error
+                  message:
+                    type: string
+                    example: Unable to start Flipkart authorization
 
-
-
-
-
-
-
+  /platforms/flipkart/auth/callback:
+    get:
+      summary: Handle Flipkart OAuth callback
+      description: Handles Flipkart's OAuth callback, validates the state, exchanges the authorization code for tokens, and saves the account for the selected brand.
+      tags:
+        - Flipkart
+  
+      security:
+        - cookieAuth: []
+  
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Authorization code returned by Flipkart.
+  
+        - name: state
+          in: query
+          required: true
+          schema:
+            type: string
+          description: OAuth state returned by Flipkart for validation.
+  
+      responses:
+        "200":
+          description: Flipkart account connected successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Flipkart account connected successfully
+  
+        "400":
+          description: Missing authorization parameters or invalid/missing brand ID.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: error
+                  message:
+                    type: string
+                    enum:
+                      - Missing authorization code or state
+                      - Brand ID is missing from the session
+                      - Invalid brand ID
+  
+        "403":
+          description: Invalid or missing OAuth state.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: error
+                  message:
+                    type: string
+                    example: Invalid or missing OAuth state
+  
+        "409":
+          description: Unable to save the Flipkart account, possibly because an account is already connected.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: error
+                  message:
+                    type: string
+                    example: A Flipkart account is already connected
+  
+        "502":
+          description: Failed to exchange the authorization code or received an invalid token response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: error
+                  message:
+                    type: string
+                    enum:
+                      - Unable to exchange the Flipkart authorization code
+                      - Flipkart returned an incomplete token response
+                      - Flipkart returned invalid token expiry values
+  
+  
+  
 
 
 

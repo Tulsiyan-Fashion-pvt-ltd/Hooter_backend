@@ -23,7 +23,7 @@ class FlipkartAPIClient:
 
         # Get a valid access token for this brand.
         self.access_token = (
-            await FlipkartService.get_valid_access_token(self.brand_i)
+            await FlipkartService.get_valid_access_token(self.brand_id)
         )
 
         # Add the access token to the request headers.

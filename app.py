@@ -40,7 +40,8 @@ app.secret_key = os.environ.get('HOOTER_SECRET_KEY')
 app.config["SECRET_KEY"] = os.environ.get('HOOTER_SECRET_KEY')
 app.config["SESSION_COOKIE_SAMESITE"] = "None"
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=1)
-app.config["SESSION_COOKIE_SECURE"] = bool(os.environ.get('SESSION_COOKIE_SECURE'))  # because you're using http locally
+# app.config["SESSION_COOKIE_SECURE"] = bool(os.environ.get('SESSION_COOKIE_SECURE'))  # because you're using http locally
+app.config["SESSION_COOKIE_SECURE"] = True
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 
 

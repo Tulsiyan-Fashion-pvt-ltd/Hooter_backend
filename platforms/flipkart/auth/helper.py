@@ -3,11 +3,12 @@ import secrets
 from urllib.parse import urlencode
 import aiohttp
 from dotenv import load_dotenv
+from quart import url_for
 
 load_dotenv()
 
-FLIPKART_AUTHORIZE_URL = ("https://api.flipkart.net/oauth-service/oauth/authorize")
-FLIPKART_TOKEN_URL = ("https://api.flipkart.net/oauth-service/oauth/token")
+FLIPKART_AUTHORIZE_URL = "https://api.flipkart.net/oauth-service/oauth/authorize"
+FLIPKART_TOKEN_URL = "https://api.flipkart.net/oauth-service/oauth/token"
 
 
 def generate_state():
@@ -23,7 +24,7 @@ def get_flipkart_config():
     """
     app_id = os.environ.get("FLIPKART_APP_ID")
     app_secret = os.environ.get("FLIPKART_APP_SECRET")
-    redirect_uri = os.environ.get("FLIPKART_REDIRECT_URI")
+    redirect_uri = os.environ.get("APP_DOMAIN") + url_for("platforms.flipkart.flipkart_auth.flipkart_callback")
 
     if not app_id or not app_secret or not redirect_uri:
         raise ValueError(
@@ -41,15 +42,9 @@ def build_flipkart_authorization_url(state: str) -> str:
     """
     app_id, _, redirect_uri = get_flipkart_config()
 
-    params = {
-        "app_id": app_id,
-        "redirect_uri": redirect_uri,
-        "response_type": "code",
-        "scope": "Seller_Api",
-        "state": state,
-    }
+    params = f"""client_id={app_id}&redirect_uri={redirect_uri}&response_type=code&scope=Seller_Api&state={state}"""
 
-    return f"{FLIPKART_AUTHORIZE_URL}?{urlencode(params)}"
+    return f"{FLIPKART_AUTHORIZE_URL}?{params}"
 
 
 async def exchange_authorization_code(code: str, state: str) -> dict:

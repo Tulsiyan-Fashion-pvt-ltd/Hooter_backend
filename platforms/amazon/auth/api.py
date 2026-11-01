@@ -6,7 +6,9 @@ from urllib.parse import urlencode
 import os
 from utils.prerequirements import login_required, brand_required
 from ..stores import mariadb
-from .services import generate_state, build_amazon_authorization_url, exchange_authorization_code
+from .services import generate_state, build_amazon_authorization_url, exchange_token
+from utils.encryption import TokenEncryption
+import redis_cache
 
 load_dotenv()
 
@@ -62,19 +64,22 @@ async def amazon_callback():
 
     # Validate state
     if not state or state != session.get("amazon_login_state"):
-         return jsonify({"status": "error", "message": "Invalid or missing Amazon state"}), 403
+        return jsonify({"status": "error", "message": "Invalid or missing Amazon state"}), 403
 
     if not selling_partner_id or not spapi_oauth_code:
         return jsonify({"status": "error", "message": "Missing selling partner ID or authorization code"}), 400
 
     # Exchange authorization code for tokens
-    token_data = await exchange_authorization_code(spapi_oauth_code)
+    token_data = await exchange_token(spapi_oauth_code)
 
     refresh_token = token_data.get("refresh_token")
-    if not refresh_token:
-        return jsonify({"status": "error", "message": "Amazon did not return refresh token"}), 400
+    access_token = token_data.get("access_token")
+    expires_in = token_data.get("expires_in")
 
-    # Store encrypted refresh token in database
+    if not refresh_token or not access_token or not expires_in:
+        return jsonify({"status": "error", "message": "Amazon did not return the required tokens"}), 400
+
+    # Store encrypted refresh token in MariaDB
     result = await mariadb.Write.add_store(
         brand_id=session.get("brand"),
         selling_partner_id=selling_partner_id,
@@ -83,9 +88,22 @@ async def amazon_callback():
 
     if result["status"] == "error":
         return jsonify(result), 400
-    
+
+    # Store encrypted access token in Redis
+    store_id = result["store_id"]
+    encrypted_access_token = TokenEncryption.encrypt_token(access_token)
+
+    await redis_cache.set(
+        f"amazon:{store_id}:access_token",
+        encrypted_access_token,
+        expires_in=expires_in
+    )
+
+    session.pop("amazon_login_state", None)
+
     return jsonify({
         "status": "success",
         "message": "Amazon account connected successfully",
         "selling_partner_id": selling_partner_id,
     }), 200
+
