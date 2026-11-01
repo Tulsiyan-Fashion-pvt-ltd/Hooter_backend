@@ -111,11 +111,17 @@ async def create_product(listing_attributes: dict, category_attributes: dict, ca
 
 
 async def update_product(usku_id: str, listing_attributes: dict, category_attributes: dict) -> tuple[dict[str, str], int]:
-    response = await asyncio.gather(mariadb.Write.update_catalog(usku_id, listing_attributes), 
-                                    mongodb.Write.update_catalog(usku_id, category_attributes))
-    
-    if response[0] != "ok" or response[1] != "ok": 
-        return {"status": "failed", "message": "error occured while updating the catalog"}, 500
+    tasks = []
+    if listing_attributes:
+        tasks.append(mariadb.Write.update_catalog(usku_id, listing_attributes))
+    if category_attributes:
+        tasks.append(mongodb.Write.update_catalog(usku_id, category_attributes))
+
+    responses = await asyncio.gather(*tasks)
+
+    for response in responses:
+        if response != "ok": 
+            return {"status": "failed", "message": "error occured while updating the catalog"}, 500
 
     return {"status": "successful", "message": "successfully updated the catalog product"}, 200
 

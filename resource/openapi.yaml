@@ -1655,7 +1655,7 @@ paths:
 
         "default":
           $ref: '#/components/responses/default'
-    put:
+    patch:
       summary:  Update catalog product
       description:  Update catalog product listing and category attributes data
       security:

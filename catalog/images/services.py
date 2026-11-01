@@ -171,7 +171,7 @@ async def background_upload_bulk_images(job_id: str, image_data: dict, usku_id: 
             tasks[job_id]['progress'] = f"{round(((work_done/total_work)*100), 2)}%"
 
         finally:
-            Path(image_path).unlink()
+            Path(image_path).unlink(missing_ok=True)
             tasks[job_id]['event'].set() # execute the waiting function
 
     if work_done == total_work:
@@ -211,7 +211,14 @@ async def background_update_bulk_images(job_id: str, image_data: dict, usku_id: 
     work_done = 0
     for image_type in image_data.keys():
         sql_image_data = await mariadb.Fetch.image(usku_id, image_type)
-        
+
+        if not sql_image_data:
+            try:
+                await upload_image_type(image_data.get(image_type).get('path'), image_type, image_data.get(image_type).get('order'), usku_id)
+            except Exception as e:
+                print(e)
+                upload_status.append({'status': 'failed', 'message': 'Could not upload the image', 'image_type': image_type, 'code': '92f13882', 'error': str(e)})
+
         url_key_obj = {
             _.get('image_variation'): _.get('image_url')
             for _ in sql_image_data
@@ -219,6 +226,9 @@ async def background_update_bulk_images(job_id: str, image_data: dict, usku_id: 
 
         async with aiofiles.open(image_data.get(image_type).get('path'), 'rb') as file:
             image = await file.read()
+        
+        # unlink path
+        Path(image_data.get(image_type).get('path')).unlink(missing_ok=True)
 
         s3_upload_response = await image_variants_upload(image, url_key_obj)
     
@@ -226,7 +236,7 @@ async def background_update_bulk_images(job_id: str, image_data: dict, usku_id: 
             work_done += 1
             upload_status.append({'status': 'successful', 'message': 'Successfully uploaded the image', 'image_type': image_type})
         else:
-            upload_status.append({'status': 'failed', 'message': 'Could not upload the image', 'image_type': image_type})
+            upload_status.append({'status': 'failed', 'message': 'Could not upload the image', 'image_type': image_type, 'code': 'f3590317'})
 
         '''sse task update'''
         progress = f"{round((work_done/total_work) * 100, 2)}%"

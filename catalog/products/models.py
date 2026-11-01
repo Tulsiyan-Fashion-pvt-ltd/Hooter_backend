@@ -1,6 +1,6 @@
-from pydantic import BaseModel, Field, create_model, ConfigDict
+from pydantic import BaseModel, Field, create_model, ConfigDict, model_validator, BeforeValidator
 # from float import float
-from typing import Literal
+from typing import Literal, Annotated
 
 
 
@@ -45,7 +45,7 @@ class ListingAttributesModel(BaseModel):
 
 
 
-def buildProductAttributeModel(attributes: dict[str, str|bool]):
+def buildProductAttributeModel(attributes: dict[str, str|bool|int]):
     """
     FUNCTION FOR DYNAMIC PRODUCT DETAILS
 
@@ -73,8 +73,8 @@ def buildProductAttributeModel(attributes: dict[str, str|bool]):
         else:
             python_type = TYPE_MAP[attr_type]
 
-        # if not attr.get("required"):
-        #     python_type = python_type | None
+        if not attr.get("required"):
+            python_type = python_type | None
 
         default = ... if attr.get("required", False) else None
 
@@ -89,3 +89,82 @@ def buildProductAttributeModel(attributes: dict[str, str|bool]):
         )
 
     return create_model("ListingAttributesModel", **fields, __config__=ConfigDict(extra="allow"))
+
+
+
+class productUpdatePayloadModel(BaseModel):
+    listing_attributes: dict| None = None
+    category_attributes: dict| None = None
+
+    @model_validator(mode='before')
+    @classmethod
+    def validate_payload(cls, data):
+        print(data)
+        if "listing_attributes" in data and data.get("listing_attributes") is None:
+            raise ValueError('listing_attributes must contain listing payload')
+        
+        if "category_attributes" in data and data.get('category_attributes') is None:
+            raise ValueError('listing_attributes must contain listing payload')
+
+        return data
+
+
+
+def not_null_optional_attr(value: any) -> any:
+    """
+    FUNCTION TO VALIDATORS
+    """
+    if value is None:
+        raise ValueError('Value can not be ', None)
+    else:
+        return value
+
+
+
+def createUpdateProductAttributeModel(attributes: dict[str, str|bool|int]):
+    """
+    FUNCTION FOR DYNAMIC PRODUCT DETAILS
+
+    Args:
+        attributes:
+            Attributes for dynamic product details which includes `field`, `name`, `description`, `required` etc.
+
+    Returns:
+        pydantic model for product attributes
+    """
+    fields = {}
+    for attr in attributes:
+        attr_type = attr.get("type", "string")
+
+        if attr_type == "enum":
+            values = attr.get("options", [])
+
+            if not values:
+                raise ValueError(
+                    f"Enum attribute '{attr['field']}' has no allowed values"
+                )
+
+            python_type = Literal[*values]
+        else:
+            python_type = TYPE_MAP[attr_type]
+
+        default =  None
+        constraints = {}
+
+        ### Since this is for a patch method, all the keys should be optional but the required type attribute's 
+        ### value must not be None
+        if attr.get('required') == True:
+            python_type = Annotated[python_type, BeforeValidator(not_null_optional_attr)]
+        else:
+            # adding the None optional null
+            python_type = python_type | None
+
+        if attr_type == "string" and "max_length" in attr:
+            constraints["max_length"] = attr.get("max_length")
+
+        fields[attr["field"]] = (
+            python_type,
+            Field(default, **constraints)
+        )
+
+    return create_model("UpdateProductAttributeModel", **fields, __config__=ConfigDict(extra="allow"))
