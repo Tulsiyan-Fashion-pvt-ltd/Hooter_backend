@@ -47,6 +47,7 @@ async def install_store():
 
 
 @auth.get("/callback")
+@validate_csrf
 @login_required
 @brand_required
 async def auth_callback():

@@ -40,7 +40,7 @@ async def get_product_stock(usku_id: str):
 
 
 
-@stocks.get("/count")
+@stocks.get("/overview")
 @login_required
 @brand_required
 async def get_inventory_counts():
