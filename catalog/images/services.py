@@ -215,28 +215,29 @@ async def background_update_bulk_images(job_id: str, image_data: dict, usku_id: 
         if not sql_image_data:
             try:
                 await upload_image_type(image_data.get(image_type).get('path'), image_type, image_data.get(image_type).get('order'), usku_id)
+                upload_status.append({'status': 'successful', 'message': 'Successfully uploaded the image', 'image_type': image_type})
             except Exception as e:
                 print(e)
                 upload_status.append({'status': 'failed', 'message': 'Could not upload the image', 'image_type': image_type, 'code': '92f13882', 'error': str(e)})
-
-        url_key_obj = {
-            _.get('image_variation'): _.get('image_url')
-            for _ in sql_image_data
-        }
-
-        async with aiofiles.open(image_data.get(image_type).get('path'), 'rb') as file:
-            image = await file.read()
-        
-        # unlink path
-        Path(image_data.get(image_type).get('path')).unlink(missing_ok=True)
-
-        s3_upload_response = await image_variants_upload(image, url_key_obj)
-    
-        if s3_upload_response == "ok":
-            work_done += 1
-            upload_status.append({'status': 'successful', 'message': 'Successfully uploaded the image', 'image_type': image_type})
         else:
-            upload_status.append({'status': 'failed', 'message': 'Could not upload the image', 'image_type': image_type, 'code': 'f3590317'})
+            url_key_obj = {
+                _.get('image_variation'): _.get('image_url')
+                for _ in sql_image_data
+            }
+
+            async with aiofiles.open(image_data.get(image_type).get('path'), 'rb') as file:
+                image = await file.read()
+
+            # unlink path
+            Path(image_data.get(image_type).get('path')).unlink(missing_ok=True)
+
+            s3_upload_response = await image_variants_upload(image, url_key_obj)
+
+            if s3_upload_response == "ok":
+                work_done += 1
+                upload_status.append({'status': 'successful', 'message': 'Successfully updated the image', 'image_type': image_type})
+            else:
+                upload_status.append({'status': 'failed', 'message': 'Could not update the image', 'image_type': image_type, 'code': 'f3590317'})
 
         '''sse task update'''
         progress = f"{round((work_done/total_work) * 100, 2)}%"

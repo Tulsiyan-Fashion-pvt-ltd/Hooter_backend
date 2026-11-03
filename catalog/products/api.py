@@ -274,11 +274,14 @@ async def update_catalog_data(usku_id):
                                       categories.Fetch.category_schema(type_id))
     
     try:
-        ListingAttributeModel = models.createUpdateProductAttributeModel(payload_schema[0].get('attributes'))
-        CategoryAttributeModel = models.createUpdateProductAttributeModel(payload_schema[1].get('attributes'))
-        
-        listing_attributes = ListingAttributeModel.model_validate(listing_attributes).model_dump(exclude_unset=True) if listing_attributes is not None else {}
-        category_attributes = CategoryAttributeModel.model_validate(category_attributes).model_dump(exclude_unset=True) if category_attributes is not None else {}
+        if listing_attributes is not None:
+            ListingAttributeModel = models.createUpdateProductAttributeModel(payload_schema[0].get('attributes'))
+            listing_attributes = ListingAttributeModel.model_validate(listing_attributes).model_dump(exclude_unset=True)
+
+        if category_attributes is not None:
+            CategoryAttributeModel = models.createUpdateProductAttributeModel(payload_schema[1].get('attributes'))
+            category_attributes = CategoryAttributeModel.model_validate(category_attributes).model_dump(exclude_unset=True)
+
     except ValueError as e:
         return jsonify({'status': 'failed', "message": "Invalid Payload", "errors": e.errors(), "code": "74fb7ffd"}), 422
     except Exception as e:
