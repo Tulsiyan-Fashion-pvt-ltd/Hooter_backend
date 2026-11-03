@@ -1,8 +1,9 @@
 import secrets
 from quart import Blueprint, jsonify, redirect, request, session
 from utils.prerequirements import login_required, brand_required
+from security_extensions import validate_csrf
 from ..stores import mariadb
-from platforms.flipkart.auth.helper import (
+from platforms.flipkart.auth.services import (
     generate_state,
     build_flipkart_authorization_url,
     exchange_authorization_code,
@@ -14,7 +15,11 @@ import redis_cache
 auth = Blueprint("flipkart_auth", __name__, url_prefix="/auth")
 
 
+
 @auth.get("/authorize")
+@validate_csrf
+@login_required
+@brand_required
 async def authorize_flipkart():
     """
     Start Flipkart OAuth authorization for the currently selected brand.
@@ -51,6 +56,9 @@ async def authorize_flipkart():
 
 
 @auth.get("/callback")
+@validate_csrf
+@login_required
+@brand_required
 async def flipkart_callback():
     """
     Handle Flipkart's OAuth callback and save tokens for the current brand.

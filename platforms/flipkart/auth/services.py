@@ -4,11 +4,19 @@ from urllib.parse import urlencode
 import aiohttp
 from dotenv import load_dotenv
 from quart import url_for
+import redis_cache
+from utils.encryption import TokenEncryption
+from ..stores import mariadb as storedb
+from .mariadb import mariadb
 
 load_dotenv()
 
 FLIPKART_AUTHORIZE_URL = "https://api.flipkart.net/oauth-service/oauth/authorize"
 FLIPKART_TOKEN_URL = "https://api.flipkart.net/oauth-service/oauth/token"
+
+
+
+
 
 
 def generate_state():
@@ -77,7 +85,7 @@ async def exchange_authorization_code(code: str, state: str) -> dict:
             return response_data
 
 
-async def get_access_token(refresh_token: str) -> dict:
+async def exchange_refresh_token(refresh_token: str) -> dict:
     """
     Use a refresh token to request a new access token.
     Returns the complete token response.
@@ -110,3 +118,64 @@ async def get_access_token(refresh_token: str) -> dict:
                 raise RuntimeError("Flipkart token response is missing access_token")
 
             return response_data
+
+
+
+
+async def get_access_token(brand_id: str) -> str:
+    """
+    Return a valid Flipkart access token for a brand.
+    Refresh the token when it is missing from Redis.
+    """
+    cache_key = f"flipkart:{brand_id}:access_token"
+
+    # Check Redis for the existing access token.
+    cached_token = await redis_cache.get(cache_key)
+    if cached_token:
+        return TokenEncryption.decrypt_token(cached_token)
+
+    
+    account = await storedb.Fetch.get_account(brand_id)
+    if not account:
+        raise ValueError("No Flipkart account is connected to this brand")
+    
+    # Fetch.get_account() should decrypt the refresh token.
+    refresh_token = account["refresh_token"]
+    if not refresh_token:
+        raise ValueError("Flipkart refresh token is missing")
+
+    # Request a new access token from Flipkart.
+    token_data = await exchange_refresh_token(refresh_token)
+    new_access_token = token_data.get("access_token")
+    expires_in = token_data.get("expires_in")
+    if not new_access_token or expires_in is None:
+        raise RuntimeError("Flipkart returned an incomplete token response")
+    
+    try:
+        expires_in = int(expires_in)
+        if expires_in <= 0:
+            raise ValueError
+    except (TypeError, ValueError):
+        raise RuntimeError("Flipkart returned an invalid access token expiry")
+
+    # Update the refresh token in MariaDB if Flipkart returns a replacement.
+    new_refresh_token = token_data.get("refresh_token")
+    new_refresh_token_expires_in = token_data.get("refresh_token_expires_in")
+    if new_refresh_token:
+        result = await mariadb.Write.update_tokens(
+            brand_id=brand_id,
+            refresh_token=new_refresh_token,
+            refresh_token_expires_in=new_refresh_token_expires_in,
+        )
+        if result.get("status") != "ok":
+            raise RuntimeError("Unable to save the refreshed Flipkart refresh token")
+        
+    # Encrypt the access token and cache it in Redis.
+    encrypted_access_token = TokenEncryption.encrypt_token(new_access_token)
+    await redis_cache.set(
+        cache_key,
+        encrypted_access_token,
+        expires_in=expires_in,
+    )
+    
+    return new_access_token

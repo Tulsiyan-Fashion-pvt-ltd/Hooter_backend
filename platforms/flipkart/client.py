@@ -1,6 +1,22 @@
+"""
+FlipkartAPIClient:
+    A class to connect 3rd party `flipkart` platform with Hooter internal backend system.
+
+    USAGE:  
+        from platforms.flipkart.FlipkartAPIClient import FlipkartAPIClient
+
+
+        def func():
+            // "logic"
+            await FlipkartAPIClient.request(*params)
+
+AUTHOR:
+    Kashish
+"""
+
 import json
 import aiohttp
-from platforms.flipkart.stores.services import FlipkartService
+from .auth.services import get_access_token
 
 
 class FlipkartAPIClient:
@@ -23,7 +39,7 @@ class FlipkartAPIClient:
 
         # Get a valid access token for this brand.
         self.access_token = (
-            await FlipkartService.get_valid_access_token(self.brand_id)
+            await get_access_token(self.brand_id)
         )
 
         # Add the access token to the request headers.
@@ -51,18 +67,12 @@ class FlipkartAPIClient:
                 data=body_bytes,
                 headers=headers,
             ) as response:
-                response_text = await response.text()
+                json_response = await response.json()
 
                 if response.status >= 400:
                     raise RuntimeError(
                         f"Flipkart Seller API request failed "
-                        f"({response.status}): {response_text}"
+                        f"({response.status}): {await response.text()}"
                     )
 
-                if not response_text:
-                    return {}
-
-                try:
-                    return json.loads(response_text)
-                except json.JSONDecodeError:
-                    raise RuntimeError("Flipkart returned an invalid JSON response")
+                return json_response
