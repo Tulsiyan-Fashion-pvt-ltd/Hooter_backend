@@ -21,7 +21,7 @@ class Write:
                     ''', (brand_id, selling_partner_id, encrypted_token))
 
                     await conn.commit()
-                    return {'status': 'ok', 'message': 'Amazon store added successfully', 'selling_partner_id': selling_partner_id}
+                    return {'status': 'ok', 'message': 'Amazon store added successfully', 'store_id': cursor.lastrowid, 'selling_partner_id': selling_partner_id}
 
                 except Exception as e:
                     await conn.rollback()
