@@ -36,12 +36,39 @@ class Fetch:
                     elif filter == "low-stock":
                         sql_condition = "and stock <= 10 and stock > 0"   
 
-                    query = f'''select u.usku_id, i.stock
-                                from master_inventory as i 
-                                inner join
-                                usku_record as u on u.usku_id = i.usku_id
-                                where brand_id = %s
+                    query = f'''SELECT 
+                                    u.usku_id, u.sku_id, i.stock,  u.type_name,
+                                    i.updated_at, c.product_title, 
+                                    SUM(c.price * i.stock) AS stock_value_at_selling_price,
+                                    SUM(c.compared_price * i.stock) AS stock_value_at_mrp,
+                                    SUM(c.purchasing_cost  * i.stock) AS stock_value_at_purchasing_cost,
+                                    img_url.image_url as main_image,
+                                    CASE 
+                                        WHEN i.stock <= 10 AND i.stock >=1 THEN 'low_stock' 
+                                        WHEN i.stock = 0 THEN 'out_of_stock' 
+                                        WHEN i.stock > 0 THEN 'in_stock'
+                                    end as status
+                                FROM master_inventory as i 
+                                INNER JOIN usku_record as u 
+                                    ON u.usku_id = i.usku_id
+                                INNER JOIN catalog as c
+                                    ON  c.usku_id = i.usku_id
+                                INNER JOIN product_images as img
+                                    ON img.usku_id = i.usku_id
+                                    AND img.image_type="main"
+                                INNER JOIN image_urls as img_url
+                                    ON img_url.image_id = img.id
+                                    AND image_variation='webp_card'
+                                WHERE brand_id = %s
                                 {sql_condition}
+                                GROUP BY 
+                                u.usku_id, 
+                                u.sku_id, 
+                                i.stock,  
+                                u.type_name,
+                                i.updated_at, 
+                                c.product_title,
+                                img_url.image_url
                             '''
                     values = (brand_id, )
                     await cursor.execute(query, values)
@@ -98,11 +125,15 @@ class Fetch:
                     query = '''
                             select
                             count(i.stock) as total, 
-                            count(case when i.stock = 0 then 1 end) as oos,
-                            count(case when i.stock!=0 then 1 end) as sellable,
-                            count(case when i.stock <= 10 and stock >0 then 1 end) as low
+                            count(case when i.stock = 0 then 1 end) as out_of_stock,
+                            count(case when i.stock!=0 then 1 end) as in_stock,
+                            count(case when i.stock <= 10 and stock >0 then 1 end) as low_stock,
+                            sum(c.purchasing_cost * i.stock) as stock_value_at_purchasing_cost,
+                            sum(c.compared_price * i.stock) as stock_value_at_mrp,
+                            sum(c.price * i.stock) as stock_value_at_selling_price
                             from master_inventory as i
                             inner join usku_record as u on u.usku_id = i.usku_id
+                            inner join catalog as c on c.usku_id = i.usku_id
                             where u.brand_id = %s
                             '''
                     values = (brand_id, )

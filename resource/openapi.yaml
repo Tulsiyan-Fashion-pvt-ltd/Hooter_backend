@@ -2403,13 +2403,10 @@ paths:
     get:
       summary: Get product stock
       description: Fetches the stock for the given usku_id.
-
       tags:
       - Inventory
-
       security:
       - cookieAuth: []
-
       parameters:
         - in: path
           name: usku_id
@@ -2417,7 +2414,6 @@ paths:
             type: string
           required: true
           description: Unique identifier for the product.
-
       responses:
         "200":
           description: Successful response
@@ -2439,7 +2435,6 @@ paths:
               example:
                 usku_id: "USKU12345"
                 stock: 50
-  
         "404":
           description: Product stock not found
           content:
@@ -2456,11 +2451,9 @@ paths:
                   message:
                     type: string
                     example: "Product stock not found for the given usku_id"
-  
               example:
                 status: "failed"
                 message: "Product stock not found for the given usku_id"
-  
         "500":
           description: Internal server error
           content:
@@ -2483,19 +2476,15 @@ paths:
                 message: "Internal server error"
         default:
           $ref: "#/components/responses/default"
-
   
-  /inventory/stocks/count:
+  /inventory/stocks/overview:
     get:
       summary: Get inventory counts
       description: Fetches the total, out of stock, sellable and low stock product counts for the brand.
-  
       tags:
         - Inventory
-  
       security:
         - cookieAuth: []
-  
       responses:
         "200":
           description: Successful response
@@ -2505,22 +2494,35 @@ paths:
                 type: object
                 required:
                   - total
-                  - oos
-                  - sellable
-                  - low
+                  - out_of_stock
+                  - in_stock
+                  - low_stock
                 properties:
                   total:
                     type: integer
                     description: Total number of inventory products
-                  oos:
+                    example: 4
+                  out_of_stock:
                     type: integer
+                    example: 3
                     description: Number of out of stock products
-                  sellable:
+                  in_stock:
                     type: integer
                     description: Number of products with stock available
-                  low:
+                    example: 1
+                  low_stock:
                     type: integer
                     description: Number of products with stock between 1 and 10
+                    example: 1
+                  stock_value_at_mrp:
+                    type: string
+                    example: 50090.00
+                  stock_value_at_purchasing_cost:
+                    type: string
+                    example: null
+                  stock_value_at_selling_price:
+                    type: string
+                    example: 34330.00
   
         "401":
           $ref: "#/components/responses/login_required"
@@ -3307,6 +3309,8 @@ paths:
         - Shopify
       security:
         - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/csrf'
       requestBody:
         description: OAuth information from shopify
         required: true
@@ -3378,6 +3382,7 @@ paths:
           description: Timestamp
           schema:
             type: integer
+        - $ref: '#/components/parameters/csrf'
       responses:
         "302":
           description: Successfully retreived refresh token and access token
@@ -3399,6 +3404,9 @@ paths:
   
       security:
         - cookieAuth: []
+
+      parameters:
+        - $ref: '#/components/parameters/csrf'
   
       responses:
         "200":
@@ -3466,10 +3474,8 @@ paths:
       description: Handles Flipkart's OAuth callback, validates the state, exchanges the authorization code for tokens, and saves the account for the selected brand.
       tags:
         - Flipkart
-  
       security:
         - cookieAuth: []
-  
       parameters:
         - name: code
           in: query
@@ -3477,14 +3483,13 @@ paths:
           schema:
             type: string
           description: Authorization code returned by Flipkart.
-  
         - name: state
           in: query
           required: true
           schema:
             type: string
           description: OAuth state returned by Flipkart for validation.
-  
+        - $ref: '#/components/parameters/csrf'
       responses:
         "200":
           description: Flipkart account connected successfully.

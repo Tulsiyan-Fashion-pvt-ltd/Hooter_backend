@@ -7,7 +7,7 @@ from quart import url_for
 import redis_cache
 from utils.encryption import TokenEncryption
 from ..stores import mariadb as storedb
-from .mariadb import mariadb
+from . import mariadb
 
 load_dotenv()
 
