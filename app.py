@@ -18,6 +18,7 @@ from swagger_ui import api_doc
 from security_extensions import limiter, security
 from arq.connections import RedisSettings
 from arq import create_pool
+from integrations.routes import integrations
 
 
 
@@ -65,6 +66,7 @@ app.register_blueprint(catalog)
 app.register_blueprint(inventory)
 app.register_blueprint(users)
 app.register_blueprint(platforms)
+app.register_blueprint(integrations)
 
 
 # creating and closing of the connection pool
