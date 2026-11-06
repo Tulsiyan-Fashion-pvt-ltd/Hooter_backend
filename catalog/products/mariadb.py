@@ -3,7 +3,7 @@ from asyncmy.cursors import DictCursor
 from datetime import datetime
 from traceback import print_exc
 from typing import Literal
-
+from config import _allow_max_records_per_page
 
 class Write:
     @staticmethod
@@ -110,23 +110,39 @@ class Write:
 
 
     @staticmethod
-    async def variants(usku_id: str, variants: list):
+    async def variants(parent_usku_id, variant_usku_id) -> dict[str, str|IndentationError]:
+        """
+        Relate multiple ids for a specific variant ID
+
+        Args:
+            parent_usku_id: Context parent USKU ID
+            variant_usku_id: USKU ID to upload as a variant
+
+        Returns:
+            dict with `status` and `error`
+        """
         pool = current_app.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
-                    query = '''insert into variants(usku_id, variant_id)
-                                values (%s, %s)'''
-
-                    variant_values = [(usku_id, variant.get("variant_id")) for variant in variants]
-                    await cursor.executemany(query, variant_values)
+                    query = '''insert into product_variants(usku_id, variant_id)
+                                values (%s, 
+                                            (
+                                                SELECT 
+                                                variant_id
+                                                WHERE usku_id=%s
+                                            )
+                                    )
+                            '''
+                    values = (variant_usku_id, parent_usku_id)
+                    await cursor.execute(query, values)
                     await connection.commit()
-                    return {"error": None}
+                    return {'status': 'ok', "error": None}
             except Exception as e:
                 await connection.rollback()
-                print(f"error encountered while adding variants for usku_id {usku_id}", e)
-                return {"error": e.args[0]}
-
+                print(f"error encountered while adding variants for id {variant_usku_id}", e)
+                return {'status': 'failed', "error": e.args[0]}
+    
 
     @staticmethod
     async def delete_catalog(usku_id):
@@ -215,24 +231,6 @@ class Write:
 
 class Fetch:
     @staticmethod
-    async def count_catalogs():
-        pool = current_app.pool
-        async with pool.acquire() as connection:
-            try:
-                async with connection.cursor(cursor = DictCursor) as cursor:
-                    query = '''select count(usku_id) as count from usku_record'''
-
-                    await cursor.execute(query)
-                    count = await cursor.fetchone()
-                    await connection.commit()
-                    return count.get('count') if count else 0
-            except Exception as e:
-                await connection.rollback()
-                print(f"error encountered during fetching catalog counts\n{e}")
-                return ("error", "error in count_catalogs")
-
-
-    @staticmethod
     async def is_sku_id_exists(sku_id, brand_id):
         pool = current_app.pool
         async with pool.acquire() as connection:
@@ -289,7 +287,38 @@ class Fetch:
                 print(f"error occured while fetching the usku_record on is_usku_id_exists function\n{e}")
                 return ("error", "could not fetch the availability from the usku_record")
 
-    
+
+    @staticmethod
+    async def sku_id(usku_id: str) -> dict[str, str|int]:
+        """
+        Get SKU ID of the product
+
+        Args:
+            usku_id: Universally unique SKU ID
+
+        Returns:
+            dict[Literal["status", "value", "error"], str| int]
+        """
+        pool = current_app.pool
+        async with pool.acquire() as connection:
+            try:
+                async with connection.cursor(cursor=DictCursor) as cursor:
+                    query = '''
+                        SELECT sku_id
+                        FROM usku_record
+                        WHERE usku_id = %s
+                        '''
+                    values = (usku_id, )
+                    await cursor.execute(query, values)
+
+                    sku = await cursor.fetchone()
+                    await connection.commit()
+                    return {'status': 'ok', "value":sku.get('sku_id')}
+            except Exception as e:
+                await connection.rollback()
+                print(f"error occured while fetching the usku_record on is_usku_id_exists function\n{e}")
+                return {'status': 'failed', 'error': e.args[0]}
+        
 
     @staticmethod
     async def catalog_product(usku_id: str):
@@ -335,6 +364,8 @@ class Fetch:
                     else:
                         "error"
 
+                    if conditions.get('limit') > _allow_max_records_per_page:
+                        raise ValueError('Limit can not exceed max limit ', _allow_max_records_per_page)
                     
                     items_query = f'''select url.image_url, s.usku_id, s.sku_id,
                     c.product_title, c.compared_price, c.price, c.purchasing_cost, s.status,
@@ -478,12 +509,84 @@ class Fetch:
                             '''
                     value = (brand_id, )
                     await cursor.execute(query, value)
-                    await connection.commit()
                     categories = await cursor.fetchall()
+                    await connection.commit()
+
                     return {"categories": categories, "error": None}                    
-                    
             except Exception as e:
                 await connection.rollback()
                 print(e)
                 print_exc()
                 return {"error": e.args[0]}
+
+
+    # ________________________________________________________________________________________________________
+    # VARIANTS QUERY
+
+    @staticmethod
+    async def count_variants(usku_id: str) -> dict[str, str|int]:
+        """
+        Returns the count of the variants of the product
+
+        Args:
+            usku_id: Universally unique SKU ID
+        
+        Returns:
+            dict with status, result, and error as keys
+        """
+        pool = current_app.pool
+        async with pool.acquire() as connection:
+            try:
+                async with connection.cursor(cursor=DictCursor) as cursor:
+                    query = '''
+                            SELECT COUNT(usku_id) as count
+                            FROM product_variants
+                            WHERE variant_id = (SELECT variant_id 
+                                FROM product_variants
+                                WHERE usku_id = %s)
+                            '''
+                    value = (usku_id, )
+                    await cursor.execute(query, value)
+                    count = await cursor.fetchone()
+                    await connection.commit()
+
+                    return {"status": 'ok', "value": count.get('count')}                    
+            except Exception as e:
+                await connection.rollback()
+                print(e)
+                print_exc()
+                return {"error": e.args[0], 'status': 'failed'}
+
+
+    @staticmethod
+    async def variant_id(usku_id: str) -> dict[str, str|int]:
+        """
+        Fetches the variant Id for the given USKU ID
+
+        Args:
+            usku_id: Universally unique SKU ID
+        
+        Returns:
+            dict with status, result, and error as keys
+        """
+        pool = current_app.pool
+        async with pool.acquire() as connection:
+            try:
+                async with connection.cursor(cursor=DictCursor) as cursor:
+                    query = '''
+                            SELECT variant_id
+                            FROM product_variants
+                            WHERE usku_id = %s)
+                            '''
+                    value = (usku_id, )
+                    await cursor.execute(query, value)
+                    result = await cursor.fetchone()
+                    await connection.commit()
+
+                    variant_id = result.get('variant_id')
+                    return {"status": 'ok', "value": variant_id}                    
+            except Exception as e:
+                await connection.rollback()
+                print(e)
+                print_exc()
+                return {"error": e.args[0], 'status': 'failed'}

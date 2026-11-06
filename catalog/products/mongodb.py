@@ -96,7 +96,7 @@ class Fetch:
             doc = await mongo.db.product_attributes.find_one({"usku_id": usku_id}, {"_id": 0, "type_id": 0, "usku_id": 0})
 
             if not doc:
-                return {"error": "not found"}
+                return {}
 
             return doc
         except Exception as e:

@@ -2322,7 +2322,35 @@ paths:
         "default":
           $ref: "#/components/responses/default"
 
-          
+  /catalog/products/variants/suggested-sku/{usku_id}:
+    get:
+      summary: Get suggested SKU ID
+      description: Get suggested SKU ID  for the new variant creation
+      tags:
+        - Catalog
+      parameters:
+        - in: path
+          name: usku_id
+          description: Universally unique SKU ID
+          required: true
+          schema:
+            type: string
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Successful request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: 
+                  sku_id:
+                    type: string
+                    example: sku#100-1
+        "default":
+          $ref: '#/components/schemas/default' 
+
   /inventory/inward/count:
     get:
       summary:  Get the inward count
@@ -2554,12 +2582,38 @@ paths:
           schema:
             type: string
             enum:
-              - sellable
-              - oos
+              - in-stock
+              - out-of-stock
               - low-stock
           required: false
           description: Filter inventory by sellable, out of stock, or low stock products.
-  
+        - in: query
+          name: records
+          required: false
+          description: Number of records per page between 10 to 50 inclusive*
+          schema:
+            type: number
+            example: 10
+        - in: query
+          name: page
+          required: false
+          description: Specify which page number you would like to access, can not be less than 1
+          schema:
+            type: number
+            example: 1
+        - in: query
+          name: type_id
+          description: Show specific product type filter
+          required: false
+          schema:
+            type: string
+            example: gid://shopify/TaxonomyCategory/aa-1-23-2-1
+        - in: query
+          name: warehouse_id
+          description: Filter to select stock inventory from a particular warehouse
+          required: false
+          schema:
+            type: string
       responses:
         "200":
           description: Successful response
@@ -2577,7 +2631,36 @@ paths:
                       type: string
                     stock:
                       type: integer
-  
+                    main_image:
+                      type: string
+                      example: https://backend-dev.h0oter.com/catalog/images/webp_card/11477e111ad947af984e9eb652816a41/main.webp
+                    product_title:
+                      type: string
+                      example: Red traditional sari
+                    sku_id:
+                      type: string
+                      example: asdfadf
+                    status:
+                      type: string
+                      example: out_of_stock
+                    stock_value_at_mrp:
+                      type: string
+                      example: 0.00
+                    stock_value_at_purchasing_cost:
+                      type: string
+                      example: null
+                    stock_value_at_selling_price:
+                      type: string
+                      example: 0.00
+                    type_name:
+                      type: string
+                      example: Saris
+                    type_id:
+                      type: string
+                      example: gid://shopify/TaxonomyCategory/aa-1-23-2-1
+                    updated_at:
+                      type: string
+                      example: Tue, 20 Oct 2026 06:51:20 GMT
         "400":
           description: Invalid filter
           content:

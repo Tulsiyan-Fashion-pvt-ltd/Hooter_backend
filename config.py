@@ -17,3 +17,7 @@ _brand_image_root_key = "profile"
 '''IMAGE CONFIGS'''
 _image_types = ["original", "high_resol_webp", "low_resol_webp", "webp_card"]
 _max_allowed_image_size = 10 * 1024 * 1024 # 10MB
+
+
+'''CONFIG FOR TABLE RECORDS LIKE INVENTORY AND PRODUCT AND SO ON'''
+_allow_max_records_per_page = 50

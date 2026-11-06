@@ -11,7 +11,7 @@ from . import services
 from traceback import print_exc
 from uuid import uuid4
 from .sse import product_sse
-from .authorize import product_api_access_required
+from .authorize import product_api_access_required, product_access_required
 from security_extensions import validate_csrf
 from . import models
 
@@ -44,6 +44,10 @@ async def upload_single_catalog():
     UPLOAD SINGLE PRODUCT TO THE CATALOG
     """
     category_id = request.args.get('type-id', type=str)
+    parent_usku_id = request.args.get('parent-usku-id', type=str)
+
+    if not category_id:
+        return {'status': 'rejected', 'message': 'Category ID is not provided', 'code': '97f35e29'}, 422
 
     payload = await request.get_json()
     listing_attributes = dict(payload.get('listing_attributes'))
@@ -67,27 +71,15 @@ async def upload_single_catalog():
     """creating product in the system"""
     response = await services.create_product(listing_attributes = listing_attributes,
                                    category_attributes = product_attributes,
-                                   category_id = category_id
+                                   category_id = category_id,
+                                   parent_usku_id=parent_usku_id
                                 )
 
     if response.get("error"):
         return jsonify({"status": "failed", "message": response.get("error")}), response.get("code")
 
+
     return jsonify({"status": "successful", "message": "added the single catalog", "usku_id": response.get("usku_id")}), 200
-
-
-"""UNDER CONSTRUCTION 🚧🚧🚧"""
-# @products.post("/variants/<usku_id>")
-# @login_required
-# @brand_required
-# async def upload_variants(usku_id: str):
-#     variants = await request.get_json()
-
-#     db = await services.create_variants(usku_id, variants)
-#     if db.get("error"):
-#         return jsonify({"status": "failed", "message": db.get("error")}), 400
-
-#     return jsonify({"status": "successful", "message": db.get("message")}), 200
 
 
 
@@ -304,6 +296,39 @@ async def get_brand_uploaded_categories():
         return jsonify({'status': 'failed', 'message': 'Could not fetch the uploaded product categories'}), 500
 
     return jsonify({'status': 'successful', 'categories': categories.get('categories')}), 200
+
+
+
+# ----------------------------------------------------------------------------------------------------
+# PRODUCT VARIANTS
+
+
+@products.get('/variants/suggested-sku/<usku_id>')
+@login_required
+@brand_required
+@product_api_access_required
+async def get_variant_sku_id_suggestion(usku_id):
+    suggestion = await services.suggest_variant_sku_id(usku_id)
+    return jsonify(suggestion[0]), suggestion[1]
+
+
+
+"""UNDER CONSTRUCTION 🚧🚧🚧"""
+@products.post("/variants/<usku_id>")
+@login_required
+@brand_required
+@product_api_access_required
+async def upload_variants(usku_id: str):
+    variants = await request.get_json()
+
+    db = await services.create_variants(usku_id, variants)
+    if db.get("error"):
+        return jsonify({"status": "failed", "message": db.get("error")}), 400
+
+    return jsonify({"status": "successful", "message": db.get("message")}), 200
+
+
+
 
 
 

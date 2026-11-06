@@ -2,6 +2,15 @@ from quart import current_app
 from asyncmy.cursors import DictCursor
 from datetime import datetime
 from catalog.products.authorize import product_access_required
+from config import _allow_max_records_per_page
+from typing import Literal
+from os import getenv
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
+
 
 class Write:
             
@@ -12,17 +21,12 @@ class Write:
 
 class Fetch:
     @staticmethod
-    async def inventory_stocks(brand_id: str, filter: str = "") -> list[dict[str, str| int]]:
+    async def inventory_stocks(brand_id: str, filter: str = "", type_id: str|None = None, limit=10, offset=0, warehouse_id: str| None = None) -> dict:
         """Fetches the total inventory of the brand. Where it returns a list of dict objects with keys `usku_id`, `stock`
-        
-        Args:
-            brand_id:
-                Unique identifier for brands
-            filter:
-                filter is a string value, which takes the values as 'sellable', 'oos', 'low-stock'
 
         Returns:
-            list of dict objects with usku_id and stock    
+            dict with `status` and `error` if fails or
+            dict with `status` and list[dict[]] if status is ok   
         """
         pool = current_app.pool
         async with pool.acquire() as connection:
@@ -34,15 +38,27 @@ class Fetch:
                     elif filter == "oos":
                         sql_condition = "and stock = 0"
                     elif filter == "low-stock":
-                        sql_condition = "and stock <= 10 and stock > 0"   
+                        sql_condition = "and stock <= 10 and stock > 0" 
+
+                    # Adding category condition
+                    if type_id:
+                        sql_condition += f"AND u.type_id = '{type_id}'"
+
+                    # limit protection
+                    if limit > _allow_max_records_per_page:
+                        raise ValueError(f"limit can not be more then {_allow_max_records_per_page} per page")
+
+                    # warehouse check
+                    if warehouse_id:
+                        sql_condition += f"AND i.warehouse_id='{warehouse_id}'"
 
                     query = f'''SELECT 
-                                    u.usku_id, u.sku_id, i.stock,  u.type_name,
+                                    u.usku_id, u.sku_id, i.stock,  u.type_name, u.type_id,
                                     i.updated_at, c.product_title, 
                                     SUM(c.price * i.stock) AS stock_value_at_selling_price,
                                     SUM(c.compared_price * i.stock) AS stock_value_at_mrp,
                                     SUM(c.purchasing_cost  * i.stock) AS stock_value_at_purchasing_cost,
-                                    img_url.image_url as main_image,
+                                    CONCAT('{getenv('APP_DOMAIN')}','/',img_url.image_url) as main_image,
                                     CASE 
                                         WHEN i.stock <= 10 AND i.stock >=1 THEN 'low_stock' 
                                         WHEN i.stock = 0 THEN 'out_of_stock' 
@@ -69,16 +85,17 @@ class Fetch:
                                 i.updated_at, 
                                 c.product_title,
                                 img_url.image_url
+                                LIMIT %s OFFSET %s
                             '''
-                    values = (brand_id, )
+                    values = (brand_id, limit, offset)
                     await cursor.execute(query, values)
                     inventory = await cursor.fetchall()
                     await connection.commit()
-                    return inventory
+                    return {'status': 'ok', 'records': inventory}
             except Exception as e:
                 await connection.rollback()
                 print(f"error encountered whie fetching the inventory for {brand_id}\n{e}")
-                return "error"
+                return {'error': e.args[0], 'status': 'failed'}
 
 
     @staticmethod

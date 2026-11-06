@@ -3,7 +3,7 @@ from catalog.products import mongodb
 from catalog.categories import mongodb as categoriessql 
 from catalog.products import mariadb
 from catalog.categories import mongodb as category_mongodb
-from catalog.products.utils.id import create_variant_id, create_usku
+from catalog.products.helper import create_variant_id, create_usku
 from brand.auth import mariadb as brand_sql
 from catalog.images import mariadb as imagesql
 import asyncio
@@ -15,7 +15,7 @@ from utils import helper, workbook
 import s3
 from io import BytesIO
 from time import time
-from .authorize import product_access_required
+from .authorize import product_access_required, product_access
 from . import models
 import math
 
@@ -38,7 +38,7 @@ async def create_variants(usku_id: str, variants: list) -> dict| str:
     {"error": "error message"}
     """
     for variant in variants:
-        variant["variant_id"] = create_variant_id(usku_id)
+        variant["variant_id"] = create_variant_id()
 
     db = await mariadb.Write.variants(usku_id, variants)
     if db.get("error") is not None:
@@ -52,8 +52,13 @@ async def create_variants(usku_id: str, variants: list) -> dict| str:
 
 
 
-async def create_product(listing_attributes: dict, category_attributes: dict, category_id: str) -> dict| str:
+async def create_product(listing_attributes: dict, category_attributes: dict, category_id: str, parent_usku_id: str| None = None) -> dict| str:
     """
+    Upload single product in the system
+
+    NOTE: 
+        Mention `parent_usku_id` to upload the product as a variant
+
     RETURNS:\n
     If the operation is successful then 
         - `{"status": "successful", "message": "product upload completed", "usku_id": usku_id, "code": 200}`\n
@@ -98,9 +103,19 @@ async def create_product(listing_attributes: dict, category_attributes: dict, ca
             else:
                 return {"error": "Invalid value for the listing_attributes column", "code": 400}
 
-
         if mongo_response.get('error'):
             return {"status": "successful", "message": "Product has listed but the product data could not be uploaded", "code": 202}
+
+        if parent_usku_id:
+            if await product_access(parent_usku_id):
+                variant_upload = await mariadb.Write.variants(parent_usku_id, usku_id)
+                if variant_upload.get('status') != 'ok':
+                    return {"status": "successful", "message": "Product uploaded but could not create a variant", "code": 202}
+                else:
+                    return {"status": "successful", "message": "Variant uploaded successfully", "usku_id": usku_id, "code": 200}
+            else:
+                return {"status": "successful", "message": "Product uploaded but could not create a variant", "code": 202}
+
         return {"status": "successful", "message": "product upload completed", "usku_id": usku_id, "code": 200}
     except Exception as e:
         print(e)
@@ -361,4 +376,62 @@ async def get_uploaded_products(brand_id: str, status: str| None = None,
     }
     
     return {"catalog_list": sql_response.get('catalog_data'), "pagitation": pagigation}, 200
-    
+
+
+
+#--------------------------------------------------------------------------------------------------------------------------------
+# VARIANT SERVICES  
+
+
+@product_access_required
+async def suggest_variant_sku_id(usku_id: str):
+    """
+    Suggest SKU ID  for the variant
+
+    Args:
+        usku_id: Univerally unique SKU ID
+
+    Returns:
+        Autogenrated sku id for suggestion
+    """
+    result = await asyncio.gather(mariadb.Fetch.count_variants(usku_id), 
+                                         mariadb.Fetch.sku_id(usku_id))
+
+    variant_count = result[0]
+    sku_id = result[1]
+
+    if sku_id.get('value') is None:
+        return  {
+                    'status': 'failed', 
+                    'message': 'Unable to fetch the product', 
+                    'code': 'd6ec487d', 
+                    'error': sku_id.get('error')
+                }, 500
+
+    if variant_count.get('value') == None:
+        return  {
+                    "sku_id": f"{sku_id.get('value')}-{1}"
+                }, 500
+    else:
+        return {
+            "sku_id": f"{sku_id.get('value')}-{int(variant_count.get('value'))+1}"
+        }, 200
+
+
+
+# @product_access_required
+# async def upload_variants(usku_ids: list):
+#     """
+#     Relate multiple products for the variants
+#     """
+#     variant_id = None
+#     for usku_id in usku_ids:
+#         try:
+#             product_access_required(usku_id)
+#         except Exception as e:
+#             print(f"User does not have the product access for the given usku_id: {usku_id}")
+#             print(e)
+#             return {'status': 'failed', 'message': 'Product does not exists or user does not have the access', 'code': '4933039d'}, 403
+
+        
+        
