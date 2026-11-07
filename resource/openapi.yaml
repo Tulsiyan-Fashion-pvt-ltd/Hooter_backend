@@ -3664,7 +3664,7 @@ paths:
                   flipkart:
                     type: string
               example:
-                shopify: connection
+                shopify: connected
                 flipkart: not_connected
       
 
