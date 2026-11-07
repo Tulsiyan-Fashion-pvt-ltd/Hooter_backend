@@ -30,11 +30,8 @@ tags:
   - name: CSRF Token
     description: CSRF token API
     
-  - name: Shopify
-    description: shopify auth and platform api
-
-  - name : Flipkart
-    description: flipkart auth and platform api
+  - name: Platforms
+    description: Platform integrations API
 
 paths:
   /users/signup:
@@ -1637,7 +1634,7 @@ paths:
                   message:
                     type: string
               example:
-                status: success
+                status: successful
                 message: Product deleted successfully
 
         "400":
@@ -2898,7 +2895,6 @@ paths:
                     type: string
                     example: failed to add the supplier
                 
-
   /inventory/warehouse:
     get:
       summary: Get warehouses
@@ -3117,9 +3113,6 @@ paths:
   
         "default":
           $ref: "#/components/responses/default"
-  
-    
-
 
   /inventory/warehouse/{warehouse-id}:
     get:
@@ -3389,7 +3382,7 @@ paths:
       summary:  Install the shopify store
       description:  Install shopify store from the passed data through shopify OAuth
       tags:
-        - Shopify
+        - Platforms
       security:
         - cookieAuth: []
       parameters:
@@ -3431,7 +3424,7 @@ paths:
       summary:  Shopify callback api
       description: Shopify uses this url to redirect and pass the access_token, refresh_token and other credentials
       tags:
-        - Shopify
+        - Platforms
       security:
         - cookieAuth: []
       parameters:
@@ -3483,7 +3476,7 @@ paths:
       summary: Authorize Flipkart account
       description: Starts Flipkart OAuth authorization for the currently selected brand.Each brand can connect only one Flipkart account. 
       tags:
-        - Flipkart
+        - Platforms
   
       security:
         - cookieAuth: []
@@ -3556,7 +3549,7 @@ paths:
       summary: Handle Flipkart OAuth callback
       description: Handles Flipkart's OAuth callback, validates the state, exchanges the authorization code for tokens, and saves the account for the selected brand.
       tags:
-        - Flipkart
+        - Platforms
       security:
         - cookieAuth: []
       parameters:
@@ -3650,9 +3643,30 @@ paths:
                       - Flipkart returned an incomplete token response
                       - Flipkart returned invalid token expiry values
   
-  
-  
-
+  /platforms/integrations:
+    get:
+      summary: Get product connection status for the available platforms
+      description: Show the connection status of the available platforms as `connected` or `not_connection`
+      security:
+        - cookieAuth: []
+      tags:
+        - Platforms
+      responses:
+        "200":
+          description: Successful request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: 
+                  shopify:
+                    type: string
+                  flipkart:
+                    type: string
+              example:
+                shopify: connection
+                flipkart: not_connected
+      
 
 
 

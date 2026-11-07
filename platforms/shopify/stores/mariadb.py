@@ -95,7 +95,11 @@ class Write:
 class Fetch:
     @staticmethod
     async def stores(brand_id: str) -> list:
-        """Fetch all stores assigned to a brand."""
+        """Fetch all stores assigned to a brand.
+        
+        Returns:
+            List of dict containing `store_id` and `shopify_shope_name`
+        """
         pool = current_app.pool
         async with pool.acquire() as conn:
             async with conn.cursor(cursor=DictCursor) as cursor:

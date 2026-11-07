@@ -6,25 +6,31 @@ from asyncmy.cursors import DictCursor
 class Fetch:
 
     @staticmethod
-    async def get_brand_integrations(brand_id: str) -> list:
+    async def brand_connections(brand_id: str) -> list:
         pool = current_app.pool
 
         async with pool.acquire() as conn:
             async with conn.cursor(cursor=DictCursor) as cursor:
                 try:
                     await cursor.execute("""
-                        SELECT 'flipkart' AS flipkart, flipkart.seller_id, 'shopify' AS shopify, shopify.store_id
-                        FROM flipkart_sellers AS flipkart
-                        INNER JOIN shopify_stores AS shopify
-                            ON flipkart.brand_id = shopify.brand_id
-                        WHERE flipkart.brand_id = %s
+                        SELECT 
+                            CASE WHEN flipkart.seller_id THEN 'connected' ELSE 'not_connected' END as flipkart, 
+                            CASE WHEN shopify.store_id THEN 'connected' ELSE 'not_connected' END as shopify
+
+                            FROM brand
+                            LEFT JOIN shopify_stores as shopify 
+                                ON shopify.brand_id = brand.brand_id
+                            LEFT JOIN flipkart_sellers as flipkart 
+                                ON flipkart.brand_id = brand.brand_id
+                            WHERE
+                                brand.brand_id = %s
                     """, (brand_id,))
 
-                    integrations = await cursor.fetchall()
+                    integrations = await cursor.fetchone()
                     await conn.commit()
-                    return integrations
-
+                    print(integrations)
+                    return{'status': 'ok', 'value': integrations}
                 except Exception as e:
                     await conn.rollback()
                     print(f"Error fetching brand integrations: {str(e)}")
-                    return None
+                    return {'status': 'failed', 'error': e.args[0]}
