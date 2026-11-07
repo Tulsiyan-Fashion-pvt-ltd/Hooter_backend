@@ -30,10 +30,6 @@ async def authorize_flipkart():
     if brand_id is None:
         return jsonify({"status": "error", "message": "Brand ID is missing from the session",}), 400
 
-    try:
-        brand_id = int(brand_id)
-    except (TypeError, ValueError):
-        return jsonify({"status": "error", "message": "Invalid brand ID",}), 400
 
     # Check whether this brand already has a Flipkart account.
     existing_account = await mariadb.Fetch.get_account(brand_id)

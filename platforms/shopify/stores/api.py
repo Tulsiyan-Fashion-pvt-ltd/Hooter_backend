@@ -1,13 +1,7 @@
-from quart import Blueprint, request, jsonify, session, abort, redirect
-import requests
+from quart import Blueprint, jsonify, session
 from . import mariadb
-from ..auth.utils import validate_shopify_token, ShopifyAPIError, verify_hmac
 from utils.prerequirements import login_required, brand_required
-import os
 from dotenv import load_dotenv
-from urllib.parse import urlencode
-import secrets
-import aiohttp
 # from .. import shopify
 load_dotenv()
 
@@ -24,7 +18,7 @@ async def list_stores():
     """
     try:
         brand = session.get('brand')
-        brand_stores = await mariadb.Fetch.get_brand_stores(brand)
+        brand_stores = await mariadb.Fetch.stores(brand)
 
         return jsonify({
             'status': 'success',

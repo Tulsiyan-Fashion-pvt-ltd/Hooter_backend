@@ -1,7 +1,7 @@
 from quart import Blueprint, jsonify, session
 from .mariadb import Fetch
 
-integrations_api = Blueprint("integrations_api", __name__)
+integrations_api = Blueprint("integrations_api", __name__, url_prefix = "/integrations")
 
 
 @integrations_api.get("/")
