@@ -7,9 +7,7 @@ from catalog.products.helper import create_variant_id, create_usku
 from brand.auth import mariadb as brand_sql
 from catalog.images import mariadb as imagesql
 import asyncio
-from quart import session
 from config import _product_image_bucket
-import json
 from traceback import print_exc
 from utils import helper, workbook
 import s3
@@ -52,7 +50,7 @@ async def create_variants(usku_id: str, variants: list) -> dict| str:
 
 
 
-async def create_product(listing_attributes: dict, category_attributes: dict, category_id: str, parent_usku_id: str| None = None) -> dict| str:
+async def create_product(brand_id, listing_attributes: dict, category_attributes: dict, category_id: str, parent_usku_id: str| None = None) -> dict| str:
     """
     Upload single product in the system
 
@@ -72,11 +70,11 @@ async def create_product(listing_attributes: dict, category_attributes: dict, ca
         return {"error": "invalid request", "message": "type id is incorrect", "code": 400}
     
     usku_id = create_usku()
-    brand_name = await brand_sql.Fetch.brand_name_by_id(session.get("brand"))
+    brand_name = await brand_sql.Fetch.brand_name_by_id(brand_id)
 
     '''ADDING THE THE DATA IN THE DB AFTER FORMATTING IT'''
     sql_attributes_value = {
-    "brand_id": session.get("brand"),
+    "brand_id": brand_id,
     "usku_id": usku_id,                     
     "type_id": category_id,
     "vendor": listing_attributes.get("vendor", brand_name),          
@@ -107,14 +105,17 @@ async def create_product(listing_attributes: dict, category_attributes: dict, ca
             return {"status": "successful", "message": "Product has listed but the product data could not be uploaded", "code": 202}
 
         if parent_usku_id:
-            if await product_access(parent_usku_id):
+            if await product_access(parent_usku_id, brand_id):
                 variant_upload = await mariadb.Write.variants(parent_usku_id, usku_id)
                 if variant_upload.get('status') != 'ok':
+                    if variant_upload.get('error') == 1452:
+                        return {"status": "successful", "message": "Product uploaded but could not create a variant", 'error': 'Could not find the uploaded product in the record',"code": 202}
+                    
                     return {"status": "successful", "message": "Product uploaded but could not create a variant", "code": 202}
                 else:
                     return {"status": "successful", "message": "Variant uploaded successfully", "usku_id": usku_id, "code": 200}
             else:
-                return {"status": "successful", "message": "Product uploaded but could not create a variant", "code": 202}
+                return {"status": "successful", "message": "Product uploaded but could not create a variant", "usku_id": usku_id, "code": 202}
 
         return {"status": "successful", "message": "product upload completed", "usku_id": usku_id, "code": 200}
     except Exception as e:

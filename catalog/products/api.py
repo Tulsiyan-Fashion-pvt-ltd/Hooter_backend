@@ -45,7 +45,7 @@ async def upload_single_catalog():
     """
     category_id = request.args.get('type-id', type=str)
     parent_usku_id = request.args.get('parent-usku-id', type=str)
-
+    print(parent_usku_id)
     if not category_id:
         return {'status': 'rejected', 'message': 'Category ID is not provided', 'code': '97f35e29'}, 422
 
@@ -62,14 +62,15 @@ async def upload_single_catalog():
 
         listing_attributes = models.ListingAttributesModel.model_validate(listing_attributes).model_dump()
         product_attributes = ProductDetailsModel.model_validate(product_attributes).model_dump()
-    except Exception as e:
+    except ValueError as e:
         print('code: 24cca3b7', "error", e)
         print_exc()
-        return {'status': 'failed', 'message': 'Invalid payload', 'code': '24cca3b7'}, 400
+        return {'status': 'failed', 'message': 'Invalid payload', 'code': '24cca3b7', 'error': e.errors()}, 400
 
 
     """creating product in the system"""
-    response = await services.create_product(listing_attributes = listing_attributes,
+    response = await services.create_product(session.get('brand'), 
+                                    listing_attributes = listing_attributes,
                                    category_attributes = product_attributes,
                                    category_id = category_id,
                                    parent_usku_id=parent_usku_id
@@ -78,8 +79,8 @@ async def upload_single_catalog():
     if response.get("error"):
         return jsonify({"status": "failed", "message": response.get("error")}), response.get("code")
 
-
-    return jsonify({"status": "successful", "message": "added the single catalog", "usku_id": response.get("usku_id")}), 200
+    print(response)
+    return jsonify({"status": "successful", "message": response.get('message'), "usku_id": response.get("usku_id")}), 200
 
 
 

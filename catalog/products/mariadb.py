@@ -4,6 +4,7 @@ from datetime import datetime
 from traceback import print_exc
 from typing import Literal
 from config import _allow_max_records_per_page
+from .helper import create_variant_id
 
 class Write:
     @staticmethod
@@ -110,7 +111,7 @@ class Write:
 
 
     @staticmethod
-    async def variants(parent_usku_id, variant_usku_id) -> dict[str, str|IndentationError]:
+    async def variants(parent_usku_id, variant_usku_id) -> dict[str, str|int]:
         """
         Relate multiple ids for a specific variant ID
 
@@ -125,17 +126,34 @@ class Write:
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
-                    query = '''insert into product_variants(usku_id, variant_id)
-                                values (%s, 
-                                            (
-                                                SELECT 
-                                                variant_id
-                                                WHERE usku_id=%s
-                                            )
-                                    )
+                    await cursor.execute('''
+                                        select usku_id from usku_record where usku_id = %s
+                                        ''', (variant_usku_id, ))
+                    print(await cursor.fetchone())
+                    
+                    '''Check if parent uskuid exists'''
+                    query = '''
+                            SELECT 
+                                variant_id
+                            FROM product_variants
+                            WHERE usku_id=%s
                             '''
-                    values = (variant_usku_id, parent_usku_id)
+                    values = (parent_usku_id, )
                     await cursor.execute(query, values)
+                    variant_id = await cursor.fetchone()
+
+                    '''Link variants'''
+                    query = '''insert into product_variants(variant_id, usku_id)
+                        values (%s, %s)
+                    '''
+                    if variant_id:
+                        values = (variant_id, variant_usku_id)
+                        await cursor.execute(query, values)
+                    else:
+                        variant_id = create_variant_id()
+                        values = [(variant_id, parent_usku_id), (variant_id, variant_usku_id)]
+                        await cursor.executemany(query, values)
+
                     await connection.commit()
                     return {'status': 'ok', "error": None}
             except Exception as e:

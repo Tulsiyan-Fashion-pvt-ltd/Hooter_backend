@@ -1200,6 +1200,13 @@ paths:
       parameters:
         - $ref: "#/components/parameters/categoryID"
         - $ref: '#/components/parameters/csrf'
+        - in: query
+          name: parent-usku-id
+          required: false
+          description: Parent USKU ID to upload the product as a variant of that product
+          schema:
+            type: string
+            example: usku-11477e111ad947af984e9eb652816a41
       requestBody:
         required: true
         content:
