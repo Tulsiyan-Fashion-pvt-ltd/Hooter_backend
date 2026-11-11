@@ -1,6 +1,12 @@
 from quart import current_app
 from asyncmy.cursors import DictCursor
-import json
+from os import getenv
+from dotenv import load_dotenv
+from typing import Literal
+
+load_dotenv()
+
+
 
 class Write:
     @staticmethod
@@ -36,9 +42,12 @@ class Write:
                 print(f"error encountered while adding a single product\n{e}")
                 return {"error": e.args[0]}                          
 
-    # @staticmethod
-    # async def update_image(img_obj: dict):
-    #     ...
+
+    @staticmethod
+    async def variant_images(product_usku_id: str, variant_usku_id: str) -> dict[Literal['status', 'value', 'error'], any]:
+        """
+        Copy images from product usku_id to variant_usku_id
+        """
 
     
 
@@ -108,7 +117,7 @@ class Fetch:
             try:
                 async with connection.cursor(cursor = DictCursor) as cursor:
                     if type:
-                        query = '''select url.image_variation, url.image_url, image.image_order from 
+                        query = f'''select url.image_variation, CONCAT('{getenv('APP_DOMAIN')}/',url.image_url) AS image_url, image.image_order from 
                             product_images as image
                             join 
                             image_urls as url
@@ -121,7 +130,7 @@ class Fetch:
 
                         
                     else:
-                        query = '''select image.image_type, url.image_variation, url.image_url, image.image_order from 
+                        query = f'''select image.image_type, url.image_variation, CONCAT('{getenv('APP_DOMAIN')}/',url.image_url) as image_url, image.image_order from 
                             product_images as image
                             join 
                             image_urls as url

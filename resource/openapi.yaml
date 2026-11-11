@@ -1677,12 +1677,6 @@ paths:
           required: true
           schema:
             type: string
-        - name: type-id
-          in: query
-          description:  Category ID for the product
-          required: true
-          schema:
-            type: string
       requestBody:
         required: true
         description:  Product attribute field and value payload

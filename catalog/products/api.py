@@ -68,19 +68,18 @@ async def upload_single_catalog():
         return {'status': 'failed', 'message': 'Invalid payload', 'code': '24cca3b7', 'error': e.errors()}, 400
 
 
-    """creating product in the system"""
-    response = await services.create_product(session.get('brand'), 
-                                    listing_attributes = listing_attributes,
-                                   category_attributes = product_attributes,
-                                   category_id = category_id,
-                                   parent_usku_id=parent_usku_id
-                                )
+    try:
+        """creating product in the system"""
+        response = await services.create_product(session.get('brand'), 
+                                        listing_attributes = listing_attributes,
+                                       category_attributes = product_attributes,
+                                       category_id = category_id,
+                                       parent_usku_id=parent_usku_id
+                                    )
 
-    if response.get("error"):
-        return jsonify({"status": "failed", "message": response.get("error")}), response.get("code")
-
-    print(response)
-    return jsonify({"status": "successful", "message": response.get('message'), "usku_id": response.get("usku_id")}), 200
+        return jsonify(response[0]), response[1]
+    except Exception as e:
+        return {'status': 'failed', 'message': 'Could not upload the product', 'error': str(e)}, 500
 
 
 
@@ -193,7 +192,7 @@ async def list_products():
     order = args.get('order')
 
     brand_id = session.get("brand")
-    catalog_list_response = await services.get_uploaded_products(brand_id, status, category, rows, page, order)
+    catalog_list_response = await services.get_products(brand_id, status, category, rows, page, order)
     return jsonify(catalog_list_response[0]), catalog_list_response[1]
 
 
@@ -203,18 +202,8 @@ async def list_products():
 @brand_required
 @product_api_access_required
 async def show_product(usku_id: str):
-    '''get the uploaded catalog products and status'''
-    product_data = await asyncio.gather(mariadb.Fetch.catalog_product(usku_id),
-                                        mongodb.Fetch.catalog_product(usku_id))
-    
-    if product_data[0].get("error"):
-        return jsonify({"status": "failed", "message": "request failed"}), 400
-    elif product_data[1].get('error'):
-        return jsonify(product_data[0]| {"error": "Could not fetch product details"}), 202
-    else:
-        # print(product_data[1])
-        product_data = product_data[0] | product_data[1]
-        return jsonify(product_data), 200
+   service = await services.get_product(usku_id)
+   return jsonify(service[0]), service[1]
 
 
 
@@ -244,10 +233,11 @@ async def update_catalog_data(usku_id):
     UPDATES THE CATALOG PRODUCT DATA
     """
     payload = await request.get_json()
-    type_id = request.args.get("type-id")
+    type_id = await mariadb.Fetch.product_category_id(usku_id)
+    type_id.get('value')
 
     if type_id == None:
-        return jsonify({"status": "failed", "message": "invalid payload"}), 400
+        return jsonify({"status": "failed", "message": "Could not fetch the category ID of the product", 'error': type_id.get('error'), 'code': '931aeb08'}), 400
 
     '''Need to check if the altered data is a mandatory field and the value is none.
     If so then the operation can not happen
@@ -313,21 +303,21 @@ async def get_variant_sku_id_suggestion(usku_id):
     return jsonify(suggestion[0]), suggestion[1]
 
 
+@products.post('/varianst/<usku_id>')
+@validate_csrf
+@login_required
+@brand_required
+async def upload_variants(usku_id): 
+    ...
 
-"""UNDER CONSTRUCTION 🚧🚧🚧"""
-@products.post("/variants/<usku_id>")
+
+@products.get("/variants/<usku_id>")
 @login_required
 @brand_required
 @product_api_access_required
-async def upload_variants(usku_id: str):
-    variants = await request.get_json()
-
-    db = await services.create_variants(usku_id, variants)
-    if db.get("error"):
-        return jsonify({"status": "failed", "message": db.get("error")}), 400
-
-    return jsonify({"status": "successful", "message": db.get("message")}), 200
-
+async def get_variants(usku_id: str):
+    variants_service = await services.get_product_variants(usku_id)
+    return jsonify(variants_service[0]), variants_service[1]
 
 
 

@@ -46,7 +46,7 @@ async def get_product_stock(usku_id: str):
 @stocks.get("/overview")
 @login_required
 @brand_required
-async def get_inventory_counts():
+async def inventory_overview():
     """Fetch inventory counts for a brand. for low, oos, sellable and total inventory"""
     stock = await mariadb.Fetch.stock_count(session.get('brand'))
     if stock == "error":

@@ -3,6 +3,7 @@ from .categories.api import categories
 from .products.api import products
 from .images.api import images
 from .collections.api import collections
+from .variants.api import variants
 
 catalog = Blueprint("catalog", __name__, url_prefix = "/catalog")
 
@@ -10,3 +11,4 @@ catalog.register_blueprint(categories)
 catalog.register_blueprint(products)
 catalog.register_blueprint(images)
 catalog.register_blueprint(collections)
+catalog.register_blueprint(variants)
