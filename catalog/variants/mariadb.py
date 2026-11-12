@@ -1,6 +1,5 @@
 from quart import current_app
 from asyncmy.cursors import DictCursor
-from .helper import create_variant_id
 from traceback import print_exc
 from typing import Literal
 from os import getenv
@@ -140,11 +139,8 @@ class Fetch:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
                     query = f'''SELECT CONCAT('{getenv('APP_DOMAIN')}/',image_urls.image_url) as main_image, 
-                    u.usku_id, u.sku_id, u.type_name, u.created_at, u.status, 
-                    c.product_title, c.product_desc, c.price, c.compared_price,
-                    c.purchasing_cost, c.vendor, c.ean, c.hsn, c.gtin, c.upc, c.isbn,
-                    c.net_weight_kg, c.dead_weight_kg, c.volumetric_weight_kg, 
-                    c.brand_name, c.updated_at
+                    u.usku_id, u.sku_id, u.created_at, u.status, 
+                    c.product_title, c.product_desc, c.price
                     FROM 
                         product_variants as variants
                     INNER JOIN

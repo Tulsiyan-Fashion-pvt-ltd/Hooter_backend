@@ -1200,13 +1200,6 @@ paths:
       parameters:
         - $ref: "#/components/parameters/categoryID"
         - $ref: '#/components/parameters/csrf'
-        - in: query
-          name: parent-usku-id
-          required: false
-          description: Parent USKU ID to upload the product as a variant of that product
-          schema:
-            type: string
-            example: usku-11477e111ad947af984e9eb652816a41
       requestBody:
         required: true
         content:
@@ -1401,7 +1394,6 @@ paths:
                 message: Could not fetch the catalog data
         "default":
           $ref: "#/components/responses/default"
-
 
   /catalog/products:
     get:
@@ -2320,7 +2312,7 @@ paths:
         "default":
           $ref: "#/components/responses/default"
 
-  /catalog/products/variants/suggested-sku/{usku_id}:
+  /catalog/variants/suggested-sku/{usku_id}:
     get:
       summary: Get suggested SKU ID
       description: Get suggested SKU ID  for the new variant creation
@@ -2348,6 +2340,208 @@ paths:
                     example: sku#100-1
         "default":
           $ref: '#/components/schemas/default' 
+
+  /catalog/variants/{usku_id}:
+    post:
+      summary: Create product variants
+      description: Create multiple variants for the product
+      tags:
+        - Catalog
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: usku_id
+          description: USKU ID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: List of variants' listing_attributes and category_attributes variation
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - variants
+              properties: 
+                variants:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - listing_attributes
+                    properties: 
+                      listing_attributes:
+                        type: object
+                        required: 
+                          - sku_id
+                        properties:
+                          sku_id:
+                            type: string
+                            example: sku#10
+                          price:
+                            type: integer
+                            example: 550.00
+                      category_attributes:
+                        type: object
+                        properties:
+                          color:
+                            type: string
+                            example: blue
+            example:
+              variants:
+                - listing_attributes:
+                    sku_id: sku#10
+                    price: 200
+                  category_attributes: 
+                    color: blue
+                - listing_attributes:
+                    sku_id: sku#11
+      responses:
+        "200":
+          description: Successfully created variants with described variants of the product
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: 
+                  status:
+                    type: string
+                  variant_id:
+                    type: string
+                  products_upload_status:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/default'
+              example:
+                status: successful
+                products_upload_status:
+                  - status: successful
+                    message: Product upload completed
+                  - status: failed
+                    message: SKU ID already exists
+                    error: Duplicate sku id
+                variant_id: variant-01a1b64b-0e4d-73d1-83ce-73e0e9f5600e
+        "202":
+          description: Product variant created but could not be linked to the parent product
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - message
+                  - products_upload_status
+                properties: 
+                  status:
+                    type: string
+                  message:
+                    type: string
+                  products_upload_status:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/default'
+              example:
+                status: failed
+                products_upload_status:
+                  - status: successful
+                    message: Product upload completed
+                  - status: failed
+                    message: SKU ID already exists
+                    error: Duplicate sku id
+                message: Issue occured while Linking the uploaded products as variants
+        "500":
+          description: Interal server error while uploading the product variants
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - message
+                properties: 
+                  status:
+                    type: string
+                  message:
+                    type: string
+                  error:
+                    type: string
+              example:
+                status: failed
+                error: Unexpected error
+                message: Issue occured while Linking the uploaded products as variants
+        "default":
+          $ref: '#/components/responses/default'
+    get:
+      summary: Get product variants
+      description: Get product variants data, including main image and sku-id and variant id
+      tags:
+        - Catalog
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: usku_id
+          description: USKU ID
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successfully fetched product variants
+          content:
+            application/json:
+              schema:
+                type: array
+                items: 
+                  type: object
+                  properties: 
+                    created_at:
+                      type: string
+                      format: date
+                    main_image:
+                      type: string
+                    price:
+                      type: string
+                    product_desc:
+                      type: string
+                    product_title:
+                      type: string
+                    sku_id:
+                      type: string
+                    status:
+                      type: string
+                    usku_id:
+                      type: string
+              example:
+                - created_at: Tue, 20 Oct 2026 06:51:19 GMT
+                  main_image: http://localhost:8888/catalog/images/webp_card/11477e111ad947af984e9eb652816a41/main.webp
+                  price:  2342.00
+                  product_desc: "asdfd"
+                  product_title: "Red traditional sari"
+                  sku_id: "asdfadf"
+                  status: "completed"
+                  usku_id: 11477e111ad947af984e9eb652816a41
+                - created_at: Sat, 07 Nov 2026 13:55:34 GMT
+                  main_image: null
+                  price:  3999.00
+                  product_desc: "Elegant Banarasi silk saree featuring intricate golden zari floral motifs throughout the body, a beautifully woven border and a richly decorated pallu. Comes with a matching unstitched blouse piece. Ideal for weddings, festive celebrations and traditional occasions."
+                  product_title: Women's Premium Banarasi Silk Saree with Golden Zari Work and Unstitched Blouse Piece
+                  sku_id: TLS-BRN-MRN-001
+                  status: pending
+                  usku_id: usku-2168885135077351774458112019141113189
+                - created_at: Wed, 11 Nov 2026 14:13:04 GMT
+                  main_image: null
+                  price:  2342.00
+                  product_desc: "asdfd"
+                  product_title: "Red traditional sari"
+                  sku_id: "variant_1"
+                  status: "pending"
+                  usku_id: usku-2169304208691680095944833419333808423
+        "default":
+          $ref: '#/components/responses/default'
 
   /inventory/inward/count:
     get:
@@ -3839,6 +4033,8 @@ components:
           type: string
         message:
           type: string
+        code:
+          type: string
 
     brandConnection:
       type: object
@@ -3926,6 +4122,8 @@ components:
               status:
                 type: string
               message:
+                type: string
+              code:
                 type: string
       
   

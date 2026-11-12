@@ -41,11 +41,11 @@ async def create_variants(usku_id: str, type_id, variants: list[dict[str, any]],
     if len(upload_responses) > 0:
         variants_link_response = await mariadb.Write.variants(usku_id, variants_usku_id)
         if variants_link_response.get('status') == 'failed':
-            return {'status': 'failed', 'message': 'Issue occured while Linking the uploaded products as variants', 'products_upload_status': upload_responses}, 200
+            return {'status': 'failed', 'message': 'Issue occured while Linking the uploaded products as variants', 'products_upload_status': upload_responses}, 202
 
         return {'status': 'successful', 'products_upload_status': upload_responses, 'variant_id': variants_link_response.get('value')}, 200
     else:
-        return {'status': 'failed', 'message': 'Could not upload the variants', 'products_upload_status': upload_responses}, 500
+        return {'status': 'failed', 'message': 'Could not upload the variants', 'error': "Unexpected error"}, 500
 
 
 
@@ -103,7 +103,5 @@ async def get_product_variants(usku_id: str) -> list[dict]:
         return {'status': 'failed', 'message': 'Interal server error', 'code': '234c29aa'}, 500
 
     variants_listing_attributes = listing_query.get('value')
-    variants_usku_ids = [variant.get('usku_id') for variant in variants_listing_attributes]
 
-    await product_mongodb.Fetch.catalog_product(usku_ids=variants_usku_ids)
-    return listing_query, 200
+    return variants_listing_attributes, 200

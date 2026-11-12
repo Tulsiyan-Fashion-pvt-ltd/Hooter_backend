@@ -85,16 +85,16 @@ async def create_product(brand_id, listing_attributes: dict, category_attributes
                                         mongodb.Write.product(category_attributes)) # db query
         if sql_response.get("error") is not None:
             if sql_response.get('error') == 1062:
-                return {"error": "Duplicate sku id"}, 409
+                return {"error": "Duplicate sku id", 'status': 'failed', 'message': 'SKU ID already exists'}, 409
             elif sql_response.get("error") == 1366:
-                return {"error": "Incorrect value for the listing_attributes fields"}, 400
+                return {'status': 'failed', 'message': 'Invalid value', "error": "Incorrect value for the listing_attributes fields"}, 400
             else:
-                return {"error": "Invalid value for the listing_attributes column"}, 400
+                return {'status': 'failed', 'message': 'Could not upload the product listing attributes', "error": "Invalid value for the listing_attributes column"}, 400
 
         if mongo_response.get('error'):
-            return {"status": "successful", "message": "Product has listed but the product data could not be uploaded"}, 202
+            return {"status": "successful", "message": "Product has listed but the product data could not be uploaded", 'error': mongo_response.get('error')}, 202
 
-        return {"status": "successful", "message": "product upload completed", "usku_id": usku_id}, 200
+        return {"status": "successful", "message": "Product upload completed", "usku_id": usku_id}, 200
     except Exception as e:
         print(e)
         print_exc()
