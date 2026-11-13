@@ -40,7 +40,7 @@ async def get_product(usku_id: str) -> tuple[dict, int]:
         return product_data[0]| {"error": "Could not fetch product details"}, 202
 
     # print(product_data[1])
-    product_data = product_data[0] | product_data[1]
+    product_data = product_data[0].get('value') | product_data[1]
     return product_data, 200
 
 

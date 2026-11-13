@@ -155,7 +155,7 @@ class Fetch:
                     LEFT JOIN 
                         image_urls
                         ON image_urls.image_id = images.id
-                        AND image_urls.image_variation='webp_card'
+                        AND image_urls.image_variation='low_resol_webp'
                     where variants.variant_id = (SELECT variant_id FROM product_variants WHERE usku_id = %s)'''
 
                     value = (usku_id, )
