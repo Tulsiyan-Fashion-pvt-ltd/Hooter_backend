@@ -28,6 +28,7 @@ class Write:
         dead_weight_kg = clean_weight(product.get("dead_weight_kg"))
         volumetric_weight_kg = clean_weight(product.get("volumetric_weight_kg"))
         async with pool.acquire() as connection:
+            await connection.begin()
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
 
@@ -74,6 +75,7 @@ class Write:
     async def bulk_product(products: list) -> dict:
         pool = current_app.pool
         async with pool.acquire() as connection:
+            await connection.begin()
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
                     usku_query = '''insert into usku_record
@@ -127,10 +129,8 @@ class Write:
                     values = (usku_id, )
 
                     await cursor.execute(query, values)
-                    await connection.commit()
                     return "ok"
             except  Exception as e:
-                await connection.rollback()
                 print(f"error encountered while deleting the product {usku_id} from the catalog\n{e}")
                 return {"error": e.args[0]}
 
@@ -147,10 +147,8 @@ class Write:
                     values = (usku_id,)
 
                     await cursor.execute(query, values)
-                    await connection.commit()
                     return "ok"
             except Exception as e:
-                await connection.rollback()
                 print(f"error encountered while updating the catalog status as completed\n{e}")
                 return {"error": e.args[0]}
 
@@ -159,6 +157,7 @@ class Write:
     async def update_catalog(usku_id: str, listing_attributes: dict):
         pool = current_app.pool
         async with pool.acquire() as connection:
+            await connection.begin()
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
                     '''Formating the attributes and values'''
@@ -213,13 +212,11 @@ class Fetch:
 
                     await cursor.execute(query, values) 
                     sku = await cursor.fetchone()
-                    await connection.commit()
                     if sku:
                         return sku
                     else:
                         return {}
             except Exception as e:
-                await connection.rollback()
                 print(f"error occured while fetching the sku_id from the brand {brand_id}\n{e}")
                 return None
 
@@ -234,10 +231,8 @@ class Fetch:
 
                     await cursor.execute(query, (brand_id, ))
                     catalog_available = await cursor.fetchone()
-                    await connection.commit()
                     return True if catalog_available and catalog_available.get('1') else False
             except Exception as e:
-                await connection.rollback()
                 print(f"error occured while fetching the catalog on is_exists_catalog function\n{e}")
                 return ("error", "could not fetch the availability from the usku_record")
                 
@@ -251,10 +246,8 @@ class Fetch:
 
                     await cursor.execute(query, (usku_id, ))
                     usku = await cursor.fetchone()
-                    await connection.commit()
                     return True if usku and usku.get('1') else False
             except Exception as e:
-                await connection.rollback()
                 print(f"error occured while fetching the usku_record on is_usku_id_exists function\n{e}")
                 return ("error", "could not fetch the availability from the usku_record")
 
@@ -283,10 +276,8 @@ class Fetch:
                     await cursor.execute(query, values)
 
                     sku = await cursor.fetchone()
-                    await connection.commit()
                     return {'status': 'ok', "value":sku.get('sku_id') if sku else None}
             except Exception as e:
-                await connection.rollback()
                 print(f"error occured while fetching the usku_record on is_usku_id_exists function\n{e}")
                 return {'status': 'failed', 'error': e.args[0]}
         
@@ -310,10 +301,8 @@ class Fetch:
 
                     await cursor.execute(query, values)
                     catalog = await cursor.fetchone()
-                    await connection.commit()
                     return {'status': 'ok', 'value': catalog if catalog else {}}
             except Exception as e:
-                await connection.rollback()
                 print(f"error occured while fetching the catalog data for {usku_id}\n{e}")
                 return {'status':'failed', "error": e.args[0]}
 
@@ -383,10 +372,8 @@ class Fetch:
 
                     await cursor.execute(page_query, page_value)
                     page_data = await cursor.fetchone()
-                    await connection.commit()
                     return {"catalog_data": catalog_data, "page_data": page_data}
             except Exception as e:
-                await connection.rollback()
                 print(f"error occured while fetching the catalog lists\n{e}")
                 return "error"
 
@@ -422,10 +409,8 @@ class Fetch:
                     
                     await cursor.execute(query, (brand_id, ))
                     catalog_data = await cursor.fetchone()
-                    await connection.commit()
                     return catalog_data
             except Exception as e:
-                await connection.rollback()
                 print(f"error occured while fetching the catalog upload counts\n{e}")
                 return "error"
 
@@ -450,10 +435,8 @@ class Fetch:
 
                     await cursor.execute(query, values)
                     id = await cursor.fetchone()
-                    await connection.commit()
                     return  {'status': 'ok', 'value': id.get('type_id') if id else None}
             except Exception as e:
-                await connection.rollback()
                 print(f"error occured while fetching the category ID for the product {usku_id}\n", e)
                 print_exc()
                 return {'status': 'failed', 'error': e.args[0]}
@@ -481,11 +464,9 @@ class Fetch:
                     value = (brand_id, )
                     await cursor.execute(query, value)
                     categories = await cursor.fetchall()
-                    await connection.commit()
 
                     return {"categories": categories, "error": None}                    
             except Exception as e:
-                await connection.rollback()
                 print(e)
                 print_exc()
                 return {"error": e.args[0]}
