@@ -5,6 +5,7 @@ from . import mariadb
 from catalog.products.authorize import product_api_access_required
 from . import models
 from . import services
+from .authorize import stocks_api_access_required
 
 stocks = Blueprint("stocks", __name__, url_prefix="/stocks")
 
@@ -54,6 +55,24 @@ async def inventory_overview():
     return jsonify(stock), 200
 
 
+@stocks.post("/adjust")
+@login_required
+@brand_required
+@stocks_api_access_required
+async def adjust_inventory():
+    data = await request.get_json(silent=True) or {}
+
+    inventory_id = data.get("inventory_id")
+    quantity = data.get("quantity")
+
+    if not isinstance(inventory_id, int) or isinstance(inventory_id, bool) or inventory_id <= 0:
+        return jsonify({"status": "failed", "message": "Valid inventory_id is required"}), 400
+
+    if not isinstance(quantity, int) or isinstance(quantity, bool) or quantity == 0:
+        return jsonify({"status": "failed", "message": "Valid non-zero quantity is required"}), 400
+
+    result = await services.adjust_stock(inventory_id, quantity)
+    return jsonify(result[0]), result[1]
 
 
 # ********************************************************************************************

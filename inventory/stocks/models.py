@@ -8,4 +8,4 @@ class StocksRecordModel(BaseModel):
     page: int = Field(default=1, ge=1)
     records: int = Field(default=10, ge=1, le=_allow_max_records_per_page)
     type_id: str| None = None
-    warehouse_id: str| None = None
+    warehouse_id: int| None = None
