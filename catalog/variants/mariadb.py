@@ -25,6 +25,7 @@ class Write:
         """
         pool = current_app.pool
         async with pool.acquire() as connection:
+            await connection.begin()
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
                     query = '''SELECT variant_id
@@ -83,12 +84,10 @@ class Fetch:
                     value = (usku_id, )
                     await cursor.execute(query, value)
                     result = await cursor.fetchone()
-                    await connection.commit()
 
                     variant_id = result.get('variant_id') if result else None
                     return {"status": 'ok', "value": variant_id}                    
             except Exception as e:
-                await connection.rollback()
                 print(e)
                 print_exc()
                 return {"error": e.args[0], 'status': 'failed'}
@@ -119,11 +118,9 @@ class Fetch:
                     value = (usku_id, )
                     await cursor.execute(query, value)
                     count = await cursor.fetchone()
-                    await connection.commit()
 
                     return {"status": 'ok', "value": count.get('count') if count else None}                    
             except Exception as e:
-                await connection.rollback()
                 print(e)
                 print_exc()
                 return {"error": e.args[0], 'status': 'failed'}
@@ -161,11 +158,9 @@ class Fetch:
                     value = (usku_id, )
                     await cursor.execute(query, value)
                     result = await cursor.fetchall()
-                    await connection.commit()
 
                     return {"status": 'ok', "value": result}                    
             except Exception as e:
-                await connection.rollback()
                 print(e)
                 print_exc()
                 return {"error": e.args[0], 'status': 'failed'}
