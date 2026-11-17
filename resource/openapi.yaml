@@ -2691,6 +2691,75 @@ paths:
   
         "default":
           $ref: "#/components/responses/default"
+
+  
+  /inventory/stocks/adjust:
+    post:
+      summary: Adjust inventory stock
+      description: Adds or removes stock for a specific inventory record. Stock cannot become negative.
+      tags:
+        - Inventory
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - inventory_id
+                - quantity
+              properties:
+                inventory_id:
+                  type: integer
+                  description: ID of the inventory record to adjust
+                  example: 1
+                quantity:
+                  type: integer
+                  description: Positive value to add stock and negative value to remove stock. It cannot be zero.
+                  example: 5
+      responses:
+        "200":
+          description: Stock adjusted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Stock adjusted successfully
+  
+        "400":
+          description: Invalid inventory ID or quantity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: failed
+                  message:
+                    type: string
+                    example: Valid non-zero quantity is required
+  
+        "401":
+          $ref: "#/components/responses/login_required"
+  
+        "403":
+          $ref: "#/components/responses/brand_required"
+  
+        "500":
+          $ref: "#/components/responses/500"
+  
+        "default":
+          $ref: "#/components/responses/default"
+
                 
   /inventory/supplier/{supplier_id}:
     get:
