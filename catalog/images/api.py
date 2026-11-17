@@ -33,6 +33,7 @@ async def upload_image(usku_id):
     files = await request.files
     form = await request.form
     type_id = await productdb.Fetch.product_category_id(usku_id)
+    type_id = type_id.get('value')
 
     try:
         metadata = json.loads(form.get("meta"))
@@ -91,7 +92,7 @@ async def upload_image(usku_id):
     """UPLOAD UNIT SO IT CAN BE RUN ASYNCHRONOUSLY ON THE IMAGE DATA"""
     try:
         job_id = secrets.token_urlsafe()
-        bg_task = asyncio.create_task(services.background_upload_bulk_images(job_id, image_dict_object, usku_id))
+        bg_task = asyncio.create_task(services.background_upload_bulk_images(usku_id, job_id, image_dict_object))
         bg_task.job_id = job_id
         bg_task.add_done_callback(services.on_bg_image_upload_task_done)
 
@@ -184,7 +185,7 @@ async def update_image(usku_id):
     try:
         '''Run backgroun job'''
         job_id = secrets.token_urlsafe()
-        task = asyncio.create_task(services.background_update_bulk_images(job_id, image_dict_object, usku_id), name="update_bulk_image")
+        task = asyncio.create_task(services.background_update_bulk_images(usku_id, job_id, image_dict_object), name="update_bulk_image")
         task.job_id = job_id
         task.add_done_callback(services.on_bg_image_upload_task_done)
 

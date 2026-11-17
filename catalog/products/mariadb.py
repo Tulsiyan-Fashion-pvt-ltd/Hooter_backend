@@ -4,7 +4,13 @@ from datetime import datetime
 from traceback import print_exc
 from typing import Literal
 from config import _allow_max_records_per_page
-from .helper import create_variant_id
+from os import getenv
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
+
 
 class Write:
     @staticmethod
@@ -22,6 +28,7 @@ class Write:
         dead_weight_kg = clean_weight(product.get("dead_weight_kg"))
         volumetric_weight_kg = clean_weight(product.get("volumetric_weight_kg"))
         async with pool.acquire() as connection:
+            await connection.begin()
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
 
@@ -66,9 +73,9 @@ class Write:
 
     @staticmethod
     async def bulk_product(products: list) -> dict:
-        print("bulk product working")
         pool = current_app.pool
         async with pool.acquire() as connection:
+            await connection.begin()
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
                     usku_query = '''insert into usku_record
@@ -108,58 +115,6 @@ class Write:
                 await connection.rollback()
                 print(f"error encountered while adding a bulk product\n{e}")
                 return {"error": e.args[0]}
-
-
-    @staticmethod
-    async def variants(parent_usku_id, variant_usku_id) -> dict[str, str|int]:
-        """
-        Relate multiple ids for a specific variant ID
-
-        Args:
-            parent_usku_id: Context parent USKU ID
-            variant_usku_id: USKU ID to upload as a variant
-
-        Returns:
-            dict with `status` and `error`
-        """
-        pool = current_app.pool
-        async with pool.acquire() as connection:
-            try:
-                async with connection.cursor(cursor=DictCursor) as cursor:
-                    await cursor.execute('''
-                                        select usku_id from usku_record where usku_id = %s
-                                        ''', (variant_usku_id, ))
-                    print(await cursor.fetchone())
-                    
-                    '''Check if parent uskuid exists'''
-                    query = '''
-                            SELECT 
-                                variant_id
-                            FROM product_variants
-                            WHERE usku_id=%s
-                            '''
-                    values = (parent_usku_id, )
-                    await cursor.execute(query, values)
-                    variant_id = await cursor.fetchone()
-
-                    '''Link variants'''
-                    query = '''insert into product_variants(variant_id, usku_id)
-                        values (%s, %s)
-                    '''
-                    if variant_id:
-                        values = (variant_id, variant_usku_id)
-                        await cursor.execute(query, values)
-                    else:
-                        variant_id = create_variant_id()
-                        values = [(variant_id, parent_usku_id), (variant_id, variant_usku_id)]
-                        await cursor.executemany(query, values)
-
-                    await connection.commit()
-                    return {'status': 'ok', "error": None}
-            except Exception as e:
-                await connection.rollback()
-                print(f"error encountered while adding variants for id {variant_usku_id}", e)
-                return {'status': 'failed', "error": e.args[0]}
     
 
     @staticmethod
@@ -174,10 +129,8 @@ class Write:
                     values = (usku_id, )
 
                     await cursor.execute(query, values)
-                    await connection.commit()
                     return "ok"
             except  Exception as e:
-                await connection.rollback()
                 print(f"error encountered while deleting the product {usku_id} from the catalog\n{e}")
                 return {"error": e.args[0]}
 
@@ -194,10 +147,8 @@ class Write:
                     values = (usku_id,)
 
                     await cursor.execute(query, values)
-                    await connection.commit()
                     return "ok"
             except Exception as e:
-                await connection.rollback()
                 print(f"error encountered while updating the catalog status as completed\n{e}")
                 return {"error": e.args[0]}
 
@@ -206,6 +157,7 @@ class Write:
     async def update_catalog(usku_id: str, listing_attributes: dict):
         pool = current_app.pool
         async with pool.acquire() as connection:
+            await connection.begin()
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
                     '''Formating the attributes and values'''
@@ -260,13 +212,11 @@ class Fetch:
 
                     await cursor.execute(query, values) 
                     sku = await cursor.fetchone()
-                    await connection.commit()
                     if sku:
                         return sku
                     else:
                         return {}
             except Exception as e:
-                await connection.rollback()
                 print(f"error occured while fetching the sku_id from the brand {brand_id}\n{e}")
                 return None
 
@@ -281,10 +231,8 @@ class Fetch:
 
                     await cursor.execute(query, (brand_id, ))
                     catalog_available = await cursor.fetchone()
-                    await connection.commit()
                     return True if catalog_available and catalog_available.get('1') else False
             except Exception as e:
-                await connection.rollback()
                 print(f"error occured while fetching the catalog on is_exists_catalog function\n{e}")
                 return ("error", "could not fetch the availability from the usku_record")
                 
@@ -298,10 +246,8 @@ class Fetch:
 
                     await cursor.execute(query, (usku_id, ))
                     usku = await cursor.fetchone()
-                    await connection.commit()
                     return True if usku and usku.get('1') else False
             except Exception as e:
-                await connection.rollback()
                 print(f"error occured while fetching the usku_record on is_usku_id_exists function\n{e}")
                 return ("error", "could not fetch the availability from the usku_record")
 
@@ -330,16 +276,14 @@ class Fetch:
                     await cursor.execute(query, values)
 
                     sku = await cursor.fetchone()
-                    await connection.commit()
-                    return {'status': 'ok', "value":sku.get('sku_id')}
+                    return {'status': 'ok', "value":sku.get('sku_id') if sku else None}
             except Exception as e:
-                await connection.rollback()
                 print(f"error occured while fetching the usku_record on is_usku_id_exists function\n{e}")
                 return {'status': 'failed', 'error': e.args[0]}
         
 
     @staticmethod
-    async def catalog_product(usku_id: str):
+    async def catalog_product(usku_id: str) -> dict[Literal['status', 'error', 'value'], any]:
         pool = current_app.pool
         async with pool.acquire() as connection:
             try:
@@ -357,12 +301,10 @@ class Fetch:
 
                     await cursor.execute(query, values)
                     catalog = await cursor.fetchone()
-                    await connection.commit()
-                    return catalog if catalog else {}
+                    return {'status': 'ok', 'value': catalog if catalog else {}}
             except Exception as e:
-                await connection.rollback()
                 print(f"error occured while fetching the catalog data for {usku_id}\n{e}")
-                return {"error": e.args[0]}
+                return {'status':'failed', "error": e.args[0]}
 
 
     
@@ -385,7 +327,7 @@ class Fetch:
                     if conditions.get('limit') > _allow_max_records_per_page:
                         raise ValueError('Limit can not exceed max limit ', _allow_max_records_per_page)
                     
-                    items_query = f'''select url.image_url, s.usku_id, s.sku_id,
+                    items_query = f'''select CONCAT('{getenv('APP_DOMAIN')}/',url.image_url) as image_url, s.usku_id, s.sku_id,
                     c.product_title, c.compared_price, c.price, c.purchasing_cost, s.status,
                     s.type_id, s.type_name,
                     s.created_at, c.updated_at
@@ -430,10 +372,8 @@ class Fetch:
 
                     await cursor.execute(page_query, page_value)
                     page_data = await cursor.fetchone()
-                    await connection.commit()
                     return {"catalog_data": catalog_data, "page_data": page_data}
             except Exception as e:
-                await connection.rollback()
                 print(f"error occured while fetching the catalog lists\n{e}")
                 return "error"
 
@@ -469,23 +409,21 @@ class Fetch:
                     
                     await cursor.execute(query, (brand_id, ))
                     catalog_data = await cursor.fetchone()
-                    await connection.commit()
                     return catalog_data
             except Exception as e:
-                await connection.rollback()
                 print(f"error occured while fetching the catalog upload counts\n{e}")
                 return "error"
 
 
     @staticmethod
-    async def product_category_id(usku_id: str):
+    async def product_category_id(usku_id: str) -> dict[Literal['status', 'error', 'value'], any]:
         """Get the shopify taxonomy category ID from the `usku_recrod`
         
         Args:
             usku_id: Universally unique Stock Keeping Unit ID
             
         Returns:
-            {"category_id": `str`} str if exists or else None
+            {status: `Literal['ok', 'failed']`, value=`cateogry-id`}
         """
         pool = current_app.pool
         async with pool.acquire() as connection:
@@ -497,13 +435,11 @@ class Fetch:
 
                     await cursor.execute(query, values)
                     id = await cursor.fetchone()
-                    await connection.commit()
-                    return id.get('type_id') if id else None
+                    return  {'status': 'ok', 'value': id.get('type_id') if id else None}
             except Exception as e:
-                await connection.rollback()
                 print(f"error occured while fetching the category ID for the product {usku_id}\n", e)
                 print_exc()
-                return None
+                return {'status': 'failed', 'error': e.args[0]}
 
 
     @staticmethod
@@ -528,83 +464,9 @@ class Fetch:
                     value = (brand_id, )
                     await cursor.execute(query, value)
                     categories = await cursor.fetchall()
-                    await connection.commit()
 
                     return {"categories": categories, "error": None}                    
             except Exception as e:
-                await connection.rollback()
                 print(e)
                 print_exc()
                 return {"error": e.args[0]}
-
-
-    # ________________________________________________________________________________________________________
-    # VARIANTS QUERY
-
-    @staticmethod
-    async def count_variants(usku_id: str) -> dict[str, str|int]:
-        """
-        Returns the count of the variants of the product
-
-        Args:
-            usku_id: Universally unique SKU ID
-        
-        Returns:
-            dict with status, result, and error as keys
-        """
-        pool = current_app.pool
-        async with pool.acquire() as connection:
-            try:
-                async with connection.cursor(cursor=DictCursor) as cursor:
-                    query = '''
-                            SELECT COUNT(usku_id) as count
-                            FROM product_variants
-                            WHERE variant_id = (SELECT variant_id 
-                                FROM product_variants
-                                WHERE usku_id = %s)
-                            '''
-                    value = (usku_id, )
-                    await cursor.execute(query, value)
-                    count = await cursor.fetchone()
-                    await connection.commit()
-
-                    return {"status": 'ok', "value": count.get('count')}                    
-            except Exception as e:
-                await connection.rollback()
-                print(e)
-                print_exc()
-                return {"error": e.args[0], 'status': 'failed'}
-
-
-    @staticmethod
-    async def variant_id(usku_id: str) -> dict[str, str|int]:
-        """
-        Fetches the variant Id for the given USKU ID
-
-        Args:
-            usku_id: Universally unique SKU ID
-        
-        Returns:
-            dict with status, result, and error as keys
-        """
-        pool = current_app.pool
-        async with pool.acquire() as connection:
-            try:
-                async with connection.cursor(cursor=DictCursor) as cursor:
-                    query = '''
-                            SELECT variant_id
-                            FROM product_variants
-                            WHERE usku_id = %s)
-                            '''
-                    value = (usku_id, )
-                    await cursor.execute(query, value)
-                    result = await cursor.fetchone()
-                    await connection.commit()
-
-                    variant_id = result.get('variant_id')
-                    return {"status": 'ok', "value": variant_id}                    
-            except Exception as e:
-                await connection.rollback()
-                print(e)
-                print_exc()
-                return {"error": e.args[0], 'status': 'failed'}

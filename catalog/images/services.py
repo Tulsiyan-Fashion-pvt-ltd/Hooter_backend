@@ -13,6 +13,7 @@ from .sse import tasks
 from pathlib import Path
 import logging
 import json
+from catalog.products.authorize import product_access_required
 
 async def image_variants_upload(image: bytes, url: dict) -> str:
     """Create and upload additional image variants to the S3-compatible server.
@@ -79,7 +80,8 @@ async def save_image_temp(file: FileStorage) -> str:
     return path
 
 
-async def upload_image_type(image_file: FileStorage| str, image_type: str, image_order: int, usku_id: str):
+@product_access_required
+async def upload_image_type(usku_id: str, image_file: FileStorage| str, image_type: str, image_order: int):
     """Upload image object and image meta data to the databases
     
     Args:
@@ -132,8 +134,8 @@ async def upload_image_type(image_file: FileStorage| str, image_type: str, image
     return None
 
 
-
-async def background_upload_bulk_images(job_id: str, image_data: dict, usku_id: str):
+@product_access_required
+async def background_upload_bulk_images(usku_id: str, job_id: str, image_data: dict):
     """Takes the image file paths and image meta deta and upload them using `upload_image_type` one by one
     
     Args:
@@ -187,8 +189,8 @@ def on_bg_image_upload_task_done(task):
     event.set()
 
 
-
-async def background_update_bulk_images(job_id: str, image_data: dict, usku_id: str):
+@product_access_required
+async def background_update_bulk_images(usku_id: str, job_id: str, image_data: dict):
     """Starts updating the images in the background for the usku_id
     
     Args:
@@ -247,7 +249,7 @@ async def background_update_bulk_images(job_id: str, image_data: dict, usku_id: 
     return upload_status
 
 
-
+@product_access_required
 async def delete_images(usku_id:str, image_type:str| None = None):
     """Delete the images from the rdbms awa from the s3 like object storage service
     
@@ -289,4 +291,21 @@ async def delete_images(usku_id:str, image_type:str| None = None):
         return {"error": "failed", "message": "Deleted the images but could not delete the records"}
 
     return {"error": None, "message": "Successfully deleted the images"}
+
+
+
+@product_access_required
+async def copy_images_to_variant(parent_usku_id: str, variant_usku_id: str) -> list[dict, int]:
+    """
+    Copy the images from parent product to the variant product when the product variant gets created
+
+    NOTE: This service is especially for the product services 
+
+    Args:
+        - parent_usku_id
+        - variant_usku_id
+
+    Returns:
+        list of dict and rest api status at position 0 and 1 respectively 
+    """
     

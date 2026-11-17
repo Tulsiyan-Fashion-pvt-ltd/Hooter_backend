@@ -7,6 +7,8 @@ integrations_api = Blueprint("integrations_api", __name__, url_prefix = "/integr
 
 
 @integrations_api.get("/")
+@login_required
+@brand_required
 async def get_integrations():
     brand_id = session.get("brand")
     integrations = await services.get_connections(brand_id)

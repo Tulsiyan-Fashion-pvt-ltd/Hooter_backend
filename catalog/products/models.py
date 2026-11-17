@@ -99,7 +99,6 @@ class productUpdatePayloadModel(BaseModel):
     @model_validator(mode='before')
     @classmethod
     def validate_payload(cls, data):
-        print(data)
         if "listing_attributes" in data and data.get("listing_attributes") is None:
             raise ValueError('listing_attributes must contain listing payload')
         

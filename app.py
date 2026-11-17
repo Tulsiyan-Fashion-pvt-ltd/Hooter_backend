@@ -82,8 +82,8 @@ async def sql_connection_startup():
                 db = os.environ.get('HOOTER_DB'),
                 minsize = 1,
                 maxsize = 20,
-                # autocommit=True
-                # pool_recycle=3600
+                autocommit=True,
+                pool_recycle=28800
             )
             connection = True
         except Exception as e:

@@ -9,14 +9,3 @@ def create_usku() -> str:
     suffix = 'usku-'
     id= suffix+uuid
     return id
-
-
-
-def create_variant_id() -> str:
-    """
-    GENERATES VARIANT ID
-    """
-    prefix = "variant-"
-    uuid = str(uuid7())
-    id = prefix+uuid
-    return id

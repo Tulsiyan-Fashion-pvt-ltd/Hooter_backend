@@ -90,10 +90,19 @@ class Write:
 
 class Fetch:
     # fetch catalog product data
-    async def catalog_product(usku_id: str):
+    async def catalog_product(usku_id: str|None = None, usku_ids: list|None=None):
+        """
+        Returns the product category attributes in dict with `attributes` key when usku_id
+            if usku_ids then list of `attributes` key
+        """
         mongo = current_app.mongo
         try:
-            doc = await mongo.db.product_attributes.find_one({"usku_id": usku_id}, {"_id": 0, "type_id": 0, "usku_id": 0})
+            doc = None
+
+            if usku_id:
+                doc = await mongo.db.product_attributes.find_one({"usku_id": usku_id}, {"_id": 0, "type_id": 0, "usku_id": 0})
+            elif usku_ids:
+                doc = await mongo.db.product_attributes.find_one({"usku_id": {'$in': usku_ids}}, {"_id": 0, "type_id": 0, "usku_id": 0})
 
             if not doc:
                 return {}
