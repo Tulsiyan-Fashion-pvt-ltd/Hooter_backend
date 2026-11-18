@@ -1,7 +1,9 @@
 from inventory.warehouse import mariadb
 from .authorize import warehouse_access_required
+from brand.auth.authorize import brand_access_required
 
 
+@warehouse_access_required
 async def delete_warehouse(warehouse_id: str) -> tuple[dict[str, str], int]:
     """Deletes the warehouse from rdbms(mariadb)
     
@@ -22,7 +24,7 @@ async def delete_warehouse(warehouse_id: str) -> tuple[dict[str, str], int]:
     return {"status": "successful", "message": "Warehouse deleted successfully"}, 200
 
 
-
+@warehouse_access_required
 async def update_warehouse(warehouse_id: str, data: dict) -> tuple[dict[str, str], int]:
     """Updates the warehouse in MariaDB
 
@@ -46,8 +48,8 @@ async def update_warehouse(warehouse_id: str, data: dict) -> tuple[dict[str, str
     return {"status": "successful", "message": "Warehouse updated successfully"}, 200
 
 
-
-async def upload_warehouse(brand_id: str, warehouse_data: dict) -> tuple[dict[str, str], int]:
+@warehouse_access_required
+async def upload_warehouse(warehouse_data: dict, brand_id: str) -> tuple[dict[str, str], int]:
     """Uploads the given product to the database
     
     Args:
@@ -64,7 +66,7 @@ async def upload_warehouse(brand_id: str, warehouse_data: dict) -> tuple[dict[st
     return {"status": "successful", "message": "added the warehouse", "warehouse_id": warehouse_id}, 200
 
 
-
+@brand_access_required
 async def get_warehouses(brand_id: str) -> tuple[dict[str, str|int], int]:
     """Fetch warehouses of the brand 
     
