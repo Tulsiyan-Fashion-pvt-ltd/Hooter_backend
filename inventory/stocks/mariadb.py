@@ -147,7 +147,6 @@ class Fetch:
                     return {'status': 'ok', 'records': inventory}
     
             except Exception as e:
-                await connection.rollback()
                 print(f"Error fetching inventory for {brand_id}: {e}")
                 return {'error': str(e), 'status': 'failed'}
 
@@ -184,7 +183,6 @@ class Fetch:
                     await cursor.execute(query, (usku_id,))
                     return await cursor.fetchall()
             except Exception as e:
-                await connection.rollback()
                 print(f"error encountered whie fetching the inventory\n{e}")
                 return "error"
 
@@ -223,10 +221,8 @@ class Fetch:
                     values = (brand_id, )
                     await cursor.execute(query, values)
                     stock = await cursor.fetchone()
-                    await connection.commit()
                     return stock if stock else {}
             except Exception as e:
-                await connection.rollback()
                 print(f"error encountered whie fetching the stock count from inventory for {brand_id}\n{e}")
                 return "error"
         

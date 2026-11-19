@@ -18,11 +18,9 @@ class Write:
                     
                     await cursor.execute(query, values)
                     warehouse_id = cursor.lastrowid
-                    await connection.commit()
                     return warehouse_id
             except Exception as e:
                 print(f"error encountered while adding warehouse\n{e}")
-                await connection.rollback()
                 return "error"
 
 
@@ -39,11 +37,9 @@ class Write:
                             '''
                     
                     await cursor.execute(query, (warehouse_id, ))
-                    await connection.commit()
                     return "ok"
             except Exception as e:
                 print(f"error encountered while deleting warehouse\n{e}")
-                await connection.rollback()
                 return "error"
         
 
@@ -75,14 +71,49 @@ class Write:
 
                     print(query)
                     await cursor.execute(query, (*values, warehouse_id))
-                    await connection.commit()
                     return "ok"
 
             except Exception as e:
                 print(e)
                 print_exc()
-                await connection.rollback()
                 return {"error" : e.args[0]}
+
+    @staticmethod
+    async def set_default_warehouse(brand_id: str, warehouse_id: int):
+        pool = current_app.pool
+    
+        async with pool.acquire() as connection:
+            await connection.begin()
+            try:
+                async with connection.cursor() as cursor:
+    
+                    # Check whether the warehouse belongs to this brand
+                    query = """
+                        SELECT warehouse_id
+                        FROM warehouse
+                        WHERE warehouse_id = %s
+                        AND brand_id = %s
+                    """
+                    await cursor.execute(query, (warehouse_id, brand_id))
+    
+                    if not await cursor.fetchone():
+                        await connection.rollback()
+                        return False
+    
+                    query = """
+                        INSERT INTO last_accessed_warehouse (brand_id, warehouse_id)
+                        VALUES (%s, %s)
+                        ON DUPLICATE KEY UPDATE warehouse_id = VALUES(warehouse_id)
+                    """
+    
+                    await cursor.execute(query, (brand_id, warehouse_id))
+                    await connection.commit()
+                    return "ok"
+    
+            except Exception as e:
+                await connection.rollback()
+                print(f"Error setting default warehouse: {e}")
+                return "error"
         
 class Fetch:
     @staticmethod
@@ -104,10 +135,8 @@ class Fetch:
                     await cursor.execute(query, values)
 
                     warehouses= await cursor.fetchall()
-                    await connection.commit()
                     return warehouses
             except Exception as e:
-                await connection.rollback()
                 print(f"error occured while fetching the warehouse of the brand for the brandid=>{brand_id}\n{e}")
                 return {"error": e.args[0]}
 
@@ -136,10 +165,28 @@ class Fetch:
                     await cursor.execute(query, values)
 
                     warehouse= await cursor.fetchone()
-                    await connection.commit()
                     return warehouse
             except Exception as e:
-                await connection.rollback()
                 print(f"error occured while fetching the warehouse of the brand for the warehouseid=>{warehouse_id}\n{e}")
                 print_exc()
                 return {"error": e.args[0]}
+
+    @staticmethod
+    async def default_warehouse(brand_id: str):
+        pool = current_app.pool
+    
+        async with pool.acquire() as connection:
+            try:
+                async with connection.cursor(cursor=DictCursor) as cursor:
+                    query = """
+                        SELECT warehouse_id
+                        FROM last_accessed_warehouse
+                        WHERE brand_id = %s
+                    """
+    
+                    await cursor.execute(query, (brand_id,))
+                    return await cursor.fetchone()
+    
+            except Exception as e:
+                print(f"Error fetching default warehouse: {e}")
+                return "error"
