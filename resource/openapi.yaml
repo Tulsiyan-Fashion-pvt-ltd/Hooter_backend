@@ -2515,6 +2515,8 @@ paths:
                       type: string
                     usku_id:
                       type: string
+                    variations:
+                      type: object
               example:
                 - created_at: Tue, 20 Oct 2026 06:51:19 GMT
                   main_image: http://localhost:8888/catalog/images/webp_card/11477e111ad947af984e9eb652816a41/main.webp
@@ -2524,6 +2526,9 @@ paths:
                   sku_id: "asdfadf"
                   status: "completed"
                   usku_id: 11477e111ad947af984e9eb652816a41
+                  variations:
+                    color: black
+                    fabric: cotton
                 - created_at: Sat, 07 Nov 2026 13:55:34 GMT
                   main_image: null
                   price:  3999.00
@@ -2532,6 +2537,9 @@ paths:
                   sku_id: TLS-BRN-MRN-001
                   status: pending
                   usku_id: usku-2168885135077351774458112019141113189
+                  variations:
+                    color: black
+                    fabric: silk
                 - created_at: Wed, 11 Nov 2026 14:13:04 GMT
                   main_image: null
                   price:  2342.00
@@ -2540,6 +2548,9 @@ paths:
                   sku_id: "variant_1"
                   status: "pending"
                   usku_id: usku-2169304208691680095944833419333808423
+                  variations:
+                    color: blue
+                    fabric: cotton
         "default":
           $ref: '#/components/responses/default'
 
