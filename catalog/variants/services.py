@@ -90,31 +90,9 @@ async def suggest_variant_sku_id(usku_id: str) -> tuple[dict, int]:
 @product_access_required
 async def get_product_variants(usku_id: str) -> tuple[dict, int]:
     """
-    Get product variants information like usku_id and the listing and category attributes by which they vary
-
-    Args:
-        usku_id: USKU ID  of the product
-
-    Returns:
-        List of variants and their properties If exists or empty list including a main `webp_card` image for identity
-    """
-    listing_query = await mariadb.Fetch.variants(usku_id)
-
-    if listing_query.get('status') != 'ok':
-        return {'status': 'failed', 'message': 'Interal server error', 'code': '234c29aa'}, 500
-
-    variants_listing_attributes = listing_query.get('value')
-
-    return variants_listing_attributes, 200
-
-
-
-@product_access_required
-async def get_product_variant_variations(usku_id: str) -> tuple[dict, int]:
-    """
     Get product variations on the classifications of product category attributes rather than lists of product variants
     """
-    def get_variations(category_variants: list) -> dict[str, dict]:
+    def get_variantions(category_variants: list) -> dict[str, dict]:
         # loop over category data and add unique attributes to their corresponding variant data
         variant_variations = {}  # store data as {usku_id: {key: value}}
         
@@ -123,16 +101,38 @@ async def get_product_variant_variations(usku_id: str) -> tuple[dict, int]:
             variant_variations[variant_usku_id] = {}
 
             for key in category_variant.keys():
-                is_common = False
+                is_common = []  # common key in every variants
                 
                 for check_variant in category_variants:
-                    if check_variant.get(key) == category_variant.get(key) and check_variant != category_variant:
-                        is_common = True
-                        break
+                    if check_variant == category_variant:
+                        continue
 
-                if not is_common:
+                    if check_variant.get(key) == category_variant.get(key):
+                        is_common.append(True)
+                    else:
+                        is_common.append(False)
+
+                if not all(is_common):
                     variant_variations[variant_usku_id][key] = category_variant.get(key)
         return variant_variations
+
+
+    # this is a pending work
+    def get_variant_dimentions(category_variants: list) -> dict[str, list[dict]]:
+        variant_variations = get_variantions(category_variants)
+        variant_dimention = {}  # {type: [{value and usku_id}]}
+        for usku_id in variant_variations.keys():
+            # we iterate over unique keys and club them out with values
+            for key in variant_variations.get(usku_id).keys():
+
+                variant_dimention[key] = []
+                for inner_usku_id in variant_variations.keys():
+                    variants = variant_variations.get(inner_usku_id)
+                    variant_dimention[key].append({"usku_id": inner_usku_id, "value": variants.get(key)})
+
+        return variant_dimention
+
+
         
 
     variants_list = await mariadb.Fetch.variants(usku_id)
@@ -150,8 +150,13 @@ async def get_product_variant_variations(usku_id: str) -> tuple[dict, int]:
         return {'status': 'failed', 'message': 'Interal server error', 'code': '40cfdc99'}, 500
 
     variants_category_attr = variants_category_attr.get('value')
-    return get_variations(variants_category_attr), 200
 
-    return "ok", 200
+    products_category_variation = get_variantions(variants_category_attr)
+    for variant in variants_list:
+        variant["variations"] = products_category_variation.get(variant.get('usku_id'))
+
+
+
+    return variants_list, 200
         
 

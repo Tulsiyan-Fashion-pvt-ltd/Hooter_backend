@@ -75,8 +75,8 @@ async def get_variant_sku_id_suggestion(usku_id):
 @product_api_access_required
 async def get_variants(usku_id: str):
     try:
-        variants_service = await services.get_product_variant_variations(usku_id)
+        variants_service = await services.get_product_variants(usku_id)
         return jsonify(variants_service[0]), variants_service[1]
     except Exception as e:
         print_exc()
-        return {'status': 'failed', 'error': str(e)}, 500
+        return {'status': 'failed', 'error': str(e), 'message': 'Interal server error'}, 500
