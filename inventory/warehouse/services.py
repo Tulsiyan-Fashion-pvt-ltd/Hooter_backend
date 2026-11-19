@@ -138,3 +138,27 @@ async def get_warehouse(warehouse_id: str) -> tuple[dict[str, str|int], int]:
         return {"status": "failed", "message": "Failed to fetch warehouses" }, 500
 
     return warehouse, 200
+
+
+async def set_default_warehouse(brand_id: str, warehouse_id: int) -> tuple[dict, int]:
+    result = await mariadb.Write.set_default_warehouse(brand_id, warehouse_id)
+
+    if result is False:
+        return {"status": "failed", "message": "Invalid warehouse"}, 404
+
+    if result == "error":
+        return {"status": "failed", "message": "Could not set default warehouse"}, 500
+
+    return {"status": "successful", "message": "Default warehouse updated successfully"}, 200
+
+
+async def get_default_warehouse(brand_id: str):
+    warehouse = await mariadb.Fetch.default_warehouse(brand_id)
+
+    if warehouse == "error":
+        return {"status": "failed", "message": "Could not fetch default warehouse"}, 500
+
+    if warehouse is None:
+        return {"status": "failed", "message": "Default warehouse not set"}, 404
+
+    return warehouse, 200
