@@ -2,12 +2,24 @@ from . import mariadb
 from datetime import datetime
 from brand.auth.authorize import brand_access_required
 from .authorize import stocks_access_required
+from inventory.warehouse import services as warehouse_services
 
 
 @brand_access_required
 async def fetch_inventory_stocks_record(brand_id: str, page: int = 1, limit: int = 10, 
                                         filter: str|None = None, type_id: str|None = None, warehouse_id: int| None = None) -> tuple[dict, int]:
     offset = (page - 1) * limit
+
+    if warehouse_id is None:
+        warehouse, status_code = await warehouse_services.get_default_warehouse(brand_id)
+
+        if status_code == 404:
+            return [], 200
+
+        if status_code != 200:
+            return {"status": "failed", "message": "Could not fetch default warehouse"}, status_code
+
+        warehouse_id = warehouse["warehouse_id"]
 
     records = await mariadb.Fetch.inventory_stocks(brand_id, filter, type_id, limit, offset, warehouse_id)
     if records.get('status') == 'failed':
