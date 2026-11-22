@@ -9,3 +9,7 @@ class StocksRecordModel(BaseModel):
     records: int = Field(default=10, ge=1, le=_allow_max_records_per_page)
     type_id: str| None = None
     warehouse_id: int| None = None
+
+
+class AdjustInventoryModel(BaseModel):
+    quantity: int

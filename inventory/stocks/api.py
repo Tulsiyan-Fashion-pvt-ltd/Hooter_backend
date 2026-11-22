@@ -18,10 +18,9 @@ async def get_inventory():
     args = request.args
 
     try:
-        params = models.StocksRecordModel.model_validate(args).model_dump()
+        params = models.StocksRecordModel.model_validate(args).model_dump(exclude_unset=True)
     except ValueError as e:
-        return {'status': 'failed', 'message': 'Invalid parameters', 'code': '37281762', 'error': e.errors()}, 422
-
+        return {'status': 'failed', 'message': 'Invalid parameters', 'code': '37281762', 'error': e.errors(include_context=False)}, 422
     records = await services.fetch_inventory_stocks_record(session.get('brand'), params.get('page'), 
                                                            params.get('records'), params.get('filter'),
                                                            params.get('type_id'), params.get('warehouse_id'))
@@ -34,13 +33,11 @@ async def get_inventory():
 @product_api_access_required
 async def get_product_stock(usku_id: str):
     """Fetches the stock for the given usku_id"""
-    inventory = await mariadb.Fetch.product_stock(usku_id)
-    if inventory == "error":
-        return jsonify({"status": "failed", "message": "internal server error"}), 500
-
-    if inventory is None:
-        return jsonify({"status": "failed", "message": "Product stock not found for the given usku_id"}), 404
-    return jsonify(inventory), 200
+    try:
+        product_stock = await services.get_product_stock(usku_id)
+        return jsonify(product_stock[0]), product_stock[1]
+    except Exception as e:
+        return jsonify({'status': 'failed', 'message': 'Unexpected internal server error', 'error': str(e), 'code': '34d9f173'}), 500
 
 
 
@@ -55,21 +52,19 @@ async def inventory_overview():
     return jsonify(stock), 200
 
 
-@stocks.post("/adjust")
+
+@stocks.post("/adjust/<inventory_id>")
 @login_required
 @brand_required
 @stocks_api_access_required
-async def adjust_inventory():
+async def adjust_inventory(inventory_id):
     data = await request.get_json(silent=True) or {}
 
-    inventory_id = data.get("inventory_id")
-    quantity = data.get("quantity")
-
-    if not isinstance(inventory_id, int) or isinstance(inventory_id, bool) or inventory_id <= 0:
-        return jsonify({"status": "failed", "message": "Valid inventory_id is required"}), 400
-
-    if not isinstance(quantity, int) or isinstance(quantity, bool) or quantity == 0:
-        return jsonify({"status": "failed", "message": "Valid non-zero quantity is required"}), 400
+    try:
+        data = models.AdjustInventoryModel.model_validate(quantity).model_dump()
+        quantity = data.get("quantity")
+    except ValueError as e:
+        return ({'status': 'failed', 'message': 'Invalid Payload', 'error': e.errors(include_context=False), 'code': '389b9ffd'}), 422
 
     result = await services.adjust_stock(inventory_id, quantity)
     return jsonify(result[0]), result[1]
