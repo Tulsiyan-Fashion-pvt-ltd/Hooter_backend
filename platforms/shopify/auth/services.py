@@ -34,7 +34,7 @@ def auth_redirect(shopify_shop_name):
     params = {
         "client_id": os.environ.get("SHOPIFY_CLIENT_ID"),
         "scope": "read_orders,write_orders, read_products,write_products,read_customers,write_customers,read_inventory,write_inventory",
-        "redirect_uri": f"{os.environ.get("APP_DOMAIN")}/platforms/shopify/auth/callback",
+        "redirect_uri": f"{os.environ.get("DASHBOARD_DOMAIN")}/integrations?request-platform=shopify&request-type=oauth-callback",
         "state": session.get("shopify_state")
     }
 
@@ -72,9 +72,9 @@ async def exchange_token(brand_id: str, code: str|int, shopify_shop_name) -> dic
             if response.status != 200:
                 content_type_header = response.headers.get('Content-Type', '')
                 if "text/html" in content_type_header:
-                    return {'status': 'failed', 'code': '4a5304a1', 'message': 'Duplicate or invalid shopify callback request', 'error': await response.text()}
+                    return {'status': 'failed', 'code': '4a5304a1', 'message': 'Duplicate or invalid shopify callback request', 'error': await response.text()}, 500
                     
-                raise {'status': 'failed', 'code': '21a1f09f', 'message': 'Shopify oauth code exchange process failed'}
+                return {'status': 'failed', 'code': '21a1f09f', 'message': 'Shopify oauth code exchange process failed'}, 500
 
             data = await response.json()
             access_token = data.get('access_token')     # store that access token in server cache
@@ -86,14 +86,14 @@ async def exchange_token(brand_id: str, code: str|int, shopify_shop_name) -> dic
     '''save this access token in the db'''
     sql_response = await shopify_store_db.Write.add_store(brand_id, shopify_shop_name, refresh_token, refresh_token_expires_in)
     if sql_response.get('status') == 'error':
-        return {'status': 'failed', 'message': sql_response.get('error'), 'code': '28dfdc68'}
+        return {'status': 'failed', 'message': sql_response.get('error'), 'code': '28dfdc68'}, 500
     else:
         '''save access token in redis cache'''
         store_id = sql_response.get('store_id')
         redis_store = await redis_cache.set(f"shopify:{store_id}:access_token", TokenEncryption.encrypt_token(access_token), expires_in=expires_in)
         if redis_store == False:
-            return {'status': 'failed', 'message': 'Could not store the access_token', 'code': '15c4fe46'}
-        return sql_response
+            return {'status': 'failed', 'message': 'Could not store the access_token', 'code': '15c4fe46'}, 500
+        return sql_response, 200
 
 
 
