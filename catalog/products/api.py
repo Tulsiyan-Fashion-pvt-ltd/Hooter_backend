@@ -44,8 +44,7 @@ async def upload_single_catalog():
     UPLOAD SINGLE PRODUCT TO THE CATALOG
     """
     category_id = request.args.get('type-id', type=str)
-    parent_usku_id = request.args.get('parent-usku-id', type=str)
-    print(parent_usku_id)
+
     if not category_id:
         return {'status': 'rejected', 'message': 'Category ID is not provided', 'code': '97f35e29'}, 422
 
@@ -73,8 +72,7 @@ async def upload_single_catalog():
         response = await services.create_product(session.get('brand'), 
                                         listing_attributes = listing_attributes,
                                        category_attributes = product_attributes,
-                                       category_id = category_id,
-                                       parent_usku_id=parent_usku_id
+                                       category_id = category_id
                                     )
 
         return jsonify(response[0]), response[1]
