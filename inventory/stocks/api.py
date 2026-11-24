@@ -33,14 +33,13 @@ async def get_inventory():
 @brand_required
 @product_api_access_required
 async def get_product_stock(usku_id: str):
-    """Fetches the stock for the given usku_id"""
-    inventory = await mariadb.Fetch.product_stock(usku_id)
+    """Fetches the stock for the given usku_id."""
+    inventory = await mariadb.Fetch.product_stock(usku_id, session['brand'])
     if inventory == "error":
         return jsonify({"status": "failed", "message": "internal server error"}), 500
-
     if inventory is None:
-        return jsonify({"status": "failed", "message": "Product stock not found for the given usku_id"}), 404
-    return jsonify(inventory), 200
+        return jsonify({"status": "failed","message": "Product stock not found for the given usku_id"}), 404
+    return jsonify({"status": "success","data": inventory}), 200
 
 
 

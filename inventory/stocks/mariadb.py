@@ -25,9 +25,9 @@ class Write:
         pool = current_app.pool
     
         async with pool.acquire() as connection:
+            await connection.begin()
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
-                    await connection.begin()
     
                     # Update stock (positive = add, negative = remove)
                     query = """
@@ -150,43 +150,103 @@ class Fetch:
                 print(f"Error fetching inventory for {brand_id}: {e}")
                 return {'error': str(e), 'status': 'failed'}
 
-
-
+    
     @staticmethod
-    async def product_stock(usku_id: str) -> list:
-        """Get product stock for the usku_id for the brand session
-        
-        Args:
-            brand_id:
-                Unique identifier for brands
-            usku_id: Universally unique SKUID
-            
-        Returns:
-            dict object with `usku_id`, `sku_id` and `stock` as the keys
-        """
+    async def product_stock(usku_id: str, brand_id: str) -> dict:
         pool = current_app.pool
-        async with pool.acquire() as connection:
-            try:
-                async with connection.cursor(cursor=DictCursor) as cursor:
-                    query = """
+    
+        async with pool.acquire() as conn:
+            async with conn.cursor(cursor=DictCursor) as cursor:
+                try:
+                    await cursor.execute('''
                         SELECT
-                            id,
-                            usku_id,
-                            warehouse_id,
-                            stock,
-                            status,
-                            updated_at
-                        FROM master_inventory
-                        WHERE usku_id = %s
-                    """
-                    
-                    await cursor.execute(query, (usku_id,))
-                    return await cursor.fetchall()
-            except Exception as e:
-                print(f"error encountered whie fetching the inventory\n{e}")
-                return "error"
-
-
+                            i.id,
+                            i.warehouse_id,
+                            i.stock,
+                            i.status,
+                            i.updated_at,
+                            w.status AS warehouse_status,
+                            c.price,
+                            c.compared_price,
+                            c.purchasing_cost
+                        FROM master_inventory AS i
+                        INNER JOIN usku_record AS u
+                            ON u.usku_id = i.usku_id
+                        LEFT JOIN warehouse AS w
+                            ON w.warehouse_id = i.warehouse_id
+                        INNER JOIN catalog AS c
+                            ON c.usku_id = i.usku_id
+                        WHERE i.usku_id = %s
+                          AND u.brand_id = %s
+                    ''', (usku_id, brand_id))
+    
+                    rows = await cursor.fetchall()
+    
+                    if not rows:
+                        return None
+    
+                    # Product prices (same for all warehouse rows)
+                    price = rows[0]['price'] or 0
+                    compared_price = rows[0]['compared_price'] or 0
+                    purchasing_cost = rows[0]['purchasing_cost'] or 0
+    
+                    total_stock = 0
+                    available_stock = 0
+                    unavailable_stock = 0
+    
+                    warehouse_stocks = []
+    
+                    for row in rows:
+                        stock = row['stock'] or 0
+    
+                        total_stock += stock
+    
+                        # Stock in active warehouses is available
+                        if row['warehouse_status'] == 'active':
+                            available = stock
+                            unavailable = 0
+                        else:
+                            available = 0
+                            unavailable = stock
+    
+                        available_stock += available
+                        unavailable_stock += unavailable
+    
+                        warehouse_stocks.append({
+                            'warehouse_id': row['warehouse_id'],
+                            'total_stock': stock,
+                            'available_stock': available,
+                            'unavailable_stock': unavailable,
+                            'stock_price': price * available,
+                            'stock_compared_price': compared_price * available,
+                            'stock_purchasing_price': purchasing_cost * available
+                        })
+    
+                    return {
+                        'overall_stock': {
+                            'total_stock': total_stock,
+                            'available_stock': available_stock,
+                            'unavailable_stock': unavailable_stock,
+                            'stock_price': price * available_stock,
+                            'stock_compared_price': compared_price * available_stock,
+                            'stock_purchasing_price': purchasing_cost * available_stock
+                        },
+                        'warehouse_stocks': warehouse_stocks,
+                        'platform': {
+                            'stock': {
+                                'amazon': 0,
+                                'flipkart': 0,
+                                'shopify': 0
+                            }
+                        }
+                    }
+    
+                except Exception as e:
+                    print(f'Error fetching product stock: {str(e)}')
+                    return 'error'
+    
+    
+    
     @staticmethod
     async def stock_count(brand_id: str) -> dict[str, int]:
         """
