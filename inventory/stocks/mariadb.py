@@ -90,6 +90,8 @@ class Fetch:
                         values.append(type_id)
     
                     if warehouse_id is not None:
+                        print(warehouse_id)
+                        print("working somehow")
                         conditions.append("i.warehouse_id = %s")
                         values.append(warehouse_id)
     
@@ -139,11 +141,9 @@ class Fetch:
                         {having}
                         LIMIT %s OFFSET %s
                     """
-    
                     values.extend([limit, offset])   
                     await cursor.execute(query, tuple(values))
                     inventory = await cursor.fetchall()
-    
                     return {'status': 'ok', 'records': inventory}
     
             except Exception as e:

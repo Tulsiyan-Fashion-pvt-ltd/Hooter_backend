@@ -136,8 +136,7 @@ class Fetch:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
                     query = f'''SELECT CONCAT('{getenv('APP_DOMAIN')}/',image_urls.image_url) as main_image, 
-                    u.usku_id, u.sku_id, u.created_at, u.status, 
-                    c.product_title, c.product_desc, c.price
+                    u.usku_id, u.sku_id, u.created_at, u.status, c.price
                     FROM 
                         product_variants as variants
                     INNER JOIN

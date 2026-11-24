@@ -1,11 +1,7 @@
 from quart import current_app
+from typing import Literal
 
-# returns the only niche specific keys without the type_id
-def get_keys(doc):
-    doc.pop("type_id") # taking out the type_id field from the attributes
 
-    # LIST OF ALL THE KEYS FOR NICHE SPECIFIC ATTRIBUTES FOR MONGODB
-    return doc.keys()
 
 
 class Write:
@@ -90,7 +86,7 @@ class Write:
 
 class Fetch:
     # fetch catalog product data
-    async def catalog_product(usku_id: str|None = None, usku_ids: list|None=None):
+    async def catalog_product(usku_id: str|None = None, usku_ids: list|None=None) -> dict[Literal['status', 'value', 'error'], any]:
         """
         Returns the product category attributes in dict with `attributes` key when usku_id
             if usku_ids then list of `attributes` key
@@ -102,15 +98,16 @@ class Fetch:
             if usku_id:
                 doc = await mongo.db.product_attributes.find_one({"usku_id": usku_id}, {"_id": 0, "type_id": 0, "usku_id": 0})
             elif usku_ids:
-                doc = await mongo.db.product_attributes.find_one({"usku_id": {'$in': usku_ids}}, {"_id": 0, "type_id": 0, "usku_id": 0})
-
+                doc = mongo.db.product_attributes.find({"usku_id": {'$in': usku_ids}}, {"_id": 0, "type_id": 0})
+                doc = await doc.to_list(length=None)
+                
             if not doc:
-                return {}
+                return {'status': 'ok', 'value': {}}
 
-            return doc
+            return {'status': 'ok', 'value': doc}
         except Exception as e:
             print(e)
-            return {"error": str(e)}
+            return {"error": str(e), 'status': 'failed'}
 
 
     

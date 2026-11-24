@@ -56,13 +56,18 @@ async def auth_callback():
 
     if not params or verify_hmac(params) or params.get("state") != session.get("shopify_state"):
         return abort(403)
-    
-    service_res = await services.exchange_token(session.get('brand'), params.get('code'), session.get('shopify_shop_name'))
-    if service_res.get('status') == "failed":
-        if service_res.get('code') == '4a5304a1':
-            return service_res.get('error')
-            
-        return service_res
-    
-    session.pop('shopify_shop_name', None)
-    return redirect(os.environ.get("DASHBOARD_DOMAIN"))
+
+    try:
+        service_res = await services.exchange_token(session.get('brand'), params.get('code'), session.get('shopify_shop_name'))
+        # if service_res.get('status') == "failed":
+        #     if service_res.get('code') == '4a5304a1':
+        #         return service_res.get('error')
+
+        #     return service_res
+
+        # session.pop('shopify_shop_name', None)
+        # return service_res
+        session.pop('shopify_shop_name', None)
+        return jsonify(service_res[0]), service_res[1]
+    except Exception as e:
+        return jsonify({'status': 'failed', 'error': str(e), 'message': 'Could not exchange the code', 'code': '8a58550f'}), 500

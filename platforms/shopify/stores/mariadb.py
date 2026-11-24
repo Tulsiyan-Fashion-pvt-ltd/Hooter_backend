@@ -22,14 +22,11 @@ class Write:
                         VALUES (%s, %s, %s, %s)
                     ''', (brand_id, shopify_shop_name, encrypted_refresh_token, refresh_token_expires_in))
 
-                    await conn.commit()
-
                     # Fetch and return the created store
                     store_id = cursor.lastrowid
                     return {'status': 'successful', 'message': 'Store added successfully', 'store_id': store_id, 'shop_name': shopify_shop_name}
 
                 except Exception as e:
-                    await conn.rollback()
                     print(f'Error adding store: {str(e)}')
 
                     if hasattr(e, 'args') and e.args[0] == 1062:
@@ -57,10 +54,8 @@ class Write:
                     values = (encrypted_shopify_refresh_token, refresh_token_expires_in, store_id) if refresh_token_expires_in else (encrypted_shopify_refresh_token, store_id) 
 
                     await cursor.execute(query, values)
-                    await conn.commit()
                     return {'status': 'successul'}
             except Exception as e:
-                await conn.rollback()
                 print(f'Error updating store: {str(e)}')
                 return {'status': 'error', 'message': f'Unable to update store: {str(e)}'}
 
@@ -78,7 +73,6 @@ class Write:
                     ''', (store_id,))
 
                     affected_rows = cursor.rowcount
-                    await conn.commit()
 
                     if affected_rows == 0:
                         return {'status': 'error', 'message': 'Store not found or unauthorized'}
@@ -86,7 +80,6 @@ class Write:
                     return {'status': 'ok', 'message': 'Store deleted successfully'}
 
                 except Exception as e:
-                    await conn.rollback()
                     print(f'Error deleting store: {str(e)}')
                     return {'status': 'error', 'message': f'Unable to delete store: {str(e)}'}
 
@@ -112,10 +105,8 @@ class Fetch:
                     ''', (brand_id,))
 
                     stores = await cursor.fetchall()
-                    await conn.commit()
                     return {"stores": stores} if stores else {"stores": []}
                 except Exception as e:
-                    await conn.rollback()
                     print(f'Error fetching brand stores: {str(e)}')
                     return {'status': 'failed', 'error': e.args[0]}
 
@@ -144,7 +135,6 @@ class Fetch:
                     values = (store_id, )
                     await cursor.execute(query, values)
                     creds = await cursor.fetchone()
-                    await connection.commit()
                     if not creds:
                         return {'error': 'Could not fetch the refresh_token'}
 
@@ -152,7 +142,6 @@ class Fetch:
                     creds = creds["refresh_token"] = TokenEncryption.decrypt_token(encrypted_refresh_token) if encrypted_refresh_token else None
                     return creds
             except Exception as e:
-                await connection.rollback()
                 print("Could not fetch the encrypted_shopify_refresh_token")
                 print(e)
                 print_exc()
@@ -183,9 +172,7 @@ class Fetch:
                     ''', (store_id,))
 
                     store = await cursor.fetchone()
-                    await conn.commit()
                     return store.get('shopify_shop_name') if store else None
                 except Exception as e:
-                    await conn.rollback()
                     print(f'Error fetching primary store: {str(e)}')
                 return store

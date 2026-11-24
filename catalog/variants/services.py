@@ -20,6 +20,7 @@ async def create_variants(usku_id: str, type_id, variants: list[dict[str, any]],
 
     if product_category_attributes.get('error') == 'failed':
         return {'status': 'failed', 'message': 'Error while fetching product listing attributes for variant'}, 500
+    product_category_attributes = product_category_attributes.get('value')
 
     upload_responses = []
     variants_usku_id = []
@@ -50,7 +51,7 @@ async def create_variants(usku_id: str, type_id, variants: list[dict[str, any]],
 
 
 @product_access_required
-async def suggest_variant_sku_id(usku_id: str):
+async def suggest_variant_sku_id(usku_id: str) -> tuple[dict, int]:
     """
     Suggest SKU ID  for the variant
 
@@ -87,21 +88,75 @@ async def suggest_variant_sku_id(usku_id: str):
 
 
 @product_access_required
-async def get_product_variants(usku_id: str) -> list[dict]:
+async def get_product_variants(usku_id: str) -> tuple[dict, int]:
     """
-    Get product variants information like usku_id and the listing and category attributes by which they vary
-
-    Args:
-        usku_id: USKU ID  of the product
-
-    Returns:
-        List of variants and their properties If exists or empty list including a main `webp_card` image for identity
+    Get product variations on the classifications of product category attributes rather than lists of product variants
     """
-    listing_query = await mariadb.Fetch.variants(usku_id)
+    def get_variantions(category_variants: list) -> dict[str, dict]:
+        # loop over category data and add unique attributes to their corresponding variant data
+        variant_variations = {}  # store data as {usku_id: {key: value}}
+        
+        for category_variant in category_variants:
+            variant_usku_id = category_variant.pop('usku_id')
+            variant_variations[variant_usku_id] = {}
 
-    if listing_query.get('status') != 'ok':
-        return {'status': 'failed', 'message': 'Interal server error', 'code': '234c29aa'}, 500
+            for key in category_variant.keys():
+                is_common = []  # common key in every variants
+                
+                for check_variant in category_variants:
+                    if check_variant == category_variant:
+                        continue
 
-    variants_listing_attributes = listing_query.get('value')
+                    if check_variant.get(key) == category_variant.get(key):
+                        is_common.append(True)
+                    else:
+                        is_common.append(False)
 
-    return variants_listing_attributes, 200
+                if not all(is_common):
+                    variant_variations[variant_usku_id][key] = category_variant.get(key)
+        return variant_variations
+
+
+    # this is a pending work
+    def get_variant_dimentions(category_variants: list) -> dict[str, list[dict]]:
+        variant_variations = get_variantions(category_variants)
+        variant_dimention = {}  # {type: [{value and usku_id}]}
+        for usku_id in variant_variations.keys():
+            # we iterate over unique keys and club them out with values
+            for key in variant_variations.get(usku_id).keys():
+
+                variant_dimention[key] = []
+                for inner_usku_id in variant_variations.keys():
+                    variants = variant_variations.get(inner_usku_id)
+                    variant_dimention[key].append({"usku_id": inner_usku_id, "value": variants.get(key)})
+
+        return variant_dimention
+
+
+        
+
+    variants_list = await mariadb.Fetch.variants(usku_id)
+    if variants_list.get('status') != 'ok':
+        return {'status': 'failed', 'message': 'Interal server error', 'code': '1e9566fa'}, 500
+
+    variants_list = variants_list.get('value')
+    if len(variants_list) < 2:
+        return [], 200  # variants supposed to be 2 at least
+
+    usku_ids = [variant.get('usku_id') for variant in variants_list]
+
+    variants_category_attr = await product_mongodb.Fetch.catalog_product(usku_ids = usku_ids)
+    if variants_category_attr.get('status') == 'failed':
+        return {'status': 'failed', 'message': 'Interal server error', 'code': '40cfdc99'}, 500
+
+    variants_category_attr = variants_category_attr.get('value')
+
+    products_category_variation = get_variantions(variants_category_attr)
+    for variant in variants_list:
+        variant["variations"] = products_category_variation.get(variant.get('usku_id'))
+
+
+
+    return variants_list, 200
+        
+

@@ -1,5 +1,5 @@
 _access = ["hooter_admin", "brand_admin", "hooter_member", "brand_member"]
-_platforms = ["shopify"]
+_platforms = ["shopify", "flipkart"]
 _FILE_READ_BUFFER = 128 * 1024 # 128 KB 
 _FILE_WRITE_BUFFER = 128 * 1024 # 128 KB 
 
