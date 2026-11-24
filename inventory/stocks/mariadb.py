@@ -213,6 +213,7 @@ class Fetch:
                         unavailable_stock += unavailable
     
                         warehouse_stocks.append({
+                            'inventory_id': row['id'],
                             'warehouse_id': row['warehouse_id'],
                             'warehouse_name': row['name'],
                             'warehouse_alias': row['alias'],

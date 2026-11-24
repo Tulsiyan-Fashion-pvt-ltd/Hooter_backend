@@ -1,4 +1,3 @@
-
 from quart import current_app, session, jsonify, request
 from asyncmy.cursors import DictCursor
 from traceback import print_exc
@@ -18,6 +17,8 @@ async def stocks_access(inventory_id: int, brand_id: str) -> bool:
                     FROM master_inventory AS i
                     INNER JOIN usku_record AS u
                         ON u.usku_id = i.usku_id
+                    INNER JOIN warehouse AS w
+                        ON w.warehouse_id = i.warehouse_id
                     WHERE i.id = %s
                     AND u.brand_id = %s
                 """
@@ -53,8 +54,8 @@ def stocks_api_access_required(func):
         data = await request.get_json(silent=True) or {}
         inventory_id = data.get('inventory_id')
 
-        if not isinstance(inventory_id, int) or isinstance(inventory_id, bool) or inventory_id <= 0:
-            return jsonify({'status': 'failed', 'message': 'Valid inventory_id is required'}), 400
+        if inventory_id is None:
+            inventory_id = kwargs.get('inventory_id')
 
         try:
             has_access = await stocks_access(inventory_id, session.get('brand'))

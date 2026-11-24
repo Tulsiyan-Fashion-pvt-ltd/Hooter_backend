@@ -58,16 +58,13 @@ async def inventory_overview():
 @brand_required
 @stocks_api_access_required
 async def adjust_inventory(inventory_id):
-    data = await request.get_json(silent=True) or {}
+    data = await request.get_json()
 
     try:
-        data = models.AdjustInventoryModel.model_validate(quantity).model_dump()
+        data = models.AdjustInventoryModel.model_validate(data).model_dump()
         quantity = data.get("quantity")
     except ValueError as e:
         return ({'status': 'failed', 'message': 'Invalid Payload', 'error': e.errors(include_context=False), 'code': '389b9ffd'}), 422
 
     result = await services.adjust_stock(inventory_id, quantity)
     return jsonify(result[0]), result[1]
-
-
-# ********************************************************************************************

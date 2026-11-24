@@ -2680,6 +2680,9 @@ paths:
                     items:
                       type: object
                       properties:
+                        inventory_id: 
+                          type: integer
+                          example: 1
                         warehouse_id:
                           type: integer
                           example: 1
@@ -2729,7 +2732,8 @@ paths:
                   stock_compared_price: 70000
                   stock_purchasing_price: 30000
                 warehouse_stocks:
-                  - warehouse_id: 1
+                  - inventory_id: 1
+                    warehouse_id: 1
                     warehouse_name: "Main Warehouse"
                     warehouse_alias: "Main WH"
                     total_stock: 100
@@ -2969,12 +2973,20 @@ paths:
           $ref: "#/components/responses/default"
 
   
-  /inventory/stocks/adjust:
+  /inventory/stocks/adjust/{inventory_id}:
     post:
       summary: Adjust inventory stock
       description: Adds or removes stock for a specific inventory record. Stock cannot become negative.
       tags:
         - Inventory
+      parameters:
+        - in: path
+          name: inventory_id
+          required: true
+          description: Inventory ID for warehouse and product stock
+          schema:
+            type: integer
+            example: 1
       security:
         - cookieAuth: []
       requestBody:
@@ -2984,13 +2996,8 @@ paths:
             schema:
               type: object
               required:
-                - inventory_id
                 - quantity
               properties:
-                inventory_id:
-                  type: integer
-                  description: ID of the inventory record to adjust
-                  example: 1
                 quantity:
                   type: integer
                   description: Positive value to add stock and negative value to remove stock. It cannot be zero.
