@@ -34,7 +34,7 @@ async def get_inventory():
 async def get_product_stock(usku_id: str):
     """Fetches the stock for the given usku_id"""
     try:
-        product_stock = await services.get_product_stock(usku_id)
+        product_stock = await services.get_product_stock(usku_id, session.get('brand'))
         return jsonify(product_stock[0]), product_stock[1]
     except Exception as e:
         return jsonify({'status': 'failed', 'message': 'Unexpected internal server error', 'error': str(e), 'code': '34d9f173'}), 500
