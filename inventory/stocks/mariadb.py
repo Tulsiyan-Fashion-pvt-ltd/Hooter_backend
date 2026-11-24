@@ -150,9 +150,10 @@ class Fetch:
                 print(f"Error fetching inventory for {brand_id}: {e}")
                 return {'error': str(e), 'status': 'failed'}
 
-    
+
+
     @staticmethod
-    async def product_stock(usku_id: str, brand_id: str) -> dict:
+    async def product_stock(usku_id: str) -> dict:
         pool = current_app.pool
     
         async with pool.acquire() as conn:
@@ -162,6 +163,8 @@ class Fetch:
                         SELECT
                             i.id,
                             i.warehouse_id,
+                            w.name,
+                            w.alias,
                             i.stock,
                             i.status,
                             i.updated_at,
@@ -170,22 +173,19 @@ class Fetch:
                             c.compared_price,
                             c.purchasing_cost
                         FROM master_inventory AS i
-                        INNER JOIN usku_record AS u
-                            ON u.usku_id = i.usku_id
                         LEFT JOIN warehouse AS w
                             ON w.warehouse_id = i.warehouse_id
                         INNER JOIN catalog AS c
                             ON c.usku_id = i.usku_id
                         WHERE i.usku_id = %s
-                          AND u.brand_id = %s
-                    ''', (usku_id, brand_id))
+                    ''', (usku_id,))
     
                     rows = await cursor.fetchall()
     
                     if not rows:
                         return None
     
-                    # Product prices (same for all warehouse rows)
+                    # Product prices
                     price = rows[0]['price'] or 0
                     compared_price = rows[0]['compared_price'] or 0
                     purchasing_cost = rows[0]['purchasing_cost'] or 0
@@ -214,6 +214,8 @@ class Fetch:
     
                         warehouse_stocks.append({
                             'warehouse_id': row['warehouse_id'],
+                            'warehouse_name': row['name'],
+                            'warehouse_alias': row['alias'],
                             'total_stock': stock,
                             'available_stock': available,
                             'unavailable_stock': unavailable,
@@ -232,19 +234,16 @@ class Fetch:
                             'stock_purchasing_price': purchasing_cost * available_stock
                         },
                         'warehouse_stocks': warehouse_stocks,
-                        'platform': {
-                            'stock': {
-                                'amazon': 0,
-                                'flipkart': 0,
-                                'shopify': 0
-                            }
+                        'stock_distribution': {
+                            'amazon': 0,
+                            'flipkart': 0,
+                            'shopify': 0
                         }
                     }
     
                 except Exception as e:
                     print(f'Error fetching product stock: {str(e)}')
                     return 'error'
-    
     
     
     @staticmethod
