@@ -32,8 +32,8 @@ async def adjust_stock(inventory_id: int, quantity: int):
 
 
 @product_access_required
-async def get_product_stock(usku_id: str, brand_id) -> tuple[dict, int]:
-    inventory = await mariadb.Fetch.product_stock(usku_id, brand_id)
+async def get_product_stock(usku_id: str) -> tuple[dict, int]:
+    inventory = await mariadb.Fetch.product_stock(usku_id)
     if inventory == "error":
         return {"status": "failed", "message": "internal server error"}, 500
 
