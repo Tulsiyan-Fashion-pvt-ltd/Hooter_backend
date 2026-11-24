@@ -2645,27 +2645,104 @@ paths:
             type: string
           required: true
           description: Unique identifier for the product.
-      responses:
+      responses:    
         "200":
           description: Successful response
           content:
             application/json:
               schema:
                 type: object
-                required:
-                  - usku_id
-                  - stock
                 properties:
-                  usku_id:
-                    type: string
-                    example: "USKU12345"
-                  stock:
-                    type: integer
-                    example: 50
-  
+                  overall_stock:
+                    type: object
+                    properties:
+                      total_stock:
+                        type: integer
+                        example: 150
+                      available_stock:
+                        type: integer
+                        example: 100
+                      unavailable_stock:
+                        type: integer
+                        example: 50
+                      stock_price:
+                        type: number
+                        example: 50000
+                      stock_compared_price:
+                        type: number
+                        example: 70000
+                      stock_purchasing_price:
+                        type: number
+                        example: 30000
+        
+                  warehouse_stocks:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        warehouse_id:
+                          type: integer
+                          example: 1
+                        warehouse_name:
+                          type: string
+                          example: "Main Warehouse"
+                        warehouse_alias:
+                          type: string
+                          example: "Main WH"
+                        total_stock:
+                          type: integer
+                          example: 100
+                        available_stock:
+                          type: integer
+                          example: 100
+                        unavailable_stock:
+                          type: integer
+                          example: 0
+                        stock_price:
+                          type: number
+                          example: 50000
+                        stock_compared_price:
+                          type: number
+                          example: 70000
+                        stock_purchasing_price:
+                          type: number
+                          example: 30000
+        
+                  stock_distribution:
+                    type: object
+                    properties:
+                      amazon:
+                        type: integer
+                        example: 0
+                      flipkart:
+                        type: integer
+                        example: 0
+                      shopify:
+                        type: integer
+                        example: 0
               example:
-                usku_id: "USKU12345"
-                stock: 50
+                overall_stock:
+                  total_stock: 150
+                  available_stock: 100
+                  unavailable_stock: 50
+                  stock_price: 50000
+                  stock_compared_price: 70000
+                  stock_purchasing_price: 30000
+                warehouse_stocks:
+                  - warehouse_id: 1
+                    warehouse_name: "Main Warehouse"
+                    warehouse_alias: "Main WH"
+                    total_stock: 100
+                    available_stock: 100
+                    unavailable_stock: 0
+                    stock_price: 50000
+                    stock_compared_price: 70000
+                    stock_purchasing_price: 30000
+                stock_distribution:
+                  amazon: 0
+                  flipkart: 0
+                  shopify: 0
+
         "404":
           description: Product stock not found
           content:
