@@ -119,6 +119,7 @@ class ProductService:
         # Insert images
         pool = current_app.pool
         async with pool.acquire() as conn:
+            await conn.begin()
             async with conn.cursor(cursor=DictCursor) as cursor:
                 try:
                     for img_data in shopify_images:
@@ -220,23 +221,20 @@ class ProductService:
         pool = current_app.pool
         async with pool.acquire() as conn:
             async with conn.cursor(cursor=DictCursor) as cursor:
-                try:
-                    await cursor.execute(
-                        '''
-                        INSERT INTO catalogue_idempotency (idempotency_key, user_id, brand_id, response_json)
-                        VALUES (%s, %s, %s, %s)
-                        ''',
-                        (idempotency_key, user_id, brand_id, json.dumps(response_payload))
-                    )
-                    await conn.commit()
-                except Exception:
-                    await conn.rollback()
+                await cursor.execute(
+                    '''
+                    INSERT INTO catalogue_idempotency (idempotency_key, user_id, brand_id, response_json)
+                    VALUES (%s, %s, %s, %s)
+                    ''',
+                    (idempotency_key, user_id, brand_id, json.dumps(response_payload))
+                )
 
     @staticmethod
     async def update_product(uid: str, brand_id: int, user_id: str, payload: dict) -> dict:
         """Update product and sync to Shopify. Enforces join with uid_record and brand filtering."""
         pool = current_app.pool
         async with pool.acquire() as conn:
+            await conn.begin()
             async with conn.cursor(cursor=DictCursor) as cursor:
                 try:
                     await ProductService.verify_brand_ownership(brand_id, user_id)
@@ -300,6 +298,7 @@ class ProductService:
         """Delete or archive product and delete on Shopify. Enforces uid_record brand join."""
         pool = current_app.pool
         async with pool.acquire() as conn:
+            await conn.begin()
             async with conn.cursor(cursor=DictCursor) as cursor:
                 try:
                     await ProductService.verify_brand_ownership(brand_id, user_id)

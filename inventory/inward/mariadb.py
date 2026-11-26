@@ -24,6 +24,7 @@ class Write:
         pool = self.pool
         async with pool.acquire() as connection:
             try:
+                await connection.begin()
                 async with connection.cursor() as cursor:
                     query = '''
                                 insert into inward(brand_id, supplier_id, warehouse_id, created_at)
@@ -72,6 +73,7 @@ class Update:
         pool = self.pool
         async with pool.acquire() as connection:
             try:
+                await connection.begin()
                 async with connection.cursor(cursor = DictCursor) as cursor:
                     status = inward_data.get("status")
                     inward_id = inward_data.get("inward_id")
@@ -167,10 +169,8 @@ class Fetch:
                     values = (brand_id, )
                     await cursor.execute(query, values)
                     count = await cursor.fetchone()
-                    await connection.commit()
                     return count if count else {}
             except Exception as e:
-                await connection.rollback()
                 print(f"error encountered whie fetching the inward count for {brand_id}\n{e}")
                 return "error"
     
@@ -178,6 +178,7 @@ class Fetch:
         pool = self.pool
         async with pool.acquire() as connection:
             try:
+                await connection.begin()
                 async with connection.cursor(cursor=DictCursor) as cursor:
                     if inward_id:
                         # fetch the specified inward for the logged in brand

@@ -15,6 +15,7 @@ class Write:
     async def image(self, img_obj: dict) -> dict:
         pool = self.pool
         async with pool.acquire() as connection:
+            await connection.begin()
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
                     usku_id = img_obj.get("usku_id")
@@ -67,10 +68,8 @@ class Delete:
                     values = (usku_id, image_type)
 
                     await cursor.execute(query, values)
-                    await connection.commit()
                     return {"error": None}
             except Exception as e:
-                await connection.rollback()
                 print(f"error occured while deleting the images of {usku_id}\n{e}")
                 return {"error": e.args[0]}
 
@@ -85,10 +84,8 @@ class Delete:
                     values = (usku_id, )
 
                     await cursor.execute(query, values)
-                    await connection.commit()
                     return {"error": None}
             except Exception as e:
-                await connection.rollback()
                 print(f"error occured while deleting the images of {usku_id}\n{e}")
                 return {"error": e.args[0]}
 
@@ -145,9 +142,7 @@ class Fetch:
                         await cursor.execute(query, values)
                         urls = await cursor.fetchall()
 
-                    await connection.commit()
                     return urls
             except Exception as e:
-                await connection.rollback()
                 print(f"error occured while fetching the image urls\n{e}")
                 return "error"

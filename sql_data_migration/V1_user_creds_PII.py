@@ -35,6 +35,7 @@ async def run():
     pool = await get_pool()
     async with pool.acquire() as connection:
         try:
+            await connection.begin()
             async with connection.cursor(cursor=DictCursor) as cursor:
                 query = '''SELECT user_id, user_name, phone_number, user_email, user_designation, created_at
                     FROM user_creds'''

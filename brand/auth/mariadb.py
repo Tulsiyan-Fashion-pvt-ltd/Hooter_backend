@@ -25,6 +25,7 @@ class Write:
         """
         pool = self.pool
         async with pool.acquire() as connection:
+            await connection.begin()
             async with connection.cursor(cursor=DictCursor) as cursor:
                 try:
                     query = """
@@ -95,10 +96,8 @@ class Write:
                             )
                     await cursor.execute(query, values)
                     poc_id = cursor.lastrowid
-                    await connection.commit()
                     return {'status': 'successful', poc_id: poc_id}
             except Exception as e:
-                await connection.rollback()
                 print(f"Error occured while adding the brand poc, code: a9ff7ec4", e)
                 print_exc()
                 return {'status': 'failed', 'code': 'a9ff7ec4', 'error': e.args[0]}
@@ -115,11 +114,9 @@ class Write:
                         VALUES (%s, %s, %s)
                     """
                     await cursor.execute(query, (brand_id, user_id, access))
-                    await connection.commit()
                     return 'ok'
                 except Exception as e:
                     print(f'error occured while mapping user to the brand as \n {e}')
-                    await connection.rollback()
                     return e.args[0]
 
     @brand_access_required
@@ -159,11 +156,9 @@ class Write:
                     values.append(brand_id)
 
                     await cursor.execute(query, values)
-                    await connection.commit()
                     return {'status': 'successful'}
                 
             except Exception as e:
-                await connection.rollback()
                 print('code: 70fc35f4', e)
                 return {'status': 'failed', 'code': '70fc35f4', 'error': e.args[0]} 
 
@@ -187,10 +182,8 @@ class Fetch:
                     await cursor.execute(query, (user_id, ))
 
                     brand_access = await cursor.fetchall()
-                    await connection.commit()
                     return brand_access
                 except Exception as e:
-                    await connection.rollback()
                     print(f"error occured during fetching brand access of the user {user_id}\n{e}")
                     return None
                 
@@ -204,10 +197,8 @@ class Fetch:
 
                     await cursor.execute(query, (brand_id, ))
                     result = await cursor.fetchone() 
-                    await connection.commit()
                     return "available" if result and result.get('1') == 1 else "unavailable"
                 except Exception as e:
-                    await connection.rollback()
                     print(f"error during checking the brand availability", e)
                     return ("error", "unable to fulfill the request")
 
@@ -225,9 +216,7 @@ class Fetch:
                     result = await cursor.fetchone()
                     brand_name = result.get('brand_name')
                     # print(brand_name)
-                    await connection.commit()
                     return brand_name
                 except Exception as e:
-                    await connection.rollback()
                     print(f"error during fetching the brand_name from the brand table in brand_name_by_id\n{e}")
                     return ("error", "unable to fulfill the request")

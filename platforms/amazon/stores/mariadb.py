@@ -20,11 +20,9 @@ class Write:
                         VALUES (%s, %s, %s)
                     ''', (brand_id, selling_partner_id, encrypted_token))
 
-                    await conn.commit()
                     return {'status': 'ok', 'message': 'Amazon store added successfully', 'store_id': cursor.lastrowid, 'selling_partner_id': selling_partner_id}
 
                 except Exception as e:
-                    await conn.rollback()
                     print(f'Error adding Amazon store: {str(e)}')
 
                     if hasattr(e, 'args') and e.args[0] == 1062:

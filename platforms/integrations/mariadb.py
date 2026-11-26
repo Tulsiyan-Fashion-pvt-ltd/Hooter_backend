@@ -27,10 +27,8 @@ class Fetch:
                     """, (brand_id,))
 
                     integrations = await cursor.fetchone()
-                    await conn.commit()
                     print(integrations)
                     return{'status': 'ok', 'value': integrations}
                 except Exception as e:
-                    await conn.rollback()
                     print(f"Error fetching brand integrations: {str(e)}")
                     return {'status': 'failed', 'error': e.args[0]}

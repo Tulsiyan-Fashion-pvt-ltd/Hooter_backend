@@ -33,13 +33,12 @@ class Write:
 
                     await cursor.execute(collection_query, collection_value)
                     collection_id = cursor.lastrowid
-                    await connection.commit()
                     return collection_id
             except Exception as e:
-                await connection.rollback()
                 print(e)
                 print_exc()
                 return None
+
 
 
     async def add_products_to_collection(self, collection_id: str, usku_ids: list[str]) -> str| None:
@@ -74,10 +73,8 @@ class Write:
                     async with connection.cursor() as cursor:
                         await cursor.executemany(query, values)
 
-                    await connection.commit()
                     return "ok"
             except Exception as e:
-                await connection.rollback()
                 print(e)
                 print_exc
                 return None
@@ -118,11 +115,9 @@ class Write:
                 async with connection.cursor(cursor=DictCursor) as cursor:
                     await cursor.executemany(query, values)
 
-                await connection.commit()
                 return "ok"
 
             except Exception as e:
-                await connection.rollback()
                 print(e)
                 print_exc()
                 return None
@@ -155,10 +150,8 @@ class Write:
 
                     values = (collection_id, brand_id)
                     await cursor.execute(query, values)
-                    await connection.commit()
                     return "ok"
             except Exception as e:
-                await connection.rollback()
                 print(e)
                 print_exc()
                 return None
@@ -194,11 +187,9 @@ class Fetch:
                 async with connection.cursor(cursor=DictCursor) as cursor:
                     await cursor.execute(query, (collection_id,))
                     result = await cursor.fetchone()
-                    await connection.commit()
                 return result.get('collection_name') if result else None
 
             except Exception as e:
-                await connection.rollback()
                 print(e)
                 print_exc()
                 return None

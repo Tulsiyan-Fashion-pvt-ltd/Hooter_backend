@@ -23,8 +23,6 @@ class Write:
                         """, (brand_id, encrypted_token, refresh_token_expires_in,),
                     )
 
-                    await conn.commit()
-
                     return {
                         "status": "ok",
                         "message": "Flipkart seller added successfully",
@@ -32,7 +30,6 @@ class Write:
                     }
 
                 except Exception as e:
-                    await conn.rollback()
                     print(f"Error adding Flipkart seller: {str(e)}")
 
                     if hasattr(e, "args") and e.args[0] == 1062:
@@ -75,15 +72,11 @@ class Write:
                             )
     
                         if cursor.rowcount == 0:
-                            await conn.rollback()
                             return {"status": "error", "message": "Flipkart account not found for this brand"}
-    
-                    await conn.commit()
     
                     return {"status": "ok", "message": "Flipkart tokens updated successfully"}
     
                 except Exception as e:
-                    await conn.rollback()
                     print(f"Error updating Flipkart tokens: {str(e)}")
     
                     return {"status": "error", "message": "Unable to update Flipkart tokens"}

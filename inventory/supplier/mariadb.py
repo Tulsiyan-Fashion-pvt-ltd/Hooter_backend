@@ -22,11 +22,9 @@ class Write:
                     await cursor.execute(query, values)
                     supplier_id = cursor.lastrowid
 
-                    await connection.commit()
                     return supplier_id
             except Exception as e:
                 print(f"error encountered while adding supplier\n{e}")
-                await connection.rollback()
                 return "error"
             
 
@@ -52,7 +50,6 @@ class Fetch:
                     await cursor.execute(query, values)
 
                     suppliers = await cursor.fetchall()
-                    await connection.commit()
                     suppliers = [{
                         "supplier_id": supplier.get("supplier_id"),
                         "name": supplier.get("name"),
@@ -63,7 +60,6 @@ class Fetch:
                     
                     return suppliers
             except Exception as e:
-                await connection.rollback()
                 print(f"error occured while fetching the suppliers of the brand for the brandid=>{brand_id}\n{e}")
                 return {"error": e.args[0]}
             
@@ -86,7 +82,6 @@ class Fetch:
                     await cursor.execute(query, values)
 
                     supplier = await cursor.fetchone()
-                    await connection.commit()
                     supplier = {
                         "name": supplier.get("name"),
                         "number": supplier.get("contact_number"),
@@ -96,6 +91,5 @@ class Fetch:
 
                     return supplier
             except Exception as e:
-                await connection.rollback()
                 print(f"error occured while fetching the supplier of the brand for the brandid=>{brand_id}\n{e}")
                 return {"error": e.args[0]}

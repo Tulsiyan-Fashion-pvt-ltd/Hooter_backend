@@ -19,11 +19,9 @@ class Write:
                     values = (data.get("inward_id"), datetime.now())
 
                     await cursor.execute(query, values)
-                    await connection.commit()
                     return "ok"
             except Exception as e:
                 print(f"error enountered while adding grn record\n{e}")
-                await connection.rollback()
                 return "error"
 
 
@@ -44,9 +42,7 @@ class Fetch:
                             '''
                     values = (inward_id, )
                     count = await cursor.execute(query, values)
-                    await connection.commit()
                     return count.get("count") if count else "error"
             except Exception as e:
-                await connection.rollback()
                 print(f"error occured while fetching the grn count for the inward {inward_id}\n{e}")
                 return {"error", e.args[0]}
