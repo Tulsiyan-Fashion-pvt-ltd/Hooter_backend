@@ -4,11 +4,11 @@ from datetime import datetime
 from catalog.products.authorize import product_access_required
 
 class Write:
-            
-            
-    @staticmethod
-    async def grn(data: dict):
-        pool = current_app.pool
+    def __init__(self, ctx: dict | None = None):
+        self.pool = ctx["pool"] if ctx is not None else current_app.pool
+
+    async def grn(self, data: dict):
+        pool = self.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor() as cursor:
@@ -28,12 +28,14 @@ class Write:
 
 
 class Fetch:
-    @staticmethod
-    async def grn_count(inward_id):
+    def __init__(self, ctx: dict | None = None):
+        self.pool = ctx["pool"] if ctx is not None else current_app.pool
+
+    async def grn_count(self, inward_id):
         """
         FETCHES THE NUMBER OF GRNS FOR THE PROVIDED INWARD ID
         """
-        pool = current_app.pool
+        pool = self.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:

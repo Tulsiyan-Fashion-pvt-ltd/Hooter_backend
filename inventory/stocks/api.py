@@ -46,7 +46,7 @@ async def get_product_stock(usku_id: str):
 @brand_required
 async def inventory_overview():
     """Fetch inventory counts for a brand. for low, oos, sellable and total inventory"""
-    stock = await mariadb.Fetch.stock_count(session.get('brand'))
+    stock = await mariadb.Fetch().stock_count(session.get('brand'))
     if stock == "error":
         return jsonify({"status": "failed", "message": "Internal server error while fetching inventory counts"}), 500
     return jsonify(stock), 200

@@ -5,8 +5,11 @@ from datetime import datetime
 
 class Write:
     '''create the inward and mark it pending'''
-    @staticmethod
-    async def inward(inward_data: dict, brand_id: str) -> str:
+
+    def __init__(self, ctx: dict | None = None):
+        self.pool = ctx["pool"] if ctx is not None else current_app.pool
+
+    async def inward(self, inward_data: dict, brand_id: str) -> str:
         """
         Creates an inward and returns the inward id if the inward id is not provided
         Updates the iwnard data if the inward_id is provided
@@ -18,7 +21,7 @@ class Write:
                 keys = (supplier_id, usku_ids (list or dictionaries)| keys = (usku_id, expected)})
             brand_id (str)
         """
-        pool = current_app.pool
+        pool = self.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor() as cursor:
@@ -62,8 +65,11 @@ class Write:
         
             
 class Update:
-    async def inward(inward_data: dict, brand_id: str) -> str:
-        pool = current_app.pool
+    def __init__(self, ctx: dict | None = None):
+        self.pool = ctx["pool"] if ctx is not None else current_app.pool
+
+    async def inward(self, inward_data: dict, brand_id: str) -> str:
+        pool = self.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor = DictCursor) as cursor:
@@ -142,9 +148,11 @@ class Update:
             
 
 class Fetch:
-    @staticmethod
-    async def inward_count(brand_id: str):
-        pool = current_app.pool
+    def __init__(self, ctx: dict | None = None):
+        self.pool = ctx["pool"] if ctx is not None else current_app.pool
+
+    async def inward_count(self, brand_id: str):
+        pool = self.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
@@ -166,9 +174,8 @@ class Fetch:
                 print(f"error encountered whie fetching the inward count for {brand_id}\n{e}")
                 return "error"
     
-    @staticmethod
-    async def inward(condition: str, brand_id: str, inward_id: str = None):
-        pool = current_app.pool
+    async def inward(self, condition: str, brand_id: str, inward_id: str = None):
+        pool = self.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:

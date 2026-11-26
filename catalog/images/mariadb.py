@@ -9,9 +9,11 @@ load_dotenv()
 
 
 class Write:
-    @staticmethod
-    async def image(img_obj: dict) -> dict:
-        pool = current_app.pool
+    def __init__(self, ctx: dict | None = None):
+        self.pool = ctx["pool"] if ctx is not None else current_app.pool
+
+    async def image(self, img_obj: dict) -> dict:
+        pool = self.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
@@ -43,8 +45,7 @@ class Write:
                 return {"error": e.args[0]}                          
 
 
-    @staticmethod
-    async def variant_images(product_usku_id: str, variant_usku_id: str) -> dict[Literal['status', 'value', 'error'], any]:
+    async def variant_images(self, product_usku_id: str, variant_usku_id: str) -> dict[Literal['status', 'value', 'error'], any]:
         """
         Copy images from product usku_id to variant_usku_id
         """
@@ -52,9 +53,11 @@ class Write:
     
 
 class Delete:
-    @staticmethod
-    async def image(usku_id: str, image_type: str) -> dict["error": str | None]:
-        pool = current_app.pool
+    def __init__(self, ctx: dict | None = None):
+        self.pool = ctx["pool"] if ctx is not None else current_app.pool
+
+    async def image(self, usku_id: str, image_type: str) -> dict["error": str | None]:
+        pool = self.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
@@ -72,9 +75,8 @@ class Delete:
                 return {"error": e.args[0]}
 
 
-    @staticmethod
-    async def all_image(usku_id: str) -> dict[str, str]| dict[str, None]:
-        pool = current_app.pool
+    async def all_image(self, usku_id: str) -> dict[str, str]| dict[str, None]:
+        pool = self.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
@@ -92,8 +94,10 @@ class Delete:
 
 
 class Fetch:
-    @staticmethod
-    async def image(usku_id: str, type: str = None) -> list[dict[str, str]]| str:
+    def __init__(self, ctx: dict | None = None):
+        self.pool = ctx["pool"] if ctx is not None else current_app.pool
+
+    async def image(self, usku_id: str, type: str = None) -> list[dict[str, str]]| str:
         """Fetch image urls from for the given usku id that 
         later can be use to download the images from the s3 server.
 
@@ -112,7 +116,7 @@ class Fetch:
 
             `literal["error"]`: on failure
         """
-        pool = current_app.pool
+        pool = self.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor = DictCursor) as cursor:

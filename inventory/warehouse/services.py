@@ -16,7 +16,7 @@ async def delete_warehouse(warehouse_id: str) -> tuple[dict[str, str], int]:
         - api status
 
     """
-    db_response = await mariadb.Write.delete_warehouse(warehouse_id)
+    db_response = await mariadb.Write().delete_warehouse(warehouse_id)
     
     if db_response != "ok":
         return {"status": "request failed", "message": "Error occured while deleting the warehouse"}, 500
@@ -37,7 +37,7 @@ async def update_warehouse(warehouse_id: str, data: dict) -> tuple[dict[str, str
       tuple(0) = dict and tuple(1) = rest status
       """
     print(data)
-    db_response = await mariadb.Write.update_warehouse(warehouse_id, data)
+    db_response = await mariadb.Write().update_warehouse(warehouse_id, data)
 
     if db_response != "ok":
         if db_response.get("error") == 1062:
@@ -60,7 +60,7 @@ async def upload_warehouse(warehouse_data: dict, brand_id: str) -> tuple[dict[st
         - tuple(0) = dict and tuple(1) = rest status code
         """
     
-    warehouse_id = await mariadb.Write.warehouse(brand_id, warehouse_data)
+    warehouse_id = await mariadb.Write().warehouse(brand_id, warehouse_data)
     if warehouse_id == "error": 
         return {"status": "failed", "message": "failed to add the warehouse"}, 500
     return {"status": "successful", "message": "added the warehouse", "warehouse_id": warehouse_id}, 200
@@ -82,7 +82,7 @@ async def get_warehouses(brand_id: str) -> tuple[dict[str, str|int], int]:
         tuple(1)-> int:
             rest api status code
     """
-    warehouses = await mariadb.Fetch.warehouses(brand_id)
+    warehouses = await mariadb.Fetch().warehouses(brand_id)
     warehouses = [{
         "warehouse_id": warehouse.get("warehouse_id"),
         "alias": warehouse.get('alias'),
@@ -120,7 +120,7 @@ async def get_warehouse(warehouse_id: str) -> tuple[dict[str, str|int], int]:
         tuple(1)-> int:
             rest api status code
     """
-    warehouse = await mariadb.Fetch.warehouse(warehouse_id)
+    warehouse = await mariadb.Fetch().warehouse(warehouse_id)
     warehouse = {
         "warehouse_id": warehouse.get("warehouse_id"),
         'alias': warehouse.get('alias'),
@@ -143,7 +143,7 @@ async def get_warehouse(warehouse_id: str) -> tuple[dict[str, str|int], int]:
 
 
 async def set_default_warehouse(brand_id: str, warehouse_id: int) -> tuple[dict, int]:
-    result = await mariadb.Write.set_default_warehouse(brand_id, warehouse_id)
+    result = await mariadb.Write().set_default_warehouse(brand_id, warehouse_id)
 
     if result is False:
         return {"status": "failed", "message": "Invalid warehouse"}, 404
@@ -155,7 +155,7 @@ async def set_default_warehouse(brand_id: str, warehouse_id: int) -> tuple[dict,
 
 
 async def get_default_warehouse(brand_id: str):
-    warehouse = await mariadb.Fetch.default_warehouse(brand_id)
+    warehouse = await mariadb.Fetch().default_warehouse(brand_id)
 
     if warehouse == "error":
         return {"status": "failed", "message": "Could not fetch default warehouse"}, 500

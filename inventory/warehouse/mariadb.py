@@ -3,9 +3,11 @@ from asyncmy.cursors import DictCursor
 from traceback import print_exc
 
 class Write:
-    @staticmethod
-    async def warehouse(brand_id: str, data: dict): 
-        pool = current_app.pool
+    def __init__(self, ctx: dict | None = None):
+        self.pool = ctx["pool"] if ctx is not None else current_app.pool
+
+    async def warehouse(self, brand_id: str, data: dict):
+        pool = self.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor() as cursor:
@@ -24,9 +26,8 @@ class Write:
                 return "error"
 
 
-    @staticmethod
-    async def switch_warehouse_to_inactive(warehouse_id:str): 
-        pool = current_app.pool
+    async def switch_warehouse_to_inactive(self, warehouse_id:str):
+        pool = self.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor() as cursor:
@@ -43,8 +44,7 @@ class Write:
                 return "error"
         
 
-    @staticmethod
-    async def update_warehouse(warehouse_id: str,data: dict) -> str | dict[str, int]:
+    async def update_warehouse(self, warehouse_id: str,data: dict) -> str | dict[str, int]:
         '''Updating the specified warehouse data
         Args:
           - warehouse_id - unique id for warehouse
@@ -54,7 +54,7 @@ class Write:
           - on success - literal[ok]
           - on failure - dict[literal[error], int]
         '''
-        pool = current_app.pool
+        pool = self.pool
         async with pool.acquire() as connection:
             query_attr = [] 
             values = []
@@ -78,9 +78,8 @@ class Write:
                 print_exc()
                 return {"error" : e.args[0]}
 
-    @staticmethod
-    async def set_default_warehouse(brand_id: str, warehouse_id: int):
-        pool = current_app.pool
+    async def set_default_warehouse(self, brand_id: str, warehouse_id: int):
+        pool = self.pool
     
         async with pool.acquire() as connection:
             await connection.begin()
@@ -116,13 +115,15 @@ class Write:
                 return "error"
         
 class Fetch:
-    @staticmethod
-    async def warehouses(brand_id: str):
+    def __init__(self, ctx: dict | None = None):
+        self.pool = ctx["pool"] if ctx is not None else current_app.pool
+
+    async def warehouses(self, brand_id: str):
         """
         RETURNS THE WAREHOUSE OF THE BRAND
         """
 
-        pool = current_app.pool
+        pool = self.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
@@ -141,8 +142,7 @@ class Fetch:
                 return {"error": e.args[0]}
 
 
-    @staticmethod
-    async def warehouse(warehouse_id: str) -> dict[str: str | int] | dict[str, int]:
+    async def warehouse(self, warehouse_id: str) -> dict[str: str | int] | dict[str, int]:
         """
         RETURNS THE PARTICULAR WAREHOUSE
 
@@ -152,7 +152,7 @@ class Fetch:
           - on success : dict of warehouse object
           - on failure : dict[literal[error], int]
         """
-        pool = current_app.pool
+        pool = self.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
@@ -171,9 +171,8 @@ class Fetch:
                 print_exc()
                 return {"error": e.args[0]}
 
-    @staticmethod
-    async def default_warehouse(brand_id: str):
-        pool = current_app.pool
+    async def default_warehouse(self, brand_id: str):
+        pool = self.pool
     
         async with pool.acquire() as connection:
             try:

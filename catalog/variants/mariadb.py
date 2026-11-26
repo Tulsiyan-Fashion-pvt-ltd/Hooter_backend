@@ -11,8 +11,10 @@ load_dotenv()
 
 
 class Write:
-    @staticmethod
-    async def variants(parent_usku_id: str, usku_ids: list) -> dict[str, str|int]:
+    def __init__(self, ctx: dict | None = None):
+        self.pool = ctx["pool"] if ctx is not None else current_app.pool
+
+    async def variants(self, parent_usku_id: str, usku_ids: list) -> dict[str, str|int]:
         """
         Relate multiple proucts for a specific variant ID
 
@@ -23,7 +25,7 @@ class Write:
         Returns:
             dict with `status`, `value`(variant_id) and `error`
         """
-        pool = current_app.pool
+        pool = self.pool
         async with pool.acquire() as connection:
             await connection.begin()
             try:
@@ -61,8 +63,10 @@ class Write:
 
 
 class Fetch:
-    @staticmethod
-    async def variant_id(usku_id: str) -> dict[str, str|int]:
+    def __init__(self, ctx: dict | None = None):
+        self.pool = ctx["pool"] if ctx is not None else current_app.pool
+
+    async def variant_id(self, usku_id: str) -> dict[str, str|int]:
         """
         Fetches the variant Id for the given USKU ID
 
@@ -72,7 +76,7 @@ class Fetch:
         Returns:
             dict with status, result, and error as keys
         """
-        pool = current_app.pool
+        pool = self.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
@@ -93,8 +97,7 @@ class Fetch:
                 return {"error": e.args[0], 'status': 'failed'}
 
 
-    @staticmethod
-    async def count_variants(usku_id: str) -> dict[str, str|int]:
+    async def count_variants(self, usku_id: str) -> dict[str, str|int]:
         """
         Returns the count of the variants of the product
 
@@ -104,7 +107,7 @@ class Fetch:
         Returns:
             dict with status, result, and error as keys
         """
-        pool = current_app.pool
+        pool = self.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
@@ -126,12 +129,11 @@ class Fetch:
                 return {"error": e.args[0], 'status': 'failed'}
 
 
-    @staticmethod
-    async def variants(usku_id: str) -> dict[Literal['status', 'error', 'value'], any]:
+    async def variants(self, usku_id: str) -> dict[Literal['status', 'error', 'value'], any]:
         """
         Returns the listing information for all the variants
         """
-        pool = current_app.pool
+        pool = self.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:

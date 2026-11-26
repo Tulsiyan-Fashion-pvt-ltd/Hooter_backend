@@ -121,7 +121,7 @@ async def upload_image_type(usku_id: str, image_file: FileStorage| str, image_ty
         "order": image_order 
     }
 
-    sql_data_response = await mariadb.Write.image(image_path_object)
+    sql_data_response = await mariadb.Write().image(image_path_object)
     if sql_data_response.get('error') == 1062:
         raise Exception("Duplicate image")
     elif sql_data_response.get("error"):
@@ -129,7 +129,7 @@ async def upload_image_type(usku_id: str, image_file: FileStorage| str, image_ty
     
     s3_upload_response = await image_variants_upload(image, image_path_object.get("url"))
     if s3_upload_response == "error":
-        await mariadb.Delete.all_image(usku_id)  # try to delte the unuploaded images
+        await mariadb.Delete().all_image(usku_id)  # try to delte the unuploaded images
         raise Exception("Could not upload image")
     return None
 
@@ -212,7 +212,7 @@ async def background_update_bulk_images(usku_id: str, job_id: str, image_data: d
 
     work_done = 0
     for image_type in image_data.keys():
-        sql_image_data = await mariadb.Fetch.image(usku_id, image_type)
+        sql_image_data = await mariadb.Fetch().image(usku_id, image_type)
 
         if not sql_image_data:
             try:
@@ -265,7 +265,7 @@ async def delete_images(usku_id:str, image_type:str| None = None):
         message:
             descriptive message
     """
-    urls = await mariadb.Fetch.image(usku_id, image_type)
+    urls = await mariadb.Fetch().image(usku_id, image_type)
 
     if urls == "error":
         return {"error": "failed", "message": "Unable to fetch the urls for the product"}
@@ -286,7 +286,7 @@ async def delete_images(usku_id:str, image_type:str| None = None):
     if "error" == s3_responses:
         return {"error": "failed", "message": "Unable to delete all the images"}
 
-    sql_response = await mariadb.Delete.image(usku_id, image_type) if image_type else await mariadb.Delete.all_image(usku_id)
+    sql_response = await mariadb.Delete().image(usku_id, image_type) if image_type else await mariadb.Delete().all_image(usku_id)
     if sql_response.get("error"):
         return {"error": "failed", "message": "Deleted the images but could not delete the records"}
 

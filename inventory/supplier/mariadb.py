@@ -4,9 +4,11 @@ from datetime import datetime
 
 
 class Write:
-    @staticmethod
-    async def supplier(data: dict): 
-        pool = current_app.pool
+    def __init__(self, ctx: dict | None = None):
+        self.pool = ctx["pool"] if ctx is not None else current_app.pool
+
+    async def supplier(self, data: dict):
+        pool = self.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor() as cursor:
@@ -29,13 +31,15 @@ class Write:
             
 
 class Fetch:
-    @staticmethod
-    async def suppliers(brand_id: str):
+    def __init__(self, ctx: dict | None = None):
+        self.pool = ctx["pool"] if ctx is not None else current_app.pool
+
+    async def suppliers(self, brand_id: str):
         """
         RETURNS THE SUPPLIERS OF THE BRAND
         """
 
-        pool = current_app.pool
+        pool = self.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
@@ -64,13 +68,12 @@ class Fetch:
                 return {"error": e.args[0]}
             
     
-    @staticmethod
-    async def supplier(brand_id: str, supplier_id: str):
+    async def supplier(self, brand_id: str, supplier_id: str):
         """
         RETURNS THE SUPPLIERS OF THE BRAND
         """
 
-        pool = current_app.pool
+        pool = self.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:

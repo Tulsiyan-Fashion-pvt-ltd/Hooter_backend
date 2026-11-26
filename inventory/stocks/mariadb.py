@@ -13,16 +13,16 @@ load_dotenv()
 
 
 class Write:
-            
-    @staticmethod
+    def __init__(self, ctx: dict | None = None):
+        self.pool = ctx["pool"] if ctx is not None else current_app.pool
+
     @product_access_required
-    async def add_stock(usku_id: str, stock: int):
+    async def add_stock(self, usku_id: str, stock: int):
         ...
 
     
-    @staticmethod
-    async def adjust_stock(inventory_id: int, quantity: int):
-        pool = current_app.pool
+    async def adjust_stock(self, inventory_id: int, quantity: int):
+        pool = self.pool
     
         async with pool.acquire() as connection:
             await connection.begin()
@@ -62,14 +62,16 @@ class Write:
     
     
 class Fetch:
-    @staticmethod
-    async def inventory_stocks(brand_id: str, filter: str = "", type_id: str | None = None, limit=10, offset=0, warehouse_id: int | None = None) -> dict:        
+    def __init__(self, ctx: dict | None = None):
+        self.pool = ctx["pool"] if ctx is not None else current_app.pool
+
+    async def inventory_stocks(self, brand_id: str, filter: str = "", type_id: str | None = None, limit=10, offset=0, warehouse_id: int | None = None) -> dict:
         """Fetches the total inventory of the brand. Where it returns a list of dict objects with keys `usku_id`, `stock`
         Returns:
             dict with `status` and `error` if fails or
             dict with `status` and list[dict[]] if status is ok   
         """
-        pool = current_app.pool
+        pool = self.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
@@ -152,9 +154,8 @@ class Fetch:
 
 
 
-    @staticmethod
-    async def product_stock(usku_id: str) -> dict:
-        pool = current_app.pool
+    async def product_stock(self, usku_id: str) -> dict:
+        pool = self.pool
     
         async with pool.acquire() as conn:
             async with conn.cursor(cursor=DictCursor) as cursor:
@@ -247,12 +248,11 @@ class Fetch:
                     return 'error'
     
     
-    @staticmethod
-    async def stock_count(brand_id: str) -> dict[str, int]:
+    async def stock_count(self, brand_id: str) -> dict[str, int]:
         """
         FETCHES THE STOCK COUNT OF SELLABLE, OOS AND LOW STOCK PRODUCTS
         """
-        pool = current_app.pool
+        pool = self.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:

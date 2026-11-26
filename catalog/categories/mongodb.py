@@ -3,7 +3,7 @@ from traceback import print_exc
 
 
 class Write:
-    def __init__(self, ctx=None):
+    def __init__(self, ctx: dict | None = None):
         self.mongo = ctx['mongo'] if ctx is not None else current_app.mongo
 
     async def category_schema(self, id: str, name: str, attributes: dict) -> dict:
@@ -20,7 +20,7 @@ class Write:
 
 
 class Fetch:
-    def __init__(self, ctx=None):
+    def __init__(self, ctx: dict | None = None):
         self.mongo = ctx['mongo'] if ctx is not None else current_app.mongo
 
     async def category_name(self, type_id: str) -> dict[str, str]:
@@ -115,7 +115,7 @@ class Fetch:
 
         
             # fetch only mandatory schema keys of any niche
-            async def mandatory(self, ctx=None):
+            async def mandatory(self, ctx: dict | None = None):
                 doc = await Fetch(ctx).category_schema(self.type_id)
                 if not doc:
                   return None
@@ -127,7 +127,7 @@ class Fetch:
 
             # to fetch all the attribute schema any niche id
             #there is no point of checking all the fields since category fields an be many there is no way to cross check what data fields are getting stored
-            async def all(self, ctx=None):
+            async def all(self, ctx: dict | None = None):
                 doc = await Fetch(ctx).category_schema(self.type_id)                               
                 if not doc:
                   return None
@@ -141,7 +141,7 @@ class Fetch:
             """
             Catalog specific attribute
             """
-            async def mandatory(ctx=None):
+            async def mandatory(ctx: dict | None = None):
                 """fetch only mandatory attribute keys for catalog listing"""
                 doc = await Fetch(ctx).listing_schema()
                 if not doc:
@@ -152,7 +152,7 @@ class Fetch:
                 return universal_mandatory_keys
             
 
-            async def all(ctx=None):
+            async def all(ctx: dict | None = None):
                 """to fetch all the attribute schema for catalog listing"""
                 doc = await Fetch(ctx).listing_schema()
                 if not doc:
@@ -171,7 +171,7 @@ class Fetch:
                 self.type_id = type_id
 
 
-            async def mandatory(self, ctx=None):
+            async def mandatory(self, ctx: dict | None = None):
                 """fetch only mandatory attribute keys for images"""
                 doc = await Fetch(ctx).image_schema(self.type_id)
                 

@@ -13,7 +13,7 @@ inward = Blueprint("inward", __name__, url_prefix="/inward")
 async def get_inward():
     brand_id = session.get("brand")
 
-    inward = await mariadb.Fetch.inward_count(brand_id)
+    inward = await mariadb.Fetch().inward_count(brand_id)
 
     if inward == "error":
         return jsonify({"status": "failed", "message": "internal server error"}), 500
@@ -30,10 +30,10 @@ async def inward_count():
     print(inward_id)
 
     if inward_id:
-        inward = await mariadb.Fetch.inward(None, brand_id, inward_id)
+        inward = await mariadb.Fetch().inward(None, brand_id, inward_id)
     else:
         condition = request.args.get("type")
-        inward = await mariadb.Fetch.inward(condition, brand_id)
+        inward = await mariadb.Fetch().inward(condition, brand_id)
 
     if inward == "error":
         return jsonify({"status": "failed", "message": "Internal server error"}), 500
@@ -67,7 +67,7 @@ async def create_inward():
         return jsonify({"status": "denied", "message": "invalid shipment payload"}), 400
 
 
-    db_respose = await mariadb.Write.inward(payload, brand_id)
+    db_respose = await mariadb.Write().inward(payload, brand_id)
     if db_respose == "error":
         return jsonify({"status": "failed", "message": "unable to create the inward"}), 500
     
@@ -107,7 +107,7 @@ async def upload_inward():
         }for usku_id, unit in payload.get("usku_ids").items() if payload.get("usku_ids")]
     }
 
-    db_query = await mariadb.Update.inward(inward, session.get("brand"))
+    db_query = await mariadb.Update().inward(inward, session.get("brand"))
     if db_query == "error": 
         return jsonify({"status": "failed", "message": "could not process the request"}), 500
     return jsonify({"status": "successful", "message": f"inward uploaded as {payload.get("status")}", "grn_id": db_query}), 200

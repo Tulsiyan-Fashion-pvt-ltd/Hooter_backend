@@ -1,12 +1,13 @@
 from quart import current_app
 from asyncmy.cursors import DictCursor
 from traceback import print_exc
-from .authorize import colletion_db_brand_access
 
 
 class Write:
-    @staticmethod
-    async def create_collection(name: str, brand_id: str) -> str| None:
+    def __init__(self, ctx: dict | None = None):
+        self.pool = ctx["pool"] if ctx is not None else current_app.pool
+
+    async def create_collection(self, name: str, brand_id: str) -> str| None:
         """
         create_collection creates the new collection for the brand and adds the enlisted products into it
 
@@ -20,7 +21,7 @@ class Write:
             On failure:
                 `None`
         """
-        pool = current_app.pool
+        pool = self.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
@@ -41,10 +42,7 @@ class Write:
                 return None
 
 
-
-    @staticmethod
-    @colletion_db_brand_access
-    async def add_products_to_collection(collection_id: str, usku_ids: list[str]) -> str| None:
+    async def add_products_to_collection(self, collection_id: str, usku_ids: list[str]) -> str| None:
         """
         Add multiple products to a collection.
 
@@ -62,7 +60,7 @@ class Write:
         if not usku_ids:
             return
         
-        pool = current_app.pool
+        pool = self.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
@@ -85,10 +83,8 @@ class Write:
                 return None
 
 
-
-    @staticmethod
-    @colletion_db_brand_access
     async def remove_products_from_collection(
+        self,
         collection_id: str,
         usku_ids: list[str]
     ) -> str | None:
@@ -108,7 +104,7 @@ class Write:
         if not usku_ids:
             return None
 
-        pool = current_app.pool
+        pool = self.pool
 
         async with pool.acquire() as connection:
             try:
@@ -132,10 +128,7 @@ class Write:
                 return None
 
 
-
-    @staticmethod
-    @colletion_db_brand_access
-    async def remove_collection(collection_id: str, brand_id: str) -> str | None:
+    async def remove_collection(self, collection_id: str, brand_id: str) -> str | None:
         """
         Remove multiple products from a collection.
     
@@ -148,7 +141,7 @@ class Write:
         Returns:
             "ok" if the operation succeeds, otherwise None.
         """
-        pool = current_app.pool
+        pool = self.pool
 
         async with pool.acquire() as connection:
             try:
@@ -174,10 +167,11 @@ class Write:
 
 
 class Fetch:
+    def __init__(self, ctx: dict | None = None):
+        self.pool = ctx["pool"] if ctx is not None else current_app.pool
 
-    @staticmethod
-    @colletion_db_brand_access
-    async def fetch_collection_name(collection_id: str) -> str | None:
+        
+    async def fetch_collection_name(self, collection_id: str) -> str | None:
         """
         Fetch the name of a collection by its ID.
 
@@ -187,7 +181,7 @@ class Fetch:
         Returns:
             The collection name if found, otherwise `None`.
         """
-        pool = current_app.pool
+        pool = self.pool
 
         async with pool.acquire() as connection:
             try:

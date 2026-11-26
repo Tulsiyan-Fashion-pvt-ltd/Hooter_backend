@@ -11,7 +11,7 @@ async def fetch_inventory_stocks_record(brand_id: str, page: int = 1, limit: int
                                         filter: str|None = None, type_id: str|None = None, warehouse_id: int| None = None) -> tuple[dict, int]:
     offset = (page - 1) * limit
 
-    records = await mariadb.Fetch.inventory_stocks(brand_id, filter, type_id, limit, offset, warehouse_id)
+    records = await mariadb.Fetch().inventory_stocks(brand_id, filter, type_id, limit, offset, warehouse_id)
     if records.get('status') == 'failed':
         return {'status': 'failed', 'message': 'Could not fetch the records', 'code': 'be387278'}, 500
 
@@ -20,7 +20,7 @@ async def fetch_inventory_stocks_record(brand_id: str, page: int = 1, limit: int
 
 @stocks_access_required
 async def adjust_stock(inventory_id: int, quantity: int):
-    result = await mariadb.Write.adjust_stock(inventory_id, quantity)
+    result = await mariadb.Write().adjust_stock(inventory_id, quantity)
 
     if result is False:
         return {'status': 'failed', 'message': 'Inventory record not found or inactive'}, 404
@@ -33,7 +33,7 @@ async def adjust_stock(inventory_id: int, quantity: int):
 
 @product_access_required
 async def get_product_stock(usku_id: str) -> tuple[dict, int]:
-    inventory = await mariadb.Fetch.product_stock(usku_id)
+    inventory = await mariadb.Fetch().product_stock(usku_id)
     if inventory == "error":
         return {"status": "failed", "message": "internal server error"}, 500
 

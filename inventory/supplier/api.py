@@ -45,7 +45,7 @@ async def add_supplier():
         })
     }
 
-    supplier_id = await mariadb.Write.supplier(data)
+    supplier_id = await mariadb.Write().supplier(data)
     if supplier_id == "error": 
         return jsonify({"status": "failed", "message": "failed to add the supplier"}), 500
     return jsonify({"status": "successful", "message": "added the supplier", "supplier_id": supplier_id}), 200
@@ -59,7 +59,7 @@ async def get_suppliers(supplier_id = None):
 
     suppliers = None
     if supplier_id is None:
-        suppliers = await mariadb.Fetch.suppliers(brand_id)
+        suppliers = await mariadb.Fetch().suppliers(brand_id)
     else:
-        suppliers = await mariadb.Fetch.supplier(brand_id, supplier_id)
+        suppliers = await mariadb.Fetch().supplier(brand_id, supplier_id)
     return jsonify(suppliers)

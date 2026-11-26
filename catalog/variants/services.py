@@ -40,7 +40,7 @@ async def create_variants(usku_id: str, type_id, variants: list[dict[str, any]],
 
 
     if len(upload_responses) > 0:
-        variants_link_response = await mariadb.Write.variants(usku_id, variants_usku_id)
+        variants_link_response = await mariadb.Write().variants(usku_id, variants_usku_id)
         if variants_link_response.get('status') == 'failed':
             return {'status': 'failed', 'message': 'Issue occured while Linking the uploaded products as variants', 'products_upload_status': upload_responses}, 202
 
@@ -61,7 +61,7 @@ async def suggest_variant_sku_id(usku_id: str) -> tuple[dict, int]:
     Returns:
         Autogenrated sku id for suggestion
     """
-    result = await asyncio.gather(mariadb.Fetch.count_variants(usku_id), 
+    result = await asyncio.gather(mariadb.Fetch().count_variants(usku_id),
                                          product_mariadb.Fetch().sku_id(usku_id))
 
     variant_count = result[0]
@@ -134,7 +134,7 @@ async def get_product_variants(usku_id: str) -> tuple[dict, int]:
         return variant_dimention
 
 
-    variants_list = await mariadb.Fetch.variants(usku_id)
+    variants_list = await mariadb.Fetch().variants(usku_id)
     if variants_list.get('status') != 'ok':
         return {'status': 'failed', 'message': 'Interal server error', 'code': '1e9566fa'}, 500
 

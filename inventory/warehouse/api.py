@@ -49,7 +49,7 @@ async def get_warehouses():
 @warehouse_api_access_required
 async def get_warehouse(warehouse_id):
     '''Get warehouse data for the particular id'''
-    warehouse = await mariadb.Fetch.warehouse(warehouse_id)
+    warehouse = await mariadb.Fetch().warehouse(warehouse_id)
     if warehouse.get("error") != None:
         print(warehouse)
         return jsonify({"status": "failed", "message": "Failed to fetch warehouse" }), 500
@@ -84,11 +84,11 @@ async def update_warehouse(warehouse_id: str):
     payload = await request.get_json()
     try:
         if payload.get('pincode') and not payload.get('state'):
-            warehouse_address = await mariadb.Fetch.warehouse(warehouse_id)
+            warehouse_address = await mariadb.Fetch().warehouse(warehouse_id)
             state = warehouse_address.get('state')
             payload = {**payload, 'state': state}
         elif payload.get('state') and not payload.get('pincode'):
-            warehouse_address = await mariadb.Fetch.warehouse(warehouse_id)
+            warehouse_address = await mariadb.Fetch().warehouse(warehouse_id)
             pincode = warehouse_address.get('pincode')
             payload = {**payload, 'pincode': pincode}
 

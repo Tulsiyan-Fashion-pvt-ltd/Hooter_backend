@@ -120,7 +120,7 @@ async def get_image_url(usku_id):
     arguments = request.args
     type = arguments.get("image-type")
    
-    image_urls = await mariadb.Fetch.image(usku_id, type)
+    image_urls = await mariadb.Fetch().image(usku_id, type)
     if image_urls == "error":
         return jsonify({"status": "failed", "message": "could not finish the request"}), 500
 
