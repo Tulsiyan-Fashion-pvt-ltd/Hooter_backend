@@ -177,7 +177,7 @@ async def background_upload_bulk_images(usku_id: str, job_id: str, image_data: d
             tasks[job_id]['event'].set() # execute the waiting function
 
     if work_done == total_work:
-        await product_sql.Write.status_complete(usku_id)
+        await product_sql.Write().status_complete(usku_id)
     return upload_report
 
 

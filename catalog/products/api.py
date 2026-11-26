@@ -1,4 +1,4 @@
-from quart import Blueprint, session, request, jsonify, Response, abort, url_for
+from quart import Blueprint, session, request, jsonify, Response, abort, url_for, current_app
 from catalog.products import mariadb
 from catalog.categories import mongodb as categories
 from catalog.categories.services import get_product_attributes
@@ -14,6 +14,7 @@ from .sse import product_sse
 from .authorize import product_api_access_required, product_access_required
 from security_extensions import validate_csrf
 from . import models
+# from .tasks import test
 
 
 products = Blueprint("products", __name__, url_prefix = "/products")
@@ -27,7 +28,7 @@ products.register_blueprint(product_sse)
 @login_required
 @brand_required
 async def if_catalog_exists():
-    is_catalog = await mariadb.Fetch.is_exists_catalog(session.get('brand'))
+    is_catalog = await mariadb.Fetch().is_exists_catalog(session.get('brand'))
     if is_catalog == True:
         return jsonify({"catalog": "available"})
     else:
@@ -51,10 +52,7 @@ async def upload_single_catalog():
     payload = await request.get_json()
     listing_attributes = dict(payload.get('listing_attributes'))
     product_attributes = dict(payload.get("category_attributes"))
-    # print(payload)
-    # variants = list(payload.get("variants"))
-
-    product_attribute = await get_product_attributes(category_id, vertical=1)
+    product_attribute = await get_product_attributes(category_id)
 
     try:
         ProductDetailsModel = models.buildProductAttributeModel(product_attribute[0].get('category_attributes'))
@@ -167,7 +165,7 @@ async def get_catlog_counts():
         total, pending and completed stock count
     """
     brand_id = session.get("brand")
-    catalog_counts = await mariadb.Fetch.catalog_upload_count(brand_id)
+    catalog_counts = await mariadb.Fetch().catalog_upload_count(brand_id)
     
     if "error" == catalog_counts:
         return jsonify({"status": "failed", "message": "Could not fetch the catalog data"}), 500
@@ -231,7 +229,7 @@ async def update_catalog_data(usku_id):
     UPDATES THE CATALOG PRODUCT DATA
     """
     payload = await request.get_json()
-    type_id = await mariadb.Fetch.product_category_id(usku_id)
+    type_id = await mariadb.Fetch().product_category_id(usku_id)
     type_id.get('value')
 
     if type_id == None:
@@ -251,8 +249,8 @@ async def update_catalog_data(usku_id):
         print(e)
         return jsonify({'status': 'failed', "message": "Unexpected Error while checking payload", "errors": str(e), "code": "22ff45ba"}), 422
     
-    payload_schema = await asyncio.gather(categories.Fetch.listing_schema(),
-                                      categories.Fetch.category_schema(type_id))
+    payload_schema = await asyncio.gather(categories.Fetch().listing_schema(),
+                                      categories.Fetch().category_schema(type_id))
     
     try:
         if listing_attributes is not None:
@@ -280,7 +278,7 @@ async def update_catalog_data(usku_id):
 @brand_required
 async def get_brand_uploaded_categories():
     """Gets the uploaded category from the brand"""
-    categories = await mariadb.Fetch.uploaded_product_category(session.get('brand'))
+    categories = await mariadb.Fetch().uploaded_product_category(session.get('brand'))
     if categories.get('error'):
         return jsonify({'status': 'failed', 'message': 'Could not fetch the uploaded product categories'}), 500
 

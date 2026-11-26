@@ -32,7 +32,7 @@ async def upload_image(usku_id):
     '''VERIFY AND UPLOAD IMAGE'''
     files = await request.files
     form = await request.form
-    type_id = await productdb.Fetch.product_category_id(usku_id)
+    type_id = await productdb.Fetch().product_category_id(usku_id)
     type_id = type_id.get('value')
 
     try:

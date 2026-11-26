@@ -14,7 +14,7 @@ async def connect_brand(user_id: str) -> dict[str, str| int]:
     Returns:
         dict with status `code`,  `status`, `brands`, `connection` and `message` keys
     """
-    brand_access = await mariadb.Fetch.brand_access(user_id)
+    brand_access = await mariadb.Fetch().brand_access(user_id)
     if brand_access is None:
         return {"status": "successful", "brands": None, "connection": "not connected", "message": "no brand is registered", "code": 201}, 
     elif len(brand_access) == 1:
@@ -50,7 +50,7 @@ async def register_brand(user_id: str, brand_data: dict) -> dict[str, str| int]:
         dict with status, message, brand_id and code
     '''
     brand_data = {"brand_id": create_id(), **brand_data}
-    result = await mariadb.Write.insert_brand(brand_data, user_id, access="brand_admin")
+    result = await mariadb.Write().insert_brand(brand_data, user_id, access="brand_admin")
 
     if result != "ok":
         if result == 1265:
@@ -65,7 +65,7 @@ async def register_brand(user_id: str, brand_data: dict) -> dict[str, str| int]:
 
 
 @brand_access_required
-async def add_new_poc(brand_id: str, poc_data: str):
+async def add_new_poc(brand_id: str, poc_data: dict):
     '''Update the brand Point Of Contact
     
     Args: 
@@ -76,7 +76,7 @@ async def add_new_poc(brand_id: str, poc_data: str):
         tuple[dict[str, str], int]
     '''
     '''update poc for brand'''
-    poc_response = await mariadb.Write.add_poc(brand_id, poc_data)
+    poc_response = await mariadb.Write().add_poc(brand_id, poc_data)
     if poc_response.get('status') != "successful":
         return {'status': 'failed', 'message': 'Could not add the poc', 'code': '8baa68bc'}, 500
 

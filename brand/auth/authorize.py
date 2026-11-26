@@ -2,6 +2,7 @@ from quart import current_app, session, jsonify
 from asyncmy.cursors import DictCursor
 from traceback import print_exc
 from functools import wraps
+from inspect import signature
 from async_lru import alru_cache
 
 @alru_cache(maxsize=128, ttl=500)
@@ -41,11 +42,12 @@ async def brand_access(brand_id: str, user_id: str) -> bool:
 def brand_access_required(func):
     """Run the brand function if the `brand_id` belongs to the user.
     
-    Requirement:
-        `brand_id` should be as the first positional argument"""
+    `brand_id` should be the first positional argument, after `self` for methods."""
+    brand_id_index = 1 if next(iter(signature(func).parameters), None) == "self" else 0
+
     @wraps(func)
     async def wrapper(*args, **kwargs):
-        has_access = await brand_access(args[0], session.get('user'))
+        has_access = await brand_access(args[brand_id_index], session.get('user'))
         if has_access == True:
             return await func(*args, **kwargs)
         else:

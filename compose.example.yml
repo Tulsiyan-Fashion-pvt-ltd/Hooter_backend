@@ -106,7 +106,7 @@ services:
     build: .
     # networks:
     #   hooter-network:
-    command: arq tasks.WorkerSettings
+    command: arq arq_worker.WorkerSettings
 
   hooter:
     build: .

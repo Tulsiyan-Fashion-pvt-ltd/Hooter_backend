@@ -18,7 +18,7 @@ def check_taxonomy(func):
 
 @check_taxonomy
 @alru_cache(maxsize=128, ttl=900)
-async def get_taxonomy_attributes(vertical: int, id: str) -> list:
+async def get_taxonomy_attributes(vertical: int, id: str, ctx: dict| None = None) -> list:
     """
     EXTRACT CATEGORY ATTRIBUTE FROM THE SHOPIFY TAXONOMY AND RETURNS IT.
     It is used in the categories so if the we don't have the attribute data in the db
@@ -55,7 +55,7 @@ async def get_taxonomy_attributes(vertical: int, id: str) -> list:
     else:
         return ["error", "invalid vertical vertical for the id"]
 
-    asyncio.create_task(mongodb.Write.category_schema(id, name, attributes))
+    asyncio.create_task(mongodb.Write(ctx).category_schema(id, name, attributes))
     return attributes
 
 
@@ -105,7 +105,7 @@ async def next_level_attributes(id: str, vertical: int) -> list:
 
 @check_taxonomy
 @alru_cache(maxsize=128, ttl=900)
-async def get_product_attributes(category_id: str, vertical: int| None = None):
+async def get_product_attributes(category_id: str, vertical: int| None = None, ctx: dict| None = None):
     """Get the object of product attributes including `listing_attributes`, `category_attributes`
     and `image_attributes`. 
 
@@ -123,8 +123,8 @@ async def get_product_attributes(category_id: str, vertical: int| None = None):
                 index 0 -> dict containing `"status"` and `"message"`
                 index 1 -> rest api status
     """
-    product_attributes = await asyncio.gather(mongodb.Fetch.listing_schema(), mongodb.Fetch.category_schema(category_id),
-                   mongodb.Fetch.image_schema(category_id))
+    product_attributes = await asyncio.gather(mongodb.Fetch(ctx).listing_schema(), mongodb.Fetch(ctx).category_schema(category_id),
+                   mongodb.Fetch(ctx).image_schema(category_id))
     
     # print(product_attributes)
     catalog_schema = product_attributes[0]
@@ -153,7 +153,7 @@ async def get_product_attributes(category_id: str, vertical: int| None = None):
 
 # @alru_cache(maxsize=128, ttl=900)
 @check_taxonomy
-async def get_product_bulkupload_workbook(category_id, vertical):
+async def get_product_bulkupload_workbook(category_id, vertical, ctx: dict| None = None):
     """Get product bulk upload workbook for the desired category.
     
     Parameters:
@@ -167,8 +167,8 @@ async def get_product_bulkupload_workbook(category_id, vertical):
                 index 0 -> dict containing `status` and `message`
                 index 1 -> rest api status
     """
-    attributes = await asyncio.gather(mongodb.Fetch.listing_schema(), 
-                                          mongodb.Fetch.category_schema(category_id))
+    attributes = await asyncio.gather(mongodb.Fetch(ctx).listing_schema(), 
+                                          mongodb.Fetch(ctx).category_schema(category_id))
 
     category_attribute = attributes[1].get("attributes") if attributes[1].get("attributes") is not None else get_taxonomy_attributes(vertical, category_id)
     '''IF THE ATTRIBUTE ISN'T IN THE DB AND WHEN SERCHEC THE VERTICAL THE VERTICAL IS INCORRECT'''

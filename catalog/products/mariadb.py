@@ -13,9 +13,11 @@ load_dotenv()
 
 
 class Write:
-    @staticmethod
-    async def product(product):
-        pool = current_app.pool
+    def __init__(self, ctx: dict | None = None):
+        self.pool = ctx["pool"] if ctx is not None else current_app.pool
+
+    async def product(self, product):
+        pool = self.pool
 
         def clean_weight(value):
             '''Tiny function to cleant he weight value issue'''
@@ -71,9 +73,8 @@ class Write:
 
 
 
-    @staticmethod
-    async def bulk_product(products: list) -> dict:
-        pool = current_app.pool
+    async def bulk_product(self, products: list) -> dict:
+        pool = self.pool
         async with pool.acquire() as connection:
             await connection.begin()
             try:
@@ -117,9 +118,8 @@ class Write:
                 return {"error": e.args[0]}
     
 
-    @staticmethod
-    async def delete_catalog(usku_id):
-        pool = current_app.pool
+    async def delete_catalog(self, usku_id):
+        pool = self.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
@@ -135,9 +135,8 @@ class Write:
                 return {"error": e.args[0]}
 
 
-    @staticmethod
-    async def status_complete(usku_id):
-        pool = current_app.pool
+    async def status_complete(self, usku_id):
+        pool = self.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
@@ -153,9 +152,8 @@ class Write:
                 return {"error": e.args[0]}
 
 
-    @staticmethod
-    async def update_catalog(usku_id: str, listing_attributes: dict):
-        pool = current_app.pool
+    async def update_catalog(self, usku_id: str, listing_attributes: dict):
+        pool = self.pool
         async with pool.acquire() as connection:
             await connection.begin()
             try:
@@ -200,9 +198,11 @@ class Write:
 
 
 class Fetch:
-    @staticmethod
-    async def is_sku_id_exists(sku_id, brand_id):
-        pool = current_app.pool
+    def __init__(self, ctx: dict | None = None):
+        self.pool = ctx["pool"] if ctx is not None else current_app.pool
+
+    async def is_sku_id_exists(self, sku_id, brand_id):
+        pool = self.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
@@ -221,9 +221,8 @@ class Fetch:
                 return None
 
 
-    @staticmethod
-    async def is_exists_catalog(brand_id):
-        pool = current_app.pool
+    async def is_exists_catalog(self, brand_id):
+        pool = self.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
@@ -236,9 +235,8 @@ class Fetch:
                 print(f"error occured while fetching the catalog on is_exists_catalog function\n{e}")
                 return ("error", "could not fetch the availability from the usku_record")
                 
-    @staticmethod
-    async def is_usku_id_exists(usku_id):
-        pool = current_app.pool
+    async def is_usku_id_exists(self, usku_id):
+        pool = self.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
@@ -252,8 +250,7 @@ class Fetch:
                 return ("error", "could not fetch the availability from the usku_record")
 
 
-    @staticmethod
-    async def sku_id(usku_id: str) -> dict[str, str|int]:
+    async def sku_id(self, usku_id: str) -> dict[str, str|int]:
         """
         Get SKU ID of the product
 
@@ -263,7 +260,7 @@ class Fetch:
         Returns:
             dict[Literal["status", "value", "error"], str| int]
         """
-        pool = current_app.pool
+        pool = self.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
@@ -282,9 +279,8 @@ class Fetch:
                 return {'status': 'failed', 'error': e.args[0]}
         
 
-    @staticmethod
-    async def catalog_product(usku_id: str) -> dict[Literal['status', 'error', 'value'], any]:
-        pool = current_app.pool
+    async def catalog_product(self, usku_id: str) -> dict[Literal['status', 'error', 'value'], any]:
+        pool = self.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
@@ -308,10 +304,9 @@ class Fetch:
 
 
     
-    @staticmethod
-    async def catalog_list(brand_id: str, conditions: dict[str, str|int]) -> list[dict[str, str|int]] | Literal["error"]:
+    async def catalog_list(self, brand_id: str, conditions: dict[str, str|int]) -> list[dict[str, str|int]] | Literal["error"]:
         """Show the list of uploaded catalog"""
-        pool = current_app.pool
+        pool = self.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor = DictCursor) as cursor:
@@ -378,8 +373,7 @@ class Fetch:
                 return "error"
 
 
-    @staticmethod
-    async def catalog_upload_count(brand_id: str) -> dict| str:
+    async def catalog_upload_count(self, brand_id: str) -> dict| str:
         """Show the count of uploaded products in the catalog in 
         `pending`, `completed` status and `total` product upload for the brand
 
@@ -395,7 +389,7 @@ class Fetch:
             On failure:
                 - str: `"error"`
         """
-        pool = current_app.pool
+        pool = self.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor = DictCursor) as cursor:
@@ -415,8 +409,7 @@ class Fetch:
                 return "error"
 
 
-    @staticmethod
-    async def product_category_id(usku_id: str) -> dict[Literal['status', 'error', 'value'], any]:
+    async def product_category_id(self, usku_id: str) -> dict[Literal['status', 'error', 'value'], any]:
         """Get the shopify taxonomy category ID from the `usku_recrod`
         
         Args:
@@ -425,7 +418,7 @@ class Fetch:
         Returns:
             {status: `Literal['ok', 'failed']`, value=`cateogry-id`}
         """
-        pool = current_app.pool
+        pool = self.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
@@ -442,8 +435,7 @@ class Fetch:
                 return {'status': 'failed', 'error': e.args[0]}
 
 
-    @staticmethod
-    async def uploaded_product_category(brand_id: str) -> dict[str, str| list[dict[str, str]]]:
+    async def uploaded_product_category(self, brand_id: str) -> dict[str, str| list[dict[str, str]]]:
         '''
         Get the list of categories of the uploaded products by the brand
         
@@ -453,7 +445,7 @@ class Fetch:
         Returns:
             dict with keys `error` and `categories`(list of dicts of categories with key `category` and `id`)
         '''
-        pool = current_app.pool
+        pool = self.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:

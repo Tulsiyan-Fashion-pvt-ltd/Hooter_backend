@@ -1,23 +1,18 @@
 from quart import current_app
 from traceback import print_exc
-# returns the only niche specific keys without the type_id
-def get_keys(doc):
-    doc.pop("type_id") # taking out the type_id field from the attributes
-
-    # LIST OF ALL THE KEYS FOR NICHE SPECIFIC ATTRIBUTES FOR MONGODB
-    return doc.keys()
 
 
 class Write:
-    @staticmethod
-    async def category_schema(id: str, name: str, attributes: dict) -> dict:
+    def __init__(self, ctx=None):
+        self.mongo = ctx['mongo'] if ctx is not None else current_app.mongo
+
+    async def category_schema(self, id: str, name: str, attributes: dict) -> dict:
         """WRITES THE CATETGORY SCHEMA INTO THE MONGODB\n
         It used when the category schema is not available and need to search from taxonomy file.
         After reading from the file the data gets stored in the db.
         """
-        mongo = current_app.mongo
         try:
-            doc = await mongo.db.product_info_schema.insert_one({"type_id": id, "name": name, "attributes": attributes})
+            doc = await self.mongo.db.product_info_schema.insert_one({"type_id": id, "name": name, "attributes": attributes})
             return {"error": None, "status": "ok"}
         except Exception as e:
             print(f"error encountered while writing the category attributes\n{e}")
@@ -25,7 +20,10 @@ class Write:
 
 
 class Fetch:
-    async def category_name(type_id: str) -> dict[str, str]:
+    def __init__(self, ctx=None):
+        self.mongo = ctx['mongo'] if ctx is not None else current_app.mongo
+
+    async def category_name(self, type_id: str) -> dict[str, str]:
         '''Checks if a type_id exists in the category schema or not
         Arguments:
             type_id:
@@ -41,8 +39,7 @@ class Fetch:
                     "name": `str`
         '''
         try:
-            mongo = current_app.mongo
-            doc = await mongo.db.product_info_schema.find_one({"type_id": type_id}, {"_id": 1, "name": 1})
+            doc = await self.mongo.db.product_info_schema.find_one({"type_id": type_id}, {"_id": 1, "name": 1})
             return {"error": "invalid type id"} if not doc else doc
         except Exception as e:
             print(e)
@@ -50,15 +47,13 @@ class Fetch:
             return "error"
 
 
-    async def category_schema(type_id: str) -> dict:
+    async def category_schema(self, type_id: str) -> dict:
         """
         SCHEMA IMPORTANT FOR PRODUCT CATEGORY SPECIFIC\n
         Returns {"attributes": []}
         """
-        mongo = current_app.mongo
-
         try: 
-                doc = await mongo.db.product_info_schema.find_one({"type_id": type_id}, {"_id": 0, "type_id": 0})  
+                doc = await self.mongo.db.product_info_schema.find_one({"type_id": type_id}, {"_id": 0, "type_id": 0})  
 
                 if not doc:
                     return {"error": "Not found"}
@@ -68,15 +63,13 @@ class Fetch:
                 return {"error": str(e)}
 
 
-    async def listing_schema():
+    async def listing_schema(self):
         """
         SCHEMA IMPORTANT FOR LISTING\n
         Returns {"attributes": []}
         """
-        mongo = current_app.mongo
-
         try:
-              doc = await mongo.db.universal_catalog_schema.find_one({}, {"_id": 0})
+              doc = await self.mongo.db.universal_catalog_schema.find_one({}, {"_id": 0})
               if not doc:
                   return {"error": "Not found"}
 
@@ -87,16 +80,15 @@ class Fetch:
 
 
     # fetching the image schema from the sql based upon the product type id
-    async def image_schema(type_id: str):
+    async def image_schema(self, type_id: str):
         """
         SCHEMA FOR IMAGE\n
         Returns {"attributes": []}
         """
-        mongo = current_app.mongo
         try:
-            doc = await mongo.db.image_schema.find_one({"type_id": type_id}, {"_id": 0, "type_id": 0})
+            doc = await self.mongo.db.image_schema.find_one({"type_id": type_id}, {"_id": 0, "type_id": 0})
             if not doc:
-                doc = await Fetch.image_schema("default")
+                doc = await self.image_schema("default")
             if not doc:
                 return {"error": "Not found"}
             
@@ -123,8 +115,8 @@ class Fetch:
 
         
             # fetch only mandatory schema keys of any niche
-            async def mandatory(self):
-                doc = await Fetch.category_schema(self.type_id)
+            async def mandatory(self, ctx=None):
+                doc = await Fetch(ctx).category_schema(self.type_id)
                 if not doc:
                   return None
 
@@ -135,8 +127,8 @@ class Fetch:
 
             # to fetch all the attribute schema any niche id
             #there is no point of checking all the fields since category fields an be many there is no way to cross check what data fields are getting stored
-            async def all(self):
-                doc = await Fetch.category_schema(self.type_id)                               
+            async def all(self, ctx=None):
+                doc = await Fetch(ctx).category_schema(self.type_id)                               
                 if not doc:
                   return None
                
@@ -149,9 +141,9 @@ class Fetch:
             """
             Catalog specific attribute
             """
-            async def mandatory():
+            async def mandatory(ctx=None):
                 """fetch only mandatory attribute keys for catalog listing"""
-                doc = await Fetch.listing_schema()
+                doc = await Fetch(ctx).listing_schema()
                 if not doc:
                   return None
                 
@@ -160,9 +152,9 @@ class Fetch:
                 return universal_mandatory_keys
             
 
-            async def all():
+            async def all(ctx=None):
                 """to fetch all the attribute schema for catalog listing"""
-                doc = await Fetch.listing_schema()
+                doc = await Fetch(ctx).listing_schema()
                 if not doc:
                   return None
                 
@@ -179,13 +171,13 @@ class Fetch:
                 self.type_id = type_id
 
 
-            async def mandatory(self):
+            async def mandatory(self, ctx=None):
                 """fetch only mandatory attribute keys for images"""
-                doc = await Fetch.image_schema(self.type_id)
+                doc = await Fetch(ctx).image_schema(self.type_id)
                 
 
                 if doc.get('error'):
-                   doc = await Fetch.image_schema("default")
+                   doc = await Fetch(ctx).image_schema("default")
                 
                 attributes = doc.get("attributes")
                 
@@ -194,9 +186,9 @@ class Fetch:
 
             
             # we don't need to check for all images. only mandatory images
-            # async def all(self):
+            # async def all(self, ctx=None):
             #     """to fetch all the attribute schema for images"""
-            #     doc = await Fetch.image_schema(self.type_id)
+            #     doc = await Fetch(ctx).image_schema(self.type_id)
             #     if not doc:
             #       return None
                 

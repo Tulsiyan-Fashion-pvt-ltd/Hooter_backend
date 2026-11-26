@@ -10,8 +10,8 @@ async def create_variants(usku_id: str, type_id, variants: list[dict[str, any]],
     Function to create the variants for the given listing or category attributes
     """
     product_listing_attributes, product_category_attributes = await asyncio.gather(
-            product_mariadb.Fetch.catalog_product(usku_id), 
-            product_mongodb.Fetch.catalog_product(usku_id)
+            product_mariadb.Fetch().catalog_product(usku_id),
+            product_mongodb.Fetch().catalog_product(usku_id)
         )
     
     if product_listing_attributes.get('status') == 'failed':
@@ -62,7 +62,7 @@ async def suggest_variant_sku_id(usku_id: str) -> tuple[dict, int]:
         Autogenrated sku id for suggestion
     """
     result = await asyncio.gather(mariadb.Fetch.count_variants(usku_id), 
-                                         product_mariadb.Fetch.sku_id(usku_id))
+                                         product_mariadb.Fetch().sku_id(usku_id))
 
     variant_count = result[0]
     sku_id = result[1]
@@ -117,6 +117,7 @@ async def get_product_variants(usku_id: str) -> tuple[dict, int]:
         return variant_variations
 
 
+
     # this is a pending work
     def get_variant_dimentions(category_variants: list) -> dict[str, list[dict]]:
         variant_variations = get_variantions(category_variants)
@@ -133,8 +134,6 @@ async def get_product_variants(usku_id: str) -> tuple[dict, int]:
         return variant_dimention
 
 
-        
-
     variants_list = await mariadb.Fetch.variants(usku_id)
     if variants_list.get('status') != 'ok':
         return {'status': 'failed', 'message': 'Interal server error', 'code': '1e9566fa'}, 500
@@ -145,7 +144,7 @@ async def get_product_variants(usku_id: str) -> tuple[dict, int]:
 
     usku_ids = [variant.get('usku_id') for variant in variants_list]
 
-    variants_category_attr = await product_mongodb.Fetch.catalog_product(usku_ids = usku_ids)
+    variants_category_attr = await product_mongodb.Fetch().catalog_product(usku_ids = usku_ids)
     if variants_category_attr.get('status') == 'failed':
         return {'status': 'failed', 'message': 'Interal server error', 'code': '40cfdc99'}, 500
 

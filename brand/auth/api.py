@@ -35,7 +35,7 @@ async def register_entity() -> Response:
         print(e)
         return jsonify({'status': 'failed', 'message': 'Invalid payload', 'error': [{"loc": error.get('loc'),
                                                                                     "msg": error.get('msg')
-                                                                                    }for error in e.errors()]}), 400
+                                                                                    }for error in e.errors(include_context=False)]}), 400
     except AttributeError as e:
         print(e)
         return jsonify({'status': 'failed', 'message': 'Error while validating payload', 'error': str(e)}), 500

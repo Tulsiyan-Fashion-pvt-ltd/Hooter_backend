@@ -5,8 +5,11 @@ from typing import Literal
 
 
 class Write:
+    def __init__(self, ctx: dict | None = None):
+        self.mongo = ctx["mongo"] if ctx is not None else current_app.mongo
+
     # function to add the catalog into the mongodb server
-    async def product(catalog: dict):
+    async def product(self, catalog: dict):
         """Uploads category specific single product data in the mongodb
 
         Arguments:
@@ -18,7 +21,7 @@ class Write:
                 - error: str -> on failure
 
         """
-        mongo = current_app.mongo
+        mongo = self.mongo
         async with await mongo.cx.start_session() as connection:
           async with connection.start_transaction():
             try:
@@ -31,8 +34,8 @@ class Write:
             
 
     # function to add the catalog into the mongodb server
-    async def bulk_product(products: list[dict[str, str| int| list| None]]) -> dict:
-        mongo = current_app.mongo
+    async def bulk_product(self, products: list[dict[str, str| int| list| None]]) -> dict:
+        mongo = self.mongo
         async with await mongo.cx.start_session() as connection:
           async with connection.start_transaction():
             try:
@@ -44,8 +47,8 @@ class Write:
                 return {"error": str(e)}
             
             
-    async def update_catalog(usku_id, category_attributes: dict) -> str| dict:
-        mongo = current_app.mongo
+    async def update_catalog(self, usku_id, category_attributes: dict) -> str| dict:
+        mongo = self.mongo
         async with await mongo.cx.start_session() as connection:
             async with connection.start_transaction():
                 try:
@@ -60,8 +63,8 @@ class Write:
 
 
                 
-    async def delete_catalog(usku_id: str):
-        mongo = current_app.mongo
+    async def delete_catalog(self, usku_id: str):
+        mongo = self.mongo
         async with await mongo.cx.start_session() as connection:
             async with connection.start_transaction():
                 try:
@@ -74,24 +77,17 @@ class Write:
 
 
 
-    async def variants(variants: list) -> dict:
-        mongo = current_app.mongo
-        try:
-            await mongo.db.variants.insert_many(variants)
-            return {"status": "ok"}
-        except Exception as e:
-            print(e)
-            return {"error": str(e)}
-
-
 class Fetch:
+    def __init__(self, ctx: dict | None = None):
+        self.mongo = ctx["mongo"] if ctx is not None else current_app.mongo
+
     # fetch catalog product data
-    async def catalog_product(usku_id: str|None = None, usku_ids: list|None=None) -> dict[Literal['status', 'value', 'error'], any]:
+    async def catalog_product(self, usku_id: str|None = None, usku_ids: list|None=None) -> dict[Literal['status', 'value', 'error'], any]:
         """
         Returns the product category attributes in dict with `attributes` key when usku_id
             if usku_ids then list of `attributes` key
         """
-        mongo = current_app.mongo
+        mongo = self.mongo
         try:
             doc = None
 

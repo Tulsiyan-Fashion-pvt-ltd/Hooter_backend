@@ -24,14 +24,14 @@ async def create_product_variants(usku_id: str):
     """
     payload = await request.get_json()
 
-    type_id = await products_mariadb.Fetch.product_category_id(usku_id)
+    type_id = await products_mariadb.Fetch().product_category_id(usku_id)
     if type_id.get('status') != 'ok':
         return jsonify({'status': 'failed', 'message': 'Error while fetching the category ID', 'error': type_id.get('error'), 'code': '8c5952ca'}), 500
 
     type_id = type_id.get('value')
     try:
-        listing_attributes_schema, category_attributes_schema = await asyncio.gather(categories_mongodb.Fetch.listing_schema(),
-                                                      categories_mongodb.Fetch.category_schema(type_id))
+        listing_attributes_schema, category_attributes_schema = await asyncio.gather(categories_mongodb.Fetch().listing_schema(),
+                                                      categories_mongodb.Fetch().category_schema(type_id))
 
         if listing_attributes_schema.get('error') or category_attributes_schema.get('error'):
             return jsonify({'status': 'failed', 

@@ -31,8 +31,8 @@ WITH THEIR KEYS
 @product_access_required
 async def get_product(usku_id: str) -> tuple[dict, int]:
     '''get the uploaded catalog products and status'''
-    product_data = await asyncio.gather(mariadb.Fetch.catalog_product(usku_id),
-                                        mongodb.Fetch.catalog_product(usku_id))
+    product_data = await asyncio.gather(mariadb.Fetch().catalog_product(usku_id),
+                                        mongodb.Fetch().catalog_product(usku_id))
     
     if product_data[0].get("error"):
         return {"status": "failed", "message": "request failed"}, 400
@@ -45,7 +45,7 @@ async def get_product(usku_id: str) -> tuple[dict, int]:
 
 
 
-async def create_product(brand_id, listing_attributes: dict, category_attributes: dict, category_id: str) -> tuple[dict, int]:
+async def create_product(brand_id, listing_attributes: dict, category_attributes: dict, category_id: str, ctx: dict| None = None) -> tuple[dict, int]:
     """
     Upload single product in the system
 
@@ -54,13 +54,13 @@ async def create_product(brand_id, listing_attributes: dict, category_attributes
         - `tuple[{"status": "successful", "message": "product upload completed", "usku_id": usku_id}, rest_status_code]`
     """
     '''CHECKIGN CATEGORY ID'''
-    category_mongo_request = await category_mongodb.Fetch.category_name(category_id)
+    category_mongo_request = await category_mongodb.Fetch(ctx).category_name(category_id)
     type_name = category_mongo_request.get('name')
     if not type_name:
         return {"error": "invalid request", "message": "type id is incorrect"}, 400
     
     usku_id = create_usku()
-    brand_name = await brand_sql.Fetch.brand_name_by_id(brand_id)
+    brand_name = await brand_sql.Fetch().brand_name_by_id(brand_id)
 
     '''ADDING THE THE DATA IN THE DB AFTER FORMATTING IT'''
     sql_attributes_value = {
@@ -81,8 +81,8 @@ async def create_product(brand_id, listing_attributes: dict, category_attributes
     category_attributes.update(mongodb_attribute_value)
 
     try:
-        sql_response, mongo_response = await asyncio.gather(mariadb.Write.product(listing_attributes), 
-                                        mongodb.Write.product(category_attributes)) # db query
+        sql_response, mongo_response = await asyncio.gather(mariadb.Write(ctx).product(listing_attributes),
+                                        mongodb.Write(ctx).product(category_attributes)) # db query
         if sql_response.get("error") is not None:
             if sql_response.get('error') == 1062:
                 return {"error": "Duplicate sku id", 'status': 'failed', 'message': 'SKU ID already exists'}, 409
@@ -106,9 +106,9 @@ async def create_product(brand_id, listing_attributes: dict, category_attributes
 async def update_product(usku_id: str, listing_attributes: dict, category_attributes: dict) -> tuple[dict[str, str], int]:
     tasks = []
     if listing_attributes:
-        tasks.append(mariadb.Write.update_catalog(usku_id, listing_attributes))
+        tasks.append(mariadb.Write().update_catalog(usku_id, listing_attributes))
     if category_attributes:
-        tasks.append(mongodb.Write.update_catalog(usku_id, category_attributes))
+        tasks.append(mongodb.Write().update_catalog(usku_id, category_attributes))
 
     responses = await asyncio.gather(*tasks)
 
@@ -134,8 +134,8 @@ async def delete_product(usku_id: str) -> tuple[dict[str, str], int]:
 
     """
     images = await imagesql.Fetch.image(usku_id) # image object keys for s3
-    db_query = await asyncio.gather(mariadb.Write.delete_catalog(usku_id), 
-                                    mongodb.Write.delete_catalog(usku_id)
+    db_query = await asyncio.gather(mariadb.Write().delete_catalog(usku_id),
+                                    mongodb.Write().delete_catalog(usku_id)
                                     )
 
     if db_query[0] != "ok" or db_query[1] != "ok" or images == "error":
@@ -337,7 +337,7 @@ async def get_products(brand_id: str, status: str| None = None,
                   'limit': rows,
                   'order': order}
 
-    sql_response = await mariadb.Fetch.catalog_list(brand_id, conditions)        
+    sql_response = await mariadb.Fetch().catalog_list(brand_id, conditions)
     if sql_response == "error":
         return {"status": "failed", "message": "could not fetch the catalog data"}, 500
 

@@ -93,6 +93,8 @@ async def sql_connection_startup():
             await asyncio.sleep(2)
 
 
+# ARQ CONNECTION
+# Import arq from current_app in blueprints and enqueue jobs
 @app.before_serving
 async def create_arq_pool():
     app.arq = await create_pool(

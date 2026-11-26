@@ -8,8 +8,10 @@ from utils.encryption import TokenEncryption
 # handling the database quiries related to brands to handle brands
 
 class Write:
-    @staticmethod
-    async def insert_brand(brand_data: dict, user_id: str, access: str) -> str| int:
+    def __init__(self, ctx: dict | None = None):
+        self.pool = ctx["pool"] if ctx is not None else current_app.pool
+
+    async def insert_brand(self, brand_data: dict, user_id: str, access: str) -> str| int:
         """Adds new brand to the database for the given user
         Args:
             - brand_data: dict object for brand containing the sql fields
@@ -21,7 +23,7 @@ class Write:
             - on success - literal[ok]
             - on failure - dict[literal[error], int]
         """
-        pool = current_app.pool
+        pool = self.pool
         async with pool.acquire() as connection:
             async with connection.cursor(cursor=DictCursor) as cursor:
                 try:
@@ -66,8 +68,7 @@ class Write:
                     return {"error": e.args[0]}
 
 
-    @staticmethod
-    async def add_poc(brand_id: str, data: dict) -> dict[str, str|int]:
+    async def add_poc(self, brand_id: str, data: dict) -> dict[str, str|int]:
         """Add new poc for the brand
         
         Args:
@@ -77,7 +78,7 @@ class Write:
         Returns:
             Returns dict with `status` successful or failed and `poc_id` and if failed then `code` and `error` in the dict
         """
-        pool = current_app.pool
+        pool = self.pool
         async with pool.acquire() as connection:
             try:
                 async with connection.cursor(cursor=DictCursor) as cursor:
@@ -104,9 +105,8 @@ class Write:
 
 
 
-    @staticmethod
-    async def map_user_brand(brand_id, user_id, access: str) -> bool:
-        pool = current_app.pool
+    async def map_user_brand(self, brand_id, user_id, access: str) -> bool:
+        pool = self.pool
         async with pool.acquire() as connection:
             async with connection.cursor(cursor=DictCursor) as cursor:
                 try:
@@ -122,9 +122,8 @@ class Write:
                     await connection.rollback()
                     return e.args[0]
 
-    @staticmethod
     @brand_access_required
-    async def update_poc(brand_id: str, data: dict) -> str| dict[str, int]:
+    async def update_poc(self, brand_id: str, data: dict) -> str| dict[str, int]:
         '''Updates the POC for the given brand_id if the brand belongs to the user else raise an exception
         
         Args:
@@ -135,7 +134,7 @@ class Write:
             - on success - literal[ok]
             - on failure - dict[literal[error], int]
         '''
-        pool = current_app.pool
+        pool = self.pool
         attrs = []
         values = []
 
@@ -171,10 +170,11 @@ class Write:
 
                 
 class Fetch:
-    
-    @staticmethod
-    async def brand_access(user_id):
-        pool = current_app.pool
+    def __init__(self, ctx: dict | None = None):
+        self.pool = ctx["pool"] if ctx is not None else current_app.pool
+
+    async def brand_access(self, user_id):
+        pool = self.pool
         async with pool.acquire() as connection:
             async with connection.cursor(cursor=DictCursor) as cursor:
                 try:
@@ -195,9 +195,8 @@ class Fetch:
                     return None
                 
     
-    @staticmethod
-    async def check_brand_id(brand_id):
-        pool = current_app.pool
+    async def check_brand_id(self, brand_id):
+        pool = self.pool
         async with pool.acquire() as connection:
             async with connection.cursor(cursor=DictCursor) as cursor:
                 try:
@@ -215,9 +214,8 @@ class Fetch:
 
 
     # check name of brand from the brand_id
-    @staticmethod
-    async def brand_name_by_id(brand_id):
-        pool = current_app.pool
+    async def brand_name_by_id(self, brand_id):
+        pool = self.pool
         async with pool.acquire() as connection:
             async with connection.cursor(cursor=DictCursor) as cursor:
                 try:
